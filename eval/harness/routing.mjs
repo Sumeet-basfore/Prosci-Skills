@@ -25,11 +25,18 @@ function hits(request, route) {
 }
 
 function scoreRow(row, request) {
+  // A row naming two routes only matches when the request evidences both. Without this rule, every
+  // docs request collects points from the stacked row's behaviour half and the table looks ambiguous.
+  if (row.routes.length > 1) {
+    const perRoute = row.routes.map((route) => hits(request, route));
+    if (perRoute.some((n) => n === 0)) return 0;
+    return perRoute.reduce((a, b) => a + b, 0);
+  }
   let score = 0;
   for (const route of row.routes) score += hits(request, route);
   const lower = request.toLowerCase();
-  if (row.routes.includes(map.interrogative.route)) {
-    if (map.interrogative.markers.some((m) => lower.includes(m))) score += map.interrogative.weight;
+  if (row.routes.includes(map.interrogative.route) && map.interrogative.markers.some((m) => lower.includes(m))) {
+    score += map.interrogative.weight;
   }
   return score;
 }
