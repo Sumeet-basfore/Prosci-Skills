@@ -300,8 +300,9 @@ Status, so this file cannot be read as ahead of reality.
 - Phase 1 has not started, and no skill has been written or edited since the rename.
 
 Phase 0.1 (`docs/plan/phase-0.1-spec.md`) measured the four invocation strategies. Results are in
-`eval/reports/phase-0.1.md`. The finding that decides what happens next: no strategy reached the
-pre-registered reliability target. One line in a repo `AGENTS.md` activated 7 of 15 runs, the Pi
+`eval/reports/phase-0.1.md`. Phase 0.2 is proposed at `docs/plan/phase-0.2-spec.md`: an explicitly
+activated mode, progressive loading, isolation as a gate, and a $0.15 ceiling with a stopping rule.
+The finding that decides what happens next: no strategy reached the pre-registered reliability target. One line in a repo `AGENTS.md` activated 7 of 15 runs, the Pi
 extension 9 of 15 at router level but only 3 at route level, explicit `/skill:prosci` 1 of 15, passive
 0 of 15. Once the router loads, the second hop is reliable (7 of 7). So activation is the constraint,
 not routing, and Phase 1 as planned is not supported until the entry-point question is settled.
