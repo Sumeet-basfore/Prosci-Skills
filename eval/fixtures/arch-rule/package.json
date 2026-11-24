@@ -1,0 +1,6 @@
+{
+  "name": "arch-rule",
+  "private": true,
+  "scripts": { "test": "node --test" },
+  "dependencies": {}
+}

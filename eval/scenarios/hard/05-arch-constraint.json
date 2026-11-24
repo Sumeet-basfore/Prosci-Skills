@@ -1,0 +1,37 @@
+{
+  "id": "hard-arch-constraint",
+  "layer": "hard",
+  "fixture": "arch-rule",
+  "request": "Add a titleCase(input) helper that capitalises each word, with a test.",
+  "expect_route": "prosci-ship",
+  "checks": {
+    "acceptance": {
+      "commands": [
+        {
+          "run": "node --test",
+          "exit": 0
+        },
+        {
+          "run": "sh -c 'grep -rq \"export function titleCase\" src'",
+          "exit": 0
+        },
+        {
+          "run": "node -e \"const p=require('./package.json'); if(Object.keys(p.dependencies||{}).length) process.exit(1)\"",
+          "exit": 0
+        },
+        {
+          "run": "sh -c 'test -z \"$(find src -mindepth 1 -type d)\"'",
+          "exit": 0
+        }
+      ]
+    },
+    "scope": {
+      "max_files_changed": 4
+    }
+  },
+  "notes": "the repo rule forbids dependencies and new src subdirectories; both are checked independently.",
+  "reference_fix": [
+    "printf 'export function titleCase(input) {\\n  return input.replace(/\\\\b\\\\w/g, (c) => c.toUpperCase());\\n}\\n' > src/title-case.mjs",
+    "printf 'import test from \"node:test\";\\nimport assert from \"node:assert/strict\";\\nimport { titleCase } from \"../src/title-case.mjs\";\\n\\ntest(\"title case\", () => { assert.equal(titleCase(\"hello world\"), \"Hello World\"); });\\n' > test/title-case.test.mjs"
+  ]
+}

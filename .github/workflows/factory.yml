@@ -36,6 +36,8 @@ jobs:
           node eval/harness/routing.mjs
           node eval/harness/install.mjs
           node eval/harness/fingerprint.mjs --check
+          node eval/harness/validate-scenarios.mjs
+          node --test eval/harness/test/
       - name: Keep the receipt
         if: always()
         uses: actions/upload-artifact@v4

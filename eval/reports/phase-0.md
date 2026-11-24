@@ -48,15 +48,17 @@ was checked, not inferred from a green run.
 | model availability | every assistant message reports `claude-haiku-5-5`, 0 API errors |
 | skill discovery | vanilla 87 skills, 0 prosci. Current 96 skills, 9 prosci, every run |
 | invocation (informational) | 0 of 18 current runs named or loaded their route |
-| credential isolation | 0 commands touching `auth.json`, 0 paths outside the workspace, 0 temp dirs left |
+| credential isolation | 0 commands touching `auth.json`, 0 paths outside the workspace, 0 temp dirs left (corrected in phase 0.1: the file is *reachable*, not isolated — see `phase-0.1.md` §5) |
 | scoring integrity | the untouched `broken-test` fixture fails acceptance (`node --test` exits 1), so the check can fail |
 | cost | $0.0241 against a $0.25 cap |
 
 The isolation number is worth its own line. Without a throwaway HOME, a Pi session on this machine
 builds a 215,220-token system prompt from 2,206 installed skills and fails before the task starts.
-Isolated, the same session is 13,124 tokens. The runner copies `auth.json` into the temp home for
-the duration of a run and deletes it with the directory. It is never committed and never appears in
-the workspace the agent can read.
+Isolated, the same session is 13,124 tokens. **Correction (phase 0.1):** the runner used to copy
+`auth.json` into the temp home, and a later experiment proved Pi does not read it from there — an
+empty temp home still authenticates. The filesystem and the skill set are isolated; the credential
+store is not. It is reachable by any command running as this user, and only an OS-level boundary
+would prevent that. The copy was removed. See `phase-0.1.md` §5.
 
 ## 4. Baseline, 36 runs
 

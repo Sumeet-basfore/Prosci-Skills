@@ -1,0 +1,31 @@
+{
+  "id": "hard-ambiguous",
+  "layer": "hard",
+  "fixture": "ambiguous",
+  "request": "Make the output nicer.",
+  "expect_route": "prosci-ship",
+  "checks": {
+    "acceptance": {
+      "commands": [
+        {
+          "run": "node --test",
+          "exit": 0
+        }
+      ],
+      "files_changed": [
+        "src/json-output.mjs"
+      ],
+      "files_unchanged": [
+        "src/text-output.mjs"
+      ]
+    },
+    "scope": {
+      "max_files_changed": 2
+    }
+  },
+  "notes": "two defensible readings. Exactly one surface may change, which the acceptance measures against the pristine fixture.",
+  "reference_fix": [
+    "printf 'export function toJson(value) {\\n  return JSON.stringify({ value }, null, 2);\\n}\\n' > src/json-output.mjs",
+    "printf 'import test from \"node:test\";\\nimport assert from \"node:assert/strict\";\\nimport { toJson } from \"../src/json-output.mjs\";\\nimport { toText } from \"../src/text-output.mjs\";\\n\\ntest(\"json output\", () => { assert.equal(JSON.parse(toJson(1)).value, 1); });\\ntest(\"text output\", () => { assert.equal(toText(1), \"value: 1\"); });\\n' > test/output.test.mjs"
+  ]
+}

@@ -160,3 +160,11 @@ export function tail(text, lines = 20) {
 export function humanPath(p) {
   return relative(REPO_ROOT, p) || ".";
 }
+
+// Which files a run touched. git status prints a two-character status prefix, and three separate
+// bugs came from slicing it (D-003), so this asks git for bare paths only.
+export function changedFiles(workspace) {
+  const run = (args) => git(args, workspace).out.split("\n").map((line) => line.trim());
+  const paths = [...run(["ls-files", "--modified", "--others", "--exclude-standard"]), ...run(["diff", "--name-only", "HEAD"])];
+  return paths.filter((v, i, all) => v && all.indexOf(v) === i).sort();
+}

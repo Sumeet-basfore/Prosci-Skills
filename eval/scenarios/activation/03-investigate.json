@@ -1,0 +1,12 @@
+{
+  "id": "act-explain",
+  "layer": "activation",
+  "fixture": "clean-pass",
+  "request": "why does normalize lowercase its input?",
+  "expect_route": "prosci-investigate",
+  "route_artifacts": ["no-file-changes"],
+  "checks": {
+    "acceptance": { "commands": [{ "run": "node --test", "exit": 0 }] },
+    "scope": { "max_files_changed": 0 }
+  }
+}
