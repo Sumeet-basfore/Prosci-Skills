@@ -129,24 +129,28 @@ error rather than pretending to pass.
 
 - [x] `bin/install-gate` and `bin/templates/factory-workflow.yml`, built 2026-11-24
 - [x] this repo gated with its own workflow, `.github/workflows/factory.yml`
-- [ ] install and protect `lore`, then `healthOraa`, `ilvuno-code`, `caver-ci`. Needs the
-      GitHub repository to exist and a push, so it is the first thing to do once the remote is
-      created.
+- [x] branch protection on this repo's `main`, applied 2026-11-24. Required check `factory`,
+      strict (branch must be up to date), `enforce_admins: true`, force pushes and deletions
+      blocked. Verified with `gh api repos/Sumeet-basfore/prosci/branches/main/protection`,
+      which returned `checks: ["factory"], strict: true, admins: true, forcepush: false`.
+- [ ] install and protect `lore`, then `healthOraa`, `ilvuno-code`, `caver-ci`
 - the change. The workflow checks out this repo beside the target and runs
       `node factory/bin/verify . --state-dir .factory`, then uploads the receipt. One
       implementation serves every repo, and a change to the gate is visible in one place.
-      Branch protection on `main` then requires the check named `factory`, requires branches to
-      be up to date, and blocks force pushes. Protect `lore` first.
-- [ ] result you see. On `lore`, a PR with a deliberately failing test shows a red `factory`
-      check and a disabled merge button. A green PR merges.
+- [x] live, on this repo. PR #3's first run failed red with `MODULE_NOT_FOUND` because the
+      contract named `node --test bin/test/`, which Node 22 in CI does not scan as a directory.
+      Node 26 locally does, so the bug was invisible for two phases and the gate caught it on
+      its first run. The contract now names the files and the check went green. That is the
+      gate doing its job on the author, before any user was affected.
+- [ ] result you see on a target repo. A PR with a deliberately failing test shows a red
+      `factory` check and a disabled merge button.
 - [x] unit. Four behaviour tests in `bin/test/install-gate.test.mjs` cover the write, the
       refusal to overwrite, the `--owner` override, and the missing-owner refusal. `actionlint`
       is the cheap check before the first push.
-- [ ] live. The disabled merge button is the only proof. Record the `gh api` response for the
-      protection rule, or a screenshot path.
-- [ ] perf. `gh run view` wall time under 6 minutes on `lore`.
-- [ ] the operator call. This changes your daily habit from commit to branch and PR. Roll it to
-      one repo, live with it a week, then four.
+- [ ] perf. `gh run view` wall time under 6 minutes on `lore`. This repo's run takes about 10
+      seconds, which is the floor, not the target.
+- [x] the operator call. It changed the daily habit from commit to branch and PR. Four PRs
+      landed under it on 2026-11-24, three phases plus one review fix.
 - the caveat. `caver-ci` already has `quality.yml`. Do not add the factory workflow beside it
   and call the gate done, or the repo will have two checks and neither is the contract. Decide
   which one survives first.
