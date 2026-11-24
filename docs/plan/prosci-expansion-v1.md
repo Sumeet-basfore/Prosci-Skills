@@ -3,6 +3,39 @@
 Written 2026-11-24. Audit, research, gap analysis, and a plan for approval. No skill was changed to
 produce this.
 
+## 0. Approved, 2026-11-24
+
+Four decisions and five constraints. This section overrides anything below that disagrees with it.
+
+**Decisions.**
+
+1. The 17 plus 3 structure is accepted. Twenty is not a target. A future skill needs a demonstrated
+   gap and an evaluation that justifies it.
+2. `prosci-design` is product surface only. API contracts, system boundaries, and architectural
+   decisions stay with `prosci-architect`.
+3. Phase 0 is the mandatory first milestone. No new skill is written until the evaluation foundation
+   exists and the current nine have been measured.
+4. Phase 0 includes a minimal installer and compatibility validation. Discovery, relative reference
+   resolution, install, update, and safe removal get verified per harness. Unsupported capabilities
+   get documented, not implied.
+
+**Constraints on the evaluation.**
+
+- It measures more than routing: negative routing, implementation quality, verification integrity,
+  token overhead, completion time, scope compliance, cross-harness consistency, regressions.
+- Deterministic routing tests are separate from probabilistic model-behaviour evaluations.
+- Scenarios are reproducible, outcomes are defined before a run, fixtures are controlled, scoring is
+  transparent.
+- Three configurations where practical: no Prosci, the current nine skills, the expanded set. The
+  current version is preserved as a reproducible baseline.
+
+**What stays from the audit.** Deterministic routing, shared engineering principles, repository-owned
+knowledge, dependency-aware planning, minimal runtime. Verified delivery is the primary objective.
+Token efficiency and throughput are measured, never assumed.
+
+**What is explicitly not optimised.** Commit volume, skill count, evaluation scores for their own
+sake.
+
 ## 1. What exists today
 
 Measured from the repo, not from memory.
@@ -238,12 +271,19 @@ untested risk in the plan.
 - **"Harness independence is a convention."** It is a build step. Until an installer exists, the
   claim is aspirational and should be written as such.
 
-## 11. Open decisions for approval
+## 11. Decisions, resolved
 
-1. Approve the 17 + 3 structure, or name the skill you want in the core set that is not there.
-2. `prosci-design`: product surface only, or should it also cover API and data design with
-   `prosci-architect` handling only system structure?
-3. Phase 0 first: an eval harness before any new skill, yes or no. My recommendation is yes, and it
-   is the one item in this plan I would refuse to skip.
-4. Do you want an installer in phase 0, or is the symlink convention enough until a second harness
-   is in use?
+The four questions this plan opened are answered above in section 0. Recorded here with the
+alternative that was not taken, so the reasoning survives.
+
+| question | answer | the road not taken |
+| --- | --- | --- |
+| 17 plus 3, or force 20 | 17 plus 3 | padding three skills to hit a number, each one costing description tokens and router ambiguity |
+| scope of `prosci-design` | product surface only | splitting API design out of architect, which would have made two skills argue over one decision |
+| phase 0 first | mandatory | writing the eight skills first, which would have made every later result unmeasurable |
+| installer now | yes, minimal, in phase 0 | relying on symlinks until a second harness, which would have left compatibility unverified and untested |
+
+## 12. Next
+
+`docs/plan/phase-0-spec.md` is the implementation specification for the approved phase 0. It is a
+proposal for review, not an approved plan, and nothing in it is built yet.
