@@ -1,7 +1,61 @@
 # Phase 0 specification: the evaluation foundation
 
-Status: proposal for review. Nothing here is built. Approved decisions are in
-`prosci-expansion-v1.md` section 0.
+Status: approved 2026-11-24 with the amendments below, and being implemented. Approved decisions are
+in `prosci-expansion-v1.md` section 0.
+
+## 0. Approved amendments, 2026-11-24
+
+Resolved decisions.
+
+1. Pi print mode is the primary L3 harness. Codex behavioural evaluation moves to phase 1.
+2. Fixtures are committed, individually reviewable files, not tarballs.
+3. Raw runs stay gitignored under `eval/runs/`. Sanitized baseline artefacts are retained separately
+   with manifests and hashes. No credentials, private context, or sensitive transcripts are committed.
+4. The L1 keyword map is hand-maintained with explicit drift detection against the router table. L1
+   never claims to prove semantic routing correctness.
+5. The initial baseline uses one fixed model at one effort with three repeats per scenario. A second
+   model waits until reproducing the findings would change a decision.
+
+Trade-offs accepted: wall-clock time is informational, Pi-only behavioural evaluation in phase 0,
+exact description counts plus per-run tokens where the harness reports them, and a reduced
+implementation-quality rubric backed by independent acceptance tests.
+
+Corrections that are now requirements, each reflected where it applies below.
+
+- Prosci-specific routing scores are reported separately from configuration-neutral behaviour scores.
+  A vanilla agent is never penalised for not naming a Prosci skill, and every comparison uses the same
+  criteria and denominators.
+- Acceptance is measured by the harness, not the agent. An agent's own "tests pass" claim is never
+  acceptance.
+- No answer leakage. Expected routes, fixture defects, and acceptance commands never appear in the
+  fixture files, and the agent works in a neutral copy path.
+- Execution is proven from structured tool records and exit codes, not from transcript prose.
+- Test-weakening detection is a heuristic, independently validated, and harmless mentions are not
+  violations.
+- Mentioning a destructive command is not executing it. Approval-boundary tests run in synthetic
+  isolation and never touch real resources.
+- Isolation covers more than a temporary HOME. Credentials needed for the run are documented as a
+  limitation.
+- Installation compatibility, native discovery, and behavioural compatibility are reported separately.
+- The installer refuses to remove or overwrite anything it did not create or that the user modified,
+  and handles collisions, interrupted installs, symlinks, and repeats.
+
+Implementation notes, measured while building it (details in `eval/reports/phase-0.md`).
+
+- The router table can map several rows to one route, so ambiguity is judged by the set of routes the
+  best rows name, not by row identity. Without that rule every ship scenario is "ambiguous".
+- The keyword map needs one rule beyond per-route phrases: an interrogative marker weights the
+  investigate route, because "where are the docs" and "fix the docs" share a noun.
+- `vanilla` is not skill-free. The harness carries 87 skills of its own; the delta between
+  configurations is exactly nine.
+
+Canonical baseline location: `eval/skills.lock.json`. Earlier drafts also mentioned a root-level
+`skills.lock.json`; that location is dropped, and the root path is not used.
+
+Measured before implementation, and the reason isolation is mandatory: an unisolated Pi session on
+this machine builds a system prompt of 215,220 tokens from the 2,206 installed skills, which exceeds
+a 200k-context model before the task begins. With an isolated home, the same prompt costs 13,124
+tokens including a real tool call.
 
 Phase 0 builds the measurement apparatus, a minimal installer, and a frozen baseline. It writes no
 new skill and changes no existing skill.
@@ -282,7 +336,7 @@ Phase 0 is done when all of these are true, and each is checkable.
    the run committed as evidence.
 3. `bin/install-skills --remove` leaves the target byte-identical to its pre-install state, proven by
    a test.
-4. Tag `v0.1-eval-baseline` exists, `skills.lock.json` matches every SKILL.md, and installing from
+4. Tag `v0.1-eval-baseline` exists, `eval/skills.lock.json` matches every SKILL.md, and installing from
    the tag reproduces the nine skills.
 5. L1 and L2 run in CI and pass. Total wall time under 10 seconds.
 6. At least 6 behaviour scenarios exist with fixtures, and one full L3 series has run against
