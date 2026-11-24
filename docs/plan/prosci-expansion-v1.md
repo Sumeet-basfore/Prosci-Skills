@@ -298,3 +298,7 @@ Status, so this file cannot be read as ahead of reality.
   win.
 - The 36-run baseline has not run.
 - Phase 1 has not started, and no skill has been written or edited since the rename.
+
+Phase 0.1 is now defined and awaiting approval: `docs/plan/phase-0.1-spec.md`. It exists because the
+baseline's real finding was activation, not content. No skill changes, no paid series, and no new
+runtime are proposed in it until the four invocation strategies have been measured.
