@@ -1,6 +1,6 @@
 ---
 name: factory-docs
-description: "Change documentation the factory way: find every claim the change invalidates, update it, run the commands you document, and check the links. Use for documentation-only work, or whenever a change alters a command, a default, a config key, or setup steps."
+description: "Change documentation the factory way: find every claim the change invalidates, update it, run the commands you document, and check the links. Use for documentation-only work, or as the second half of a behaviour change that altered a command, a flag, a default, a config key, or setup steps."
 ---
 
 # Change documentation
@@ -11,6 +11,10 @@ that names a command nobody runs rots silently until someone follows it and fail
 This route exists because the two most common real defects in a personal repo are not logic
 errors. They are a documented command that no longer works and a default that changed while the
 example stayed the same.
+
+It runs after the behaviour change, not instead of it. Documentation is a claim about code, so a
+change to the code comes first, merges, and then the documentation is brought back in line. The
+exception is documentation that is wrong today with no code change behind it.
 
 ## 1. Name the audience and the source of truth
 
