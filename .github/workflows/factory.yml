@@ -37,7 +37,8 @@ jobs:
           node eval/harness/install.mjs
           node eval/harness/fingerprint.mjs --check
           node eval/harness/validate-scenarios.mjs
-          node --test eval/harness/test/
+          # A directory argument is not supported before Node 24, so name the files.
+          node --test eval/harness/test/*.test.mjs
       - name: Keep the receipt
         if: always()
         uses: actions/upload-artifact@v4
