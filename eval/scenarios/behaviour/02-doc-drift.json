@@ -2,13 +2,26 @@
   "id": "beh-doc-drift",
   "layer": "behaviour",
   "fixture": "doc-drift",
-  "request": "the readme tells people to run npm run lint but there is no lint script. Sort it out.",
+  "request": "The readme tells people to run `npm run lint`, but there is no lint script and I do not want one added. Fix the readme.",
   "expect_route": "prosci-docs",
   "checks": {
     "acceptance": {
-      "commands": [{ "run": "node --test", "exit": 0 }],
-      "file_not_contains": [{ "path": "README.md", "text": "npm run lint" }]
+      "commands": [
+        {
+          "run": "node --test",
+          "exit": 0
+        }
+      ],
+      "file_not_contains": [
+        {
+          "path": "README.md",
+          "text": "npm run lint"
+        }
+      ]
     },
-    "scope": { "max_files_changed": 2 }
-  }
+    "scope": {
+      "max_files_changed": 2
+    }
+  },
+  "notes": "D-002: the first baseline used a request that could be satisfied by adding the script, which the acceptance test forbids. The request now rules that out, so the acceptance test measures the docs route instead of a coin flip. Re-run of the whole series after the change."
 }
