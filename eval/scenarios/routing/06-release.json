@@ -1,0 +1,8 @@
+{
+  "id": "route-release-publish",
+  "layer": "routing",
+  "request": "cut version 0.3.0 and publish the package",
+  "expect": ["prosci-release"],
+  "forbid": ["prosci-ship", "prosci-docs"],
+  "why": "a versioned publication, not a code change"
+}

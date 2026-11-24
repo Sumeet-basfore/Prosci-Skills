@@ -1,0 +1,8 @@
+{
+  "id": "route-init-adopt",
+  "layer": "routing",
+  "request": "onboard this existing repo so agents know how to run its tests",
+  "expect": ["prosci-init"],
+  "forbid": ["prosci-docs"],
+  "why": "the repo has no instructions file, so the work is adoption, not documentation of a behaviour change"
+}

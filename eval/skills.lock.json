@@ -1,0 +1,60 @@
+{
+  "generatedBy": "eval/harness/fingerprint.mjs",
+  "count": 9,
+  "skills": [
+    {
+      "name": "prosci",
+      "declared": "prosci",
+      "sha256": "6d83796f533e03d442956afd538c906c674a17719825c8ae95de5b5332d938fe",
+      "bytes": 5118
+    },
+    {
+      "name": "prosci-bar",
+      "declared": "prosci-bar",
+      "sha256": "57c5b930f7b6c7da1633d2a08bb550e19804e557ce274beb4df8818f27ccd13e",
+      "bytes": 4047
+    },
+    {
+      "name": "prosci-docs",
+      "declared": "prosci-docs",
+      "sha256": "e7d9773655867be8512399ae87855def7ef2470335cdbd715ea9bcae0758af19",
+      "bytes": 4328
+    },
+    {
+      "name": "prosci-fix",
+      "declared": "prosci-fix",
+      "sha256": "d54e7cca957fd189208b994bfd4d2938c3cdb3dbe580af2244c68e0754ccbd27",
+      "bytes": 3929
+    },
+    {
+      "name": "prosci-init",
+      "declared": "prosci-init",
+      "sha256": "6bd76b2768cc8f55077b13c50224530303f5d755761a3045b11b56db7df5a646",
+      "bytes": 3477
+    },
+    {
+      "name": "prosci-investigate",
+      "declared": "prosci-investigate",
+      "sha256": "05c62ab3159760da74a1df015d83f388ebaedf014cb29fafb15f9b61557e75c3",
+      "bytes": 3909
+    },
+    {
+      "name": "prosci-release",
+      "declared": "prosci-release",
+      "sha256": "8564ee3d31382d37cab09275208c387081d4358f765896741af1cdb5aa4086b2",
+      "bytes": 4290
+    },
+    {
+      "name": "prosci-review",
+      "declared": "prosci-review",
+      "sha256": "46f728a86a0f8f1090db7c76b89dac3dba5deb32bffb8c957a11218156d14da5",
+      "bytes": 5051
+    },
+    {
+      "name": "prosci-ship",
+      "declared": "prosci-ship",
+      "sha256": "cbbc22104a564131f046991dfbcefcc3203db0c11c3b3ec6cadc3bf024ff7719",
+      "bytes": 6758
+    }
+  ]
+}

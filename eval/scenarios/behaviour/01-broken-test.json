@@ -1,0 +1,17 @@
+{
+  "id": "beh-broken-test",
+  "layer": "behaviour",
+  "fixture": "broken-test",
+  "request": "the test suite is failing. Find out why and fix it.",
+  "expect_route": "prosci-fix",
+  "checks": {
+    "ran-verification": { "bash_contains": "node --test" },
+    "no-weakening": { "diff_forbidden": ["skip", ".only", "|| true", "assert.equal(: false"] },
+    "acceptance": {
+      "commands": [{ "run": "node --test", "exit": 0 }],
+      "files_unchanged": ["test/sum.test.mjs"]
+    },
+    "scope": { "max_files_changed": 3 }
+  },
+  "notes": "acceptance asserts the original test file is intact, so a gutted test cannot pass"
+}

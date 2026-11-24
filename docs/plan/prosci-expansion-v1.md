@@ -285,5 +285,16 @@ alternative that was not taken, so the reasoning survives.
 
 ## 12. Next
 
-`docs/plan/phase-0-spec.md` is the implementation specification for the approved phase 0. It is a
-proposal for review, not an approved plan, and nothing in it is built yet.
+Phase 0 is approved and implemented as far as the behavioural baseline, which awaits an explicit
+spend approval. The specification is `docs/plan/phase-0-spec.md`, and the first measurements are in
+`eval/reports/phase-0.md`.
+
+Status, so this file cannot be read as ahead of reality.
+
+- Deterministic layers green: 22 routing scenarios, installer verified on five harnesses, fingerprint
+  matching nine skills at tag `v0.1-eval-baseline`.
+- L3 smoke run done on one scenario, two configurations. Prosci's configuration had the skills in
+  context and did not invoke its route, which is the first behavioural result and the opposite of a
+  win.
+- The 36-run baseline has not run.
+- Phase 1 has not started, and no skill has been written or edited since the rename.

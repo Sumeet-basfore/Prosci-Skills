@@ -1,0 +1,8 @@
+{
+  "id": "route-release-hotfix-publish",
+  "layer": "routing",
+  "request": "publish a patch release for the fix that just merged",
+  "expect": ["prosci-release"],
+  "forbid": ["prosci-ship", "prosci-fix"],
+  "why": "the code is merged, only the publication is left"
+}

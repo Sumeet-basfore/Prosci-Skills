@@ -28,6 +28,15 @@ jobs:
           node-version: "22"
       - name: Run the contract
         run: node factory/bin/verify . --state-dir .factory --json
+      - name: L1 routing (deterministic, no model)
+        run: |
+          if [ -f eval/harness/routing.mjs ]; then node eval/harness/routing.mjs; else echo "no eval harness in this repo, skipping"; fi
+      - name: L2 install (deterministic, no model)
+        run: |
+          if [ -f eval/harness/install.mjs ]; then node eval/harness/install.mjs; else echo "no eval harness in this repo, skipping"; fi
+      - name: Skill fingerprint
+        run: |
+          if [ -f eval/harness/fingerprint.mjs ]; then node eval/harness/fingerprint.mjs --check; else echo "no fingerprint in this repo, skipping"; fi
       - name: Keep the receipt
         if: always()
         uses: actions/upload-artifact@v4

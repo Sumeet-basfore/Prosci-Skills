@@ -1,0 +1,9 @@
+{
+  "id": "neg-where-are-docs",
+  "layer": "routing",
+  "request": "where are the docs for the config file",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-docs", "prosci-ship"],
+  "must_not_change_files": true,
+  "why": "negative: pointing at documentation is a question, not an edit"
+}

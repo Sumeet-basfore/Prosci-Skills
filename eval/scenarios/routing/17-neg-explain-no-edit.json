@@ -1,0 +1,9 @@
+{
+  "id": "neg-question-about-cache",
+  "layer": "routing",
+  "request": "how does the cache decide when to evict?",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-ship", "prosci-fix", "prosci-docs"],
+  "must_not_change_files": true,
+  "why": "negative: an explanation must not produce a diff"
+}

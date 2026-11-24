@@ -1,0 +1,8 @@
+{
+  "id": "route-review-open-pr",
+  "layer": "routing",
+  "request": "review the diff on this pull request before we merge it",
+  "expect": ["prosci-review"],
+  "forbid": ["prosci-ship"],
+  "why": "reads an existing diff"
+}

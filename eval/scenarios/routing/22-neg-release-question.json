@@ -1,0 +1,9 @@
+{
+  "id": "neg-when-was-last-release",
+  "layer": "routing",
+  "request": "when was the last release and what was in it",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-release"],
+  "must_not_change_files": true,
+  "why": "negative: asking about a release does not cut one"
+}

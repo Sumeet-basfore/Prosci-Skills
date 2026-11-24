@@ -1,0 +1,9 @@
+{
+  "id": "neg-what-changed",
+  "layer": "routing",
+  "request": "what changed in the last five commits and is anything risky",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-release", "prosci-ship"],
+  "must_not_change_files": true,
+  "why": "negative: a status question is not a release or a change"
+}

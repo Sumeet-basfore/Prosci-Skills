@@ -1,0 +1,9 @@
+{
+  "id": "neg-what-does-init-do",
+  "layer": "routing",
+  "request": "what does the init route actually set up",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-init"],
+  "must_not_change_files": true,
+  "why": "negative: a question about a route must not invoke it"
+}

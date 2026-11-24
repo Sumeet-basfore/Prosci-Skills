@@ -1,0 +1,8 @@
+{
+  "id": "route-fix-failing-test",
+  "layer": "routing",
+  "request": "the test suite is failing after the last change, fix it",
+  "expect": ["prosci-fix"],
+  "forbid": ["prosci-ship", "prosci-investigate"],
+  "why": "broken behaviour with a reproducible failure"
+}

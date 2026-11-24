@@ -1,0 +1,8 @@
+{
+  "id": "route-ship-add-flag",
+  "layer": "routing",
+  "request": "add a --json flag to the report command so scripts can parse it",
+  "expect": ["prosci-ship"],
+  "forbid": ["prosci-investigate", "prosci-docs"],
+  "why": "adds behaviour, so the ship route owns it"
+}

@@ -17,6 +17,37 @@ finds them.
 Say "use the factory" and the agent starts at `prosci`. Say `/skill:prosci-ship` to jump
 straight to a route.
 
+## Install
+
+The nine skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
+keeping them together so the relative `../prosci-x/SKILL.md` references resolve.
+
+```sh
+bin/install-skills --check                    # what is installed where, changes nothing
+bin/install-skills --harness pi               # link into ~/.agents/skills
+bin/install-skills --target <dir> --copy      # copy into any directory, for a sandbox
+bin/install-skills --harness pi --remove      # remove only what this script installed
+```
+
+The installer refuses to overwrite or delete anything it did not create, keeps a copy you edited,
+repairs an interrupted install, and verifies that every route link resolves after installing.
+
+Compatibility is three separate claims and they are not the same claim:
+
+| harness | skills directory | files | discovery | behaviour |
+| --- | --- | --- | --- | --- |
+| pi | `~/.agents/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
+| claude | `~/.claude/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
+| codex | `~/.codex/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
+| cursor | `~/.cursor/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
+| opencode | `~/.config/opencode/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
+| omp | no skills directory found | unsupported | not applicable | not applicable |
+
+Files verified means the files land, the names match, and every relative reference resolves.
+Discovery means the harness itself loads them, which phase 0 does not test. Behaviour means the
+harness follows them, which is measured from phase 1. Nothing here claims a harness works beyond
+its column.
+
 ## The workflow, in one screen
 
 1. Read the repo's own instructions and find its real test command.

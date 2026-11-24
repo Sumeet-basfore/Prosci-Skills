@@ -1,0 +1,8 @@
+{
+  "id": "route-docs-stale-readme",
+  "layer": "routing",
+  "request": "the readme tells people to run npm run lint and that script does not exist",
+  "expect": ["prosci-docs"],
+  "forbid": ["prosci-ship"],
+  "why": "documentation is wrong today with no behaviour change behind it"
+}

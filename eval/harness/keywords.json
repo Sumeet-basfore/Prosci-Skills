@@ -1,0 +1,75 @@
+{
+  "note": "Hand-maintained. Used to find the router row that owns a scenario. It measures the table's boundaries, not semantic routing. routing.mjs fails when this map and the router table drift apart.",
+  "interrogative": {
+    "weight": 2,
+    "route": "prosci-investigate",
+    "markers": [
+      "why",
+      "how does",
+      "how do",
+      "what does",
+      "what changed",
+      "when was",
+      "where are",
+      "which option",
+      "tell me",
+      "point me",
+      "is it",
+      "does the",
+      "should we"
+    ]
+  },
+  "routes": {
+    "prosci-ship": [
+      "add",
+      "implement",
+      "feature",
+      "rename",
+      "change behaviour",
+      "change behavior",
+      "support"
+    ],
+    "prosci-fix": [
+      "fix",
+      "bug",
+      "broken",
+      "fails",
+      "failing",
+      "crash",
+      "regression"
+    ],
+    "prosci-review": [
+      "review",
+      "diff",
+      "pull request",
+      "as a reviewer"
+    ],
+    "prosci-investigate": [
+      "explain",
+      "why does",
+      "how does"
+    ],
+    "prosci-docs": [
+      "readme",
+      "documentation",
+      "setup guide",
+      "guide",
+      "examples"
+    ],
+    "prosci-release": [
+      "release",
+      "version",
+      "tag",
+      "publish",
+      "package"
+    ],
+    "prosci-init": [
+      "new project",
+      "start a new",
+      "scaffold",
+      "adopt",
+      "onboard",
+      "setup"
+    ]
+  }
+}
