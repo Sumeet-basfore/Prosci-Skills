@@ -13,13 +13,18 @@ import { spawnSync } from "node:child_process";
 import { EVAL_DIR, loadScenarios, scenarioDir } from "./lib.mjs";
 
 const layer = process.argv.includes("--layer") ? process.argv[process.argv.indexOf("--layer") + 1] : "hard";
-const leak = /prosci|expected|acceptance|reference_fix|eval\//i;
+// Synthetic fixtures must not name the project at all. Calibrated fixtures are copies of real work
+// and do contain it, so they declare the terms that would give the answer away instead.
+function leakCheck(scenario) {
+  if (scenario.leak_terms?.length) return new RegExp(scenario.leak_terms.join("|"), "i");
+  return /prosci|expected|acceptance|reference_fix|eval\//i;
+}
 
 function runAcceptance(scenario, workspace) {
   const spec = scenario.checks?.acceptance ?? {};
   const results = [];
   for (const cmd of spec.commands ?? []) {
-    const r = spawnSync("sh", ["-c", cmd.run], { cwd: workspace, encoding: "utf8", timeout: 120000 });
+    const r = spawnSync("sh", ["-c", cmd.run], { cwd: workspace, encoding: "utf8", timeout: 120000, env: { ...process.env, EVAL_DIR } });
     results.push({ run: cmd.run, ok: (r.status ?? -1) === cmd.exit, actual: r.status, expected: cmd.exit });
   }
   for (const file of spec.files_changed ?? []) {
@@ -54,7 +59,7 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.isDirectory()) walk(join(dir, entry.name), rel);
       else if (!/\.(png|jpg|json)$/i.test(entry.name)) {
-        if (leak.test(readFileSync(join(dir, entry.name), "utf8"))) leaks.push(rel);
+        if (leakCheck(scenario).test(readFileSync(join(dir, entry.name), "utf8"))) leaks.push(rel);
       }
     }
   };
@@ -74,7 +79,7 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   const after = mkdtempSync(join(tmpdir(), "prosci-validate-"));
   cpSync(fixture, after, { recursive: true });
   for (const cmd of scenario.reference_fix ?? []) {
-    const r = spawnSync("sh", ["-c", cmd], { cwd: after, encoding: "utf8" });
+    const r = spawnSync("sh", ["-c", cmd], { cwd: after, encoding: "utf8", env: { ...process.env, EVAL_DIR } });
     if (r.status !== 0) leaks.push(`reference_fix command failed: ${cmd.slice(0, 40)}`);
   }
   const fixed = runAcceptance(scenario, after);

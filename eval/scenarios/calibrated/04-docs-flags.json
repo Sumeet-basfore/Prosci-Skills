@@ -1,0 +1,18 @@
+{
+ "id": "cal-docs-flags",
+ "layer": "calibrated",
+ "fixture": "real-work/t4",
+ "request": "bin/README.md documents bin/verify but not the install-skills flags. Document --target, --copy and --check, one line each, and state what --check exits with.",
+ "expect_route": "prosci-docs",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "sh -c 'grep -q -- \"--target\" README.md && grep -q -- \"--copy\" README.md && grep -q -- \"--check\" README.md'", "exit": 0 },
+    { "run": "sh -c 'grep -qi exit README.md'", "exit": 0 }
+   ]
+  },
+  "scope": { "max_files_changed": 1 }
+ },
+ "leak_terms": ["copy instead of linking", "exits 1 when the target differs"],
+ "reference_fix": ["sh \"$EVAL_DIR/scenarios/calibrated/reference/t4.sh\""]
+}

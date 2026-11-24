@@ -1,0 +1,31 @@
+{
+ "id": "cal-test-gap",
+ "layer": "calibrated",
+ "fixture": "real-work/t3",
+ "request": "bin/lib/factory-block.mjs parses the factory block, but bin/test only covers the happy path. Add a test file bin/test/mistyped.test.mjs that covers an unknown key inside the block, so a future parser change cannot start throwing on it silently. Keep the existing suite green.",
+ "expect_route": "prosci-ship",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test bin/test/*.test.mjs",
+     "exit": 0
+    },
+    {
+     "run": "node --test bin/test/mistyped.test.mjs",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 4
+  }
+ },
+ "leak_terms": [
+  "mistyped.test.mjs",
+  "future parser change"
+ ],
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/calibrated/reference/t3.sh\""
+ ]
+}
