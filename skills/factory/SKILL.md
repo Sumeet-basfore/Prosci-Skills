@@ -43,6 +43,9 @@ that land, not from large changes that stall.
 | fix a bug or a failing test | `../factory-fix/SKILL.md` | reproduce it |
 | review a diff or a pull request | `../factory-review/SKILL.md` | read the diff, then the surrounding code |
 | explain how something works, or which option to pick | `../factory-investigate/SKILL.md` | write the question in one sentence |
+| change documentation, or a change alters a command or a default | `../factory-docs/SKILL.md` | search for the claim, do not browse |
+| ship a version, package, tag, or published artifact | `../factory-release/SKILL.md` | preflight, then prove the artifact |
+| start a repo, or adopt one with no usable conventions | `../factory-init/SKILL.md` | inspect before you create |
 | the scope is unclear, or the change is large | `../factory-ship/SKILL.md` | settle the scope in step 2 before writing code |
 
 Every route ends at `../factory-bar/SKILL.md`. Read the bar once per session. Read the route
