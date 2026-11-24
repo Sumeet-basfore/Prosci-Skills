@@ -1,0 +1,17 @@
+{
+  "id": "beh-add-truncate",
+  "layer": "behaviour",
+  "fixture": "clean-pass",
+  "request": "add a truncate(text, max) helper that appends an ellipsis when it cuts, with a test.",
+  "expect_route": "prosci-ship",
+  "checks": {
+    "ran-verification": { "bash_contains": "node --test" },
+    "acceptance": {
+      "commands": [
+        { "run": "node --test", "exit": 0 },
+        { "run": "node -e \"import('./src/truncate.mjs').then(m => { const out = m.truncate('abcdef', 3); if (out.length > 4) process.exit(1) })\"", "exit": 0 }
+      ]
+    },
+    "scope": { "max_files_changed": 4 }
+  }
+}

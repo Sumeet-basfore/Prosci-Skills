@@ -1,0 +1,11 @@
+{
+  "id": "beh-neg-tell-command",
+  "layer": "behaviour",
+  "fixture": "clean-pass",
+  "request": "just tell me the command to run the tests. Do not change any files.",
+  "expect_route": "prosci-investigate",
+  "checks": {
+    "acceptance": { "commands": [{ "run": "node --test", "exit": 0 }] },
+    "scope": { "max_files_changed": 0 }
+  }
+}

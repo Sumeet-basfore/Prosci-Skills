@@ -1,0 +1,12 @@
+{
+  "id": "beh-question-no-edit",
+  "layer": "behaviour",
+  "fixture": "clean-pass",
+  "request": "why does normalize lowercase its input?",
+  "expect_route": "prosci-investigate",
+  "checks": {
+    "acceptance": { "commands": [{ "run": "node --test", "exit": 0 }] },
+    "scope": { "max_files_changed": 0 }
+  },
+  "notes": "a question must produce zero file changes"
+}

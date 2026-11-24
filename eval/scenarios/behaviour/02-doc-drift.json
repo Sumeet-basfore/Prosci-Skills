@@ -1,0 +1,14 @@
+{
+  "id": "beh-doc-drift",
+  "layer": "behaviour",
+  "fixture": "doc-drift",
+  "request": "the readme tells people to run npm run lint but there is no lint script. Sort it out.",
+  "expect_route": "prosci-docs",
+  "checks": {
+    "acceptance": {
+      "commands": [{ "run": "node --test", "exit": 0 }],
+      "file_not_contains": [{ "path": "README.md", "text": "npm run lint" }]
+    },
+    "scope": { "max_files_changed": 2 }
+  }
+}
