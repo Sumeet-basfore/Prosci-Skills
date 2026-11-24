@@ -24,7 +24,7 @@ change to the repo cannot edit it.
 Node only, no dependencies, no build step. Tests use `node:test`.
 
 ```factory
-test: node --test bin/test/
+test: node --test bin/test/*.test.mjs
 ```
 
 ## Rules
