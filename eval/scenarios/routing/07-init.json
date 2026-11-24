@@ -1,0 +1,8 @@
+{
+  "id": "route-init-new-project",
+  "layer": "routing",
+  "request": "start a new project for a cli that converts markdown to pdf",
+  "expect": ["prosci-init"],
+  "forbid": ["prosci-ship"],
+  "why": "nothing exists yet, so the repo has to be set up before any change"
+}

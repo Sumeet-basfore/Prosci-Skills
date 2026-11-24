@@ -1,0 +1,8 @@
+{
+  "id": "route-docs-examples-stale",
+  "layer": "routing",
+  "request": "the setup guide examples still use the old import path",
+  "expect": ["prosci-docs"],
+  "forbid": ["prosci-ship"],
+  "why": "documentation only, and the code already changed in an earlier merge"
+}

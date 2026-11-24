@@ -1,0 +1,9 @@
+{
+  "id": "neg-tell-me-the-command",
+  "layer": "routing",
+  "request": "just tell me the command to run the tests, do not change anything",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-ship", "prosci-fix", "prosci-docs"],
+  "must_not_change_files": true,
+  "why": "negative: an explicit no-change request must not produce a change"
+}

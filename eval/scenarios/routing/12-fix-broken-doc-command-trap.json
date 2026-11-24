@@ -1,0 +1,13 @@
+{
+  "id": "route-fix-doc-command-breaks-build",
+  "layer": "routing",
+  "request": "the test command fails because a script it calls was deleted, fix it",
+  "expect": [
+    "prosci-fix"
+  ],
+  "forbid": [
+    "prosci-docs",
+    "prosci-release"
+  ],
+  "why": "the build is broken, so it is a fix. The readme is a symptom, not the task"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "route-fix-crash",
+  "layer": "routing",
+  "request": "the sync command crashes with a stack trace whenever the cache is warm, fix it",
+  "expect": ["prosci-fix"],
+  "forbid": ["prosci-investigate", "prosci-ship"],
+  "why": "the user asked for a fix, and a crash is reproducible"
+}

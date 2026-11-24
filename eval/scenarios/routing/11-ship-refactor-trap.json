@@ -1,0 +1,8 @@
+{
+  "id": "route-ship-new-endpoint",
+  "layer": "routing",
+  "request": "add a /health endpoint that returns the build sha",
+  "expect": ["prosci-ship"],
+  "forbid": ["prosci-investigate", "prosci-docs"],
+  "why": "new behaviour, no question and no documentation-only change"
+}

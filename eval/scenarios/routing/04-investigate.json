@@ -1,0 +1,9 @@
+{
+  "id": "route-investigate-why",
+  "layer": "routing",
+  "request": "why does the loader return nothing on a fresh clone?",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-fix", "prosci-ship"],
+  "must_not_change_files": true,
+  "why": "a question is not a change, and the answer is an explanation"
+}

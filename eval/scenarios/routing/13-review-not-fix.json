@@ -1,0 +1,8 @@
+{
+  "id": "route-review-self",
+  "layer": "routing",
+  "request": "read my own diff as a reviewer before I merge it",
+  "expect": ["prosci-review"],
+  "forbid": ["prosci-ship", "prosci-fix"],
+  "why": "review is a reading task, and the change already exists"
+}

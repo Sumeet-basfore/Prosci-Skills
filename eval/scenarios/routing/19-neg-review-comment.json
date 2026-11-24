@@ -1,0 +1,9 @@
+{
+  "id": "neg-answer-reviewer",
+  "layer": "routing",
+  "request": "a reviewer asked why we chose a queue here, write the reply",
+  "expect": ["prosci-investigate"],
+  "forbid": ["prosci-ship", "prosci-review"],
+  "must_not_change_files": true,
+  "why": "negative: writing an explanation is not reviewing a diff or changing code"
+}
