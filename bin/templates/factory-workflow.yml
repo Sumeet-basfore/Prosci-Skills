@@ -26,6 +26,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
       - name: Run the contract
         run: node factory/bin/verify . --state-dir .factory --json
       - name: Keep the receipt
