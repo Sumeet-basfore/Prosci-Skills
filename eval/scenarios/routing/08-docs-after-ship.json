@@ -9,6 +9,5 @@
   "forbid": [
     "prosci-release"
   ],
-  "why": "the stacked row names the docs route only, so a scenario that needs the behaviour route first cannot be matched by the table. Documented as D-001, fixed in its own PR",
-  "known_failure": "D-001"
+  "why": "the stacked row names both routes now, so the table can express behaviour first, docs second"
 }

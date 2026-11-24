@@ -44,7 +44,7 @@ that land, not from large changes that stall.
 | review a diff or a pull request | `../prosci-review/SKILL.md` | read the diff, then the surrounding code |
 | explain how something works, or which option to pick | `../prosci-investigate/SKILL.md` | write the question in one sentence |
 | change documentation only | `../prosci-docs/SKILL.md` | search for the claim, do not browse |
-| a behaviour change that also alters a command, a flag, or a default | the behaviour route first, then `../prosci-docs/SKILL.md` | finish the route, then search for the claims it invalidated |
+| a behaviour change that also alters a command, a flag, or a default | `../prosci-ship/SKILL.md` first, then `../prosci-docs/SKILL.md` | finish the behaviour route, then search for the claims it invalidated |
 | ship a version, package, tag, or published artifact | `../prosci-release/SKILL.md` | preflight, then prove the artifact |
 | start a repo, or adopt one with no usable conventions | `../prosci-init/SKILL.md` | inspect before you create |
 | the scope is unclear, or the change is large | `../prosci-ship/SKILL.md` | settle the scope in step 2 before writing code |
