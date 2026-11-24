@@ -1,5 +1,5 @@
 ---
-name: factory-bar
+name: prosci-bar
 description: "The definition of done every factory route ends at: six boxes with how to evidence each, the failure modes that catch you, and a report template. Read before you claim a change is finished."
 ---
 

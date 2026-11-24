@@ -1,5 +1,5 @@
 ---
-name: factory-ship
+name: prosci-ship
 description: "Build a feature or behaviour change the factory way: read the repo, settle the spec, name the data shape, make the smallest diff, test the behaviour, verify by running, commit in units, and land through a pull request. Use when the request adds or changes behaviour."
 ---
 
@@ -149,7 +149,7 @@ Keep it under 40 lines. Long evidence goes in a comment or a linked file.
 ## 9. Review your own diff
 
 Read `git diff <base>...HEAD` as if someone else wrote it. Run
-`../factory-review/SKILL.md` on it. Fix what you find before asking anyone else.
+`../prosci-review/SKILL.md` on it. Fix what you find before asking anyone else.
 
 ## 10. Land it
 
@@ -160,7 +160,7 @@ If the repo has no checks, say so in the pull request, and let the human decide.
 
 ## Before you report
 
-Run the steps in `../factory-bar/SKILL.md`. Six boxes, each true or explicitly unmet.
+Run the steps in `../prosci-bar/SKILL.md`. Six boxes, each true or explicitly unmet.
 
 ## Reply
 

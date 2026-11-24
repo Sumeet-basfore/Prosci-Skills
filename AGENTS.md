@@ -5,14 +5,14 @@ The software factory. Skills in `skills/`, workflow in the skills, research and 
 
 ## How to use it
 
-Any agent working anywhere should start at `skills/factory/SKILL.md`. Say "use the factory" or
+Any agent working anywhere should start at `skills/prosci/SKILL.md`. Say "use the factory" or
 name a route directly.
 
-- `factory` routes and holds the non-negotiables
-- `factory-ship` adds or changes behaviour
-- `factory-fix` fixes a bug, test first
-- `factory-review` reviews a diff before merge
-- `factory-bar` is the definition of done every route ends at
+- `prosci` routes and holds the non-negotiables
+- `prosci-ship` adds or changes behaviour
+- `prosci-fix` fixes a bug, test first
+- `prosci-review` reviews a diff before merge
+- `prosci-bar` is the definition of done every route ends at
 
 The skills are the product. `bin/` is optional evidence tooling: `context-doctor` proves a
 repo's commands resolve, `verify` runs them and writes a receipt, `install-gate` puts the same

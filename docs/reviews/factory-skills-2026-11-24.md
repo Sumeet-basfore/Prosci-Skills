@@ -1,5 +1,8 @@
 # Factory skills review, 2026-11-24
 
+Skill names in this record predate the rename to the `prosci-*` prefix. The scores and the finding
+are unchanged.
+
 Nine skills reviewed by a Codex worker on gpt-6-luna at xhigh effort, each rated on five
 dimensions. Two scored below 8, were rebuilt, and were re-rated by a second worker. All nine now
 score above 8.

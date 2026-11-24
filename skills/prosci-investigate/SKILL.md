@@ -1,5 +1,5 @@
 ---
-name: factory-investigate
+name: prosci-investigate
 description: "Answer a question about code without changing it: trace the behaviour, separate evidence from inference, and end with an explanation or a recommendation. Use when the user asks why something works a certain way, how a subsystem fits together, or which of several approaches to take."
 ---
 
@@ -79,7 +79,7 @@ Check three things.
 - Every factual claim has a location or a command behind it.
 - The answer starts with the answer, not with what you read.
 
-This route still ends at `../factory-bar/SKILL.md`, with two boxes standing in place of the
+This route still ends at `../prosci-bar/SKILL.md`, with two boxes standing in place of the
 usual ones. Box 1 is the question answered. Box 6 is nothing modified and nothing overstated. Box
 2 and 3 do not apply unless you ran something to establish behaviour, in which case they apply
 fully.

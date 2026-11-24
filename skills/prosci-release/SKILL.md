@@ -1,5 +1,5 @@
 ---
-name: factory-release
+name: prosci-release
 description: "Cut a release the factory way: preflight the branch and checks, pick the version from the changes, update the metadata and changelog, build and inspect the artifact, and publish only on explicit authorization. Use when shipping a version, a package, a tag, or a published artifact."
 ---
 
@@ -19,7 +19,7 @@ Refuse to continue if any of these is false, and say which one.
 - The default branch's checks are green at the commit you are releasing, not at an earlier one.
 - The full verification runs from a clean checkout, not from your warm one.
 - You know the install or upgrade path a user follows. If the docs do not state it, that is a
-  `factory-docs` change first.
+  `prosci-docs` change first.
 
 ## 2. Pick the version from the changes
 

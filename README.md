@@ -8,13 +8,13 @@ finds them.
 
 | skill | when |
 | --- | --- |
-| `factory` | the entry point. Routes the request and holds the non-negotiables |
-| `factory-ship` | building a feature or changing behaviour |
-| `factory-fix` | fixing a bug or a failing test |
-| `factory-review` | reviewing your own work or someone else's before merge |
-| `factory-bar` | the definition of done every route ends at |
+| `prosci` | the entry point. Routes the request and holds the non-negotiables |
+| `prosci-ship` | building a feature or changing behaviour |
+| `prosci-fix` | fixing a bug or a failing test |
+| `prosci-review` | reviewing your own work or someone else's before merge |
+| `prosci-bar` | the definition of done every route ends at |
 
-Say "use the factory" and the agent starts at `factory`. Say `/skill:factory-ship` to jump
+Say "use the factory" and the agent starts at `prosci`. Say `/skill:prosci-ship` to jump
 straight to a route.
 
 ## The workflow, in one screen

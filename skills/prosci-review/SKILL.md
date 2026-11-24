@@ -1,5 +1,5 @@
 ---
-name: factory-review
+name: prosci-review
 description: "Review a diff or pull request the factory way: intent, evidence, correctness at the edges, tests that can fail, blast radius, reader load, and hardening at boundaries only. Use before merging your own work, or when the user asks for a review."
 ---
 
