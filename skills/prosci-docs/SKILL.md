@@ -1,5 +1,5 @@
 ---
-name: factory-docs
+name: prosci-docs
 description: "Change documentation the factory way: find every claim the change invalidates, update it, run the commands you document, and check the links. Use for documentation-only work, or as the second half of a behaviour change that altered a command, a flag, a default, a config key, or setup steps."
 ---
 
@@ -88,7 +88,7 @@ Rewriting the whole page is a separate change.
 
 Documentation gets the same treatment as code: a branch, a pull request, a description that says
 which claims were wrong, and the output of the commands you ran. It ends at
-`../factory-bar/SKILL.md` like every other route, with box 3 satisfied by the command output rather
+`../prosci-bar/SKILL.md` like every other route, with box 3 satisfied by the command output rather
 than a test.
 
 If the repo has no checks, say so in the pull request.

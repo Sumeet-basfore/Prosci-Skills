@@ -1,5 +1,5 @@
 ---
-name: factory-init
+name: prosci-init
 description: "Start or adopt a repo the factory way: inspect what exists, add only the instructions and baseline commands a change needs, and prove the baseline runs. Use when creating a project, or onboarding a repo that has no usable conventions."
 ---
 
@@ -66,7 +66,7 @@ initialised yet regardless of what the file says.
 
 ## 4. Prove the baseline with a first change
 
-Make one real, small change through `../factory-ship/SKILL.md` before declaring the repo ready. The
+Make one real, small change through `../prosci-ship/SKILL.md` before declaring the repo ready. The
 scaffold is a claim until a change travels through it: edit, test, verify, pull request, merge.
 
 If that first pass reveals a missing step, add it to the instructions file then, not later.

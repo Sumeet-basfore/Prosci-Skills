@@ -1,5 +1,5 @@
 ---
-name: factory
+name: prosci
 description: "Route any code change through the factory workflow: pick a route, follow it, land it with evidence. Use for any request to build, fix, refactor, or review code, or when the user says 'factory', 'use the factory', or 'ship this properly'."
 ---
 
@@ -39,17 +39,17 @@ that land, not from large changes that stall.
 
 | the request | route | first step |
 | --- | --- | --- |
-| build a feature or change behaviour | `../factory-ship/SKILL.md` | read the repo's instructions |
-| fix a bug or a failing test | `../factory-fix/SKILL.md` | reproduce it |
-| review a diff or a pull request | `../factory-review/SKILL.md` | read the diff, then the surrounding code |
-| explain how something works, or which option to pick | `../factory-investigate/SKILL.md` | write the question in one sentence |
-| change documentation only | `../factory-docs/SKILL.md` | search for the claim, do not browse |
-| a behaviour change that also alters a command, a flag, or a default | the behaviour route first, then `../factory-docs/SKILL.md` | finish the route, then search for the claims it invalidated |
-| ship a version, package, tag, or published artifact | `../factory-release/SKILL.md` | preflight, then prove the artifact |
-| start a repo, or adopt one with no usable conventions | `../factory-init/SKILL.md` | inspect before you create |
-| the scope is unclear, or the change is large | `../factory-ship/SKILL.md` | settle the scope in step 2 before writing code |
+| build a feature or change behaviour | `../prosci-ship/SKILL.md` | read the repo's instructions |
+| fix a bug or a failing test | `../prosci-fix/SKILL.md` | reproduce it |
+| review a diff or a pull request | `../prosci-review/SKILL.md` | read the diff, then the surrounding code |
+| explain how something works, or which option to pick | `../prosci-investigate/SKILL.md` | write the question in one sentence |
+| change documentation only | `../prosci-docs/SKILL.md` | search for the claim, do not browse |
+| a behaviour change that also alters a command, a flag, or a default | the behaviour route first, then `../prosci-docs/SKILL.md` | finish the route, then search for the claims it invalidated |
+| ship a version, package, tag, or published artifact | `../prosci-release/SKILL.md` | preflight, then prove the artifact |
+| start a repo, or adopt one with no usable conventions | `../prosci-init/SKILL.md` | inspect before you create |
+| the scope is unclear, or the change is large | `../prosci-ship/SKILL.md` | settle the scope in step 2 before writing code |
 
-Every route ends at `../factory-bar/SKILL.md`. Read the bar once per session. Read the route
+Every route ends at `../prosci-bar/SKILL.md`. Read the bar once per session. Read the route
 before the first edit, not after.
 
 Two routes stack. When a behaviour change invalidates a documented command, a flag, or a

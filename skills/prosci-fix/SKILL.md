@@ -1,5 +1,5 @@
 ---
-name: factory-fix
+name: prosci-fix
 description: "Fix a bug the factory way: reproduce it, find the first wrong thing, write the failing test first, fix the cause, and verify on the same surface. Use when something is broken, a test fails, or the user reports wrong behaviour."
 ---
 
@@ -83,7 +83,7 @@ places and open separate work for them rather than fixing them here.
 
 ## Before you report
 
-Run the steps in `../factory-bar/SKILL.md`. The regression box is the one that matters most here.
+Run the steps in `../prosci-bar/SKILL.md`. The regression box is the one that matters most here.
 
 ## Reply
 

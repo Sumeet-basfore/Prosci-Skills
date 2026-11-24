@@ -12,32 +12,32 @@ prevents a specific failure the current five let through.
 
 Four gaps, with the worker's priority in brackets.
 
-### 1. `factory-investigate` [1]
+### 1. `prosci-investigate` [1]
 
 A read-only route for questions about behaviour, architecture, or tradeoffs.
 
 The failure: a user asks why a subsystem behaves a certain way, the router sends the request down
-`factory-ship` because the scope is unclear, and the agent edits code when the user wanted an
+`prosci-ship` because the scope is unclear, and the agent edits code when the user wanted an
 explanation. Nothing in the five skills covers a request that should change nothing.
 
-Overlap it named: `factory-fix` investigates a bug it intends to fix, and `factory-review`
+Overlap it named: `prosci-fix` investigates a bug it intends to fix, and `prosci-review`
 evaluates a diff. Neither has a route for a question with no change attached.
 
-Built. See `skills/factory-investigate/SKILL.md`.
+Built. See `skills/prosci-investigate/SKILL.md`.
 
-### 2. `factory-release` [2]
+### 2. `prosci-release` [2]
 
 Preparing a versioned release, package, tag, or publication.
 
 The failure: tested code is released with the wrong version, a user-facing change missing from the
-changelog, or an artifact nobody verified. `factory-ship` ends at merge, so everything after merge
+changelog, or an artifact nobody verified. `prosci-ship` ends at merge, so everything after merge
 is currently unwritten.
 
 Its content sketch: check the release branch, clean tree, and full verification; choose the
 semver bump from the changes; update version metadata and the changelog; build and inspect the
 artifact; require explicit authorization before tagging or publishing.
 
-### 3. `factory-docs` [2]
+### 3. `prosci-docs` [2]
 
 Documentation-only work, or changes that affect docs, examples, or setup instructions.
 
@@ -49,7 +49,7 @@ Its content sketch: identify the audience and the source of truth; update the do
 links; check each claim against current behaviour and run the documented commands where that is
 practical.
 
-### 4. `factory-init` [3]
+### 4. `prosci-init` [3]
 
 Creating a project, or onboarding a repo that has no usable conventions.
 
@@ -69,20 +69,20 @@ four.
 
 ## The operator's read
 
-- `factory-investigate` was the right first call. The misroute it prevents is the one that wastes
+- `prosci-investigate` was the right first call. The misroute it prevents is the one that wastes
   the most time, and the route is cheap to write. It is built and merged.
-- `factory-release` earns a place only when something actually publishes. For a repo with no
+- `prosci-release` earns a place only when something actually publishes. For a repo with no
   version, no package, and no tag, it is ceremony. Build it when the first package ships.
-- `factory-docs` is the strongest of the remaining three, and it is also the smallest. A
+- `prosci-docs` is the strongest of the remaining three, and it is also the smallest. A
   documentation route that requires running the documented command would have caught the
   `.venv/bin/pytest` and template-metadata bugs found earlier today, both of which were
   documentation and packaging drift rather than logic errors.
-- `factory-init` overlaps with step 1 of `factory-ship`, which already writes the commands into
+- `prosci-init` overlaps with step 1 of `prosci-ship`, which already writes the commands into
   the repo's instructions when they are missing. Promoting that to its own skill is justified only
   if new projects are frequent.
 
-Recommended order: `factory-docs`, then `factory-release` when a package exists, then
-`factory-init` if new repos start appearing.
+Recommended order: `prosci-docs`, then `prosci-release` when a package exists, then
+`prosci-init` if new repos start appearing.
 
 ## A note on the worker
 
