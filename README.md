@@ -6,7 +6,7 @@ A gate and a record for every repository on this machine, plus the research that
 bin/context-doctor                    # static check across every project repo
 bin/verify ../lore                    # run one repo's block, write a receipt
 bin/install-gate ../lore              # write the server-side workflow into a repo
-node --test bin/test/                 # the tools' own tests
+node --test bin/test/*.test.mjs       # the tools' own tests
 ```
 
 Each repository states its own typecheck, test, and build commands in a fenced `factory` block
