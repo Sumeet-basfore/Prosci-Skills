@@ -42,10 +42,15 @@ that land, not from large changes that stall.
 | build a feature or change behaviour | `../factory-ship/SKILL.md` | read the repo's instructions |
 | fix a bug or a failing test | `../factory-fix/SKILL.md` | reproduce it |
 | review a diff or a pull request | `../factory-review/SKILL.md` | read the diff, then the surrounding code |
+| explain how something works, or which option to pick | `../factory-investigate/SKILL.md` | write the question in one sentence |
 | the scope is unclear, or the change is large | `../factory-ship/SKILL.md` | settle the scope in step 2 before writing code |
 
 Every route ends at `../factory-bar/SKILL.md`. Read the bar once per session. Read the route
 before the first edit, not after.
+
+A question is not a change. If the user asked why something behaves a certain way, or which
+approach to take, route to investigate and change nothing. The most common misroute in this
+factory is turning a question into a patch.
 
 Use a route even when the change looks small. A one-line fix still needs the failing case, the
 output, and a pull request. What changes with size is the amount of planning, never the evidence.
