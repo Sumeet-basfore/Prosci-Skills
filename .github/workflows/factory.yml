@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/checkout@v5
         with:
-          repository: Sumeet-basfore/factory
+          repository: Sumeet-basfore/prosci
           path: factory
           persist-credentials: false
       - uses: actions/setup-node@v5
