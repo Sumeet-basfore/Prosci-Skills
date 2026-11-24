@@ -31,12 +31,18 @@ const THINKING = value("--thinking", "low");
 const REPEATS = Number(value("--repeats", flag("--smoke") ? "1" : "3"));
 const CONFIGS = (value("--configs", "vanilla,current") ?? "").split(",").filter(Boolean);
 const onlyScenario = value("--scenario");
+const onlyList = value("--scenarios");
+const MAX_COST = Number(value("--max-cost", "0.25"));
 const SMOKE = flag("--smoke");
 const series = value("--series", new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19));
 const runsDir = join(EVAL_DIR, "runs", series);
 mkdirSync(runsDir, { recursive: true });
 
-const scenarios = loadScenarios(scenarioDir("behaviour")).filter((s) => (onlyScenario ? s.id === onlyScenario : true));
+const scenarios = loadScenarios(scenarioDir("behaviour")).filter((s) => {
+  if (onlyScenario) return s.id === onlyScenario;
+  if (onlyList) return onlyList.split(",").map((x) => x.trim()).includes(s.id);
+  return true;
+});
 if (SMOKE) scenarios.splice(1);
 
 const realHome = process.env.HOME;
@@ -134,12 +140,20 @@ function scoreRun(scenario, config, parsed, acceptance, changedFiles) {
 }
 
 const runs = [];
+let spent = 0;
+let stopped = false;
 for (const scenario of scenarios) {
+  if (stopped) break;
   for (let rep = 1; rep <= REPEATS; rep += 1) {
     // Interleave, and flip the order each repeat, so a warm cache or a slow first run cannot favour
     // one configuration.
     const order = rep % 2 === 1 ? CONFIGS : [...CONFIGS].reverse();
     for (const config of order) {
+      if (spent >= MAX_COST) {
+        console.log(`stopping: spent $${spent.toFixed(4)} reached the cap of $${MAX_COST}`);
+        stopped = true;
+        break;
+      }
       if (config === "expanded") {
         runs.push({ scenario: scenario.id, config, n: rep, status: "absent", note: "the expanded set does not exist yet" });
         continue;
@@ -178,6 +192,7 @@ for (const scenario of scenarios) {
       writeFileSync(join(runsDir, `${scenario.id}-${config}-${rep}.json`), `${JSON.stringify(record, null, 2)}\n`);
       writeFileSync(join(runsDir, `${scenario.id}-${config}-${rep}.jsonl`), existsSync(agentRun.path) ? readFileSync(agentRun.path, "utf8") : "");
       runs.push(record);
+      spent += record.costUsd ?? 0;
       rmSync(base, { recursive: true, force: true });
       console.log(`${record.checks.acceptance.ok ? "ok  " : "FAIL"} ${scenario.id} ${config} rep${rep} neutral=${record.neutralScore} tokens=${record.tokens}`);
     }
@@ -185,7 +200,13 @@ for (const scenario of scenarios) {
 }
 
 const { rollup } = await import("./score.mjs");
-writeFileSync(join(runsDir, "summary.json"), `${JSON.stringify({ series, model: MODEL, thinking: THINKING, repeats: REPEATS, configs: CONFIGS, runs, rollup: rollup(runs.filter((r) => r.mean !== undefined || r.neutralScore !== undefined)) }, null, 2)}\n`);
+writeFileSync(
+  join(runsDir, "summary.json"),
+  `${JSON.stringify({ series, model: MODEL, thinking: THINKING, repeats: REPEATS, configs: CONFIGS, capUsd: MAX_COST, spentUsd: Number(spent.toFixed(4)), runs, rollup: rollup(runs.filter((r) => typeof r.neutralScore === "number")) }, null, 2)}\n`,
+);
+
+console.log(`\nseries ${series}: ${runs.length} runs, model ${MODEL} at ${THINKING}, spent $${spent.toFixed(4)} of $${MAX_COST}`);
+if (stopped) console.log("series did not finish: the spend cap stopped it");
 
 console.log(`\nseries ${series}: ${runs.length} runs, model ${MODEL} at ${THINKING}`);
 const totals = runs.filter((r) => typeof r.costUsd === "number");
