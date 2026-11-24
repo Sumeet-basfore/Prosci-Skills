@@ -1,0 +1,17 @@
+{
+  "id": "hard-type-conflict",
+  "layer": "hard",
+  "fixture": "type-conflict",
+  "request": "Add describeId(n) that returns the padded user key and the numeric id together, without changing what userKey or orderTotal already promise.",
+  "expect_route": "prosci-ship",
+  "checks": {
+    "acceptance": {
+      "commands": [
+        { "run": "node --test", "exit": 0 },
+        { "run": "node -e \"import('./src/describe.mjs').then(m=>{ const d=m.describeId(7); if(!d.includes('user-0007')||!d.includes('7')) process.exit(1) }).catch(()=>process.exit(1))\"", "exit": 0 }
+      ]
+    },
+    "scope": { "max_files_changed": 4 }
+  },
+  "reference_fix": ["printf 'import { userKey } from \"./user.mjs\";\\nimport { makeId } from \"./id.mjs\";\\n\\nexport function describeId(n) {\\n  return `${userKey(n)} (${makeId(n)})`;\\n}\\n' > src/describe.mjs"]
+}

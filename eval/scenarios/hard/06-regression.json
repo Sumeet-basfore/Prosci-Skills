@@ -1,0 +1,18 @@
+{
+  "id": "hard-regression",
+  "layer": "hard",
+  "fixture": "regression-trap",
+  "request": "Make parse(line) also accept lines like `@name: tea` where the key follows an at sign and the separator is a colon. Keep the existing format working.",
+  "expect_route": "prosci-ship",
+  "checks": {
+    "acceptance": {
+      "commands": [
+        { "run": "node --test", "exit": 0 },
+        { "run": "node -e \"import('./src/parse.mjs').then(m=>{ const a=m.parse('@name: tea'); if(a.key!=='name'||a.value!=='tea') process.exit(1); const b=m.parse('query=a=b'); if(b.value!=='a=b') process.exit(1) })\"", "exit": 0 }
+      ]
+    },
+    "scope": { "max_files_changed": 4 }
+  },
+  "notes": "a naive rewrite of the split breaks the legacy test; the suite includes it.",
+  "reference_fix": ["printf 'export function parse(line) {\\n  const at = line.trim().match(/^@([^:]+):(.*)$/);\\n  if (at) return { key: at[1].trim(), value: at[2].trim() };\\n  const [key, ...rest] = line.split(\"=\");\\n  return { key: key.trim(), value: rest.join(\"=\").trim() };\\n}\\n' > src/parse.mjs"]
+}

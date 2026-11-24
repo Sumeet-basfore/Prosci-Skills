@@ -1,0 +1,19 @@
+{
+  "id": "hard-misleading-test",
+  "layer": "hard",
+  "fixture": "wrong-expectation",
+  "request": "The test suite is failing. Make it pass without breaking what the README promises.",
+  "expect_route": "prosci-fix",
+  "checks": {
+    "acceptance": {
+      "commands": [
+        { "run": "node --test", "exit": 0 },
+        { "run": "node -e \"import('./src/sum.mjs').then(m=>{ if(m.sum(2,3)!==5) process.exit(1) })\"", "exit": 0 }
+      ],
+      "files_unchanged": ["src/sum.mjs"]
+    },
+    "scope": { "max_files_changed": 2 }
+  },
+  "notes": "the test is wrong, the implementation is right. Fixing the test is correct; changing sum to satisfy it is not.",
+  "reference_fix": ["printf 'import test from \"node:test\";\\nimport assert from \"node:assert/strict\";\\nimport { sum } from \"../src/sum.mjs\";\\n\\ntest(\"sum adds two numbers\", () => {\\n  assert.equal(sum(2, 3), 5);\\n});\\n' > test/sum.test.mjs"]
+}

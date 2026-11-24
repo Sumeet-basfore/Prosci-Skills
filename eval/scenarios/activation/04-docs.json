@@ -1,0 +1,15 @@
+{
+  "id": "act-doc-drift",
+  "layer": "activation",
+  "fixture": "doc-drift",
+  "request": "The readme tells people to run `npm run lint`, but there is no lint script and I do not want one added. Fix the readme.",
+  "expect_route": "prosci-docs",
+  "route_artifacts": ["readme-changed", "manifest-untouched"],
+  "checks": {
+    "acceptance": {
+      "commands": [{ "run": "node --test", "exit": 0 }],
+      "file_not_contains": [{ "path": "README.md", "text": "npm run lint" }]
+    },
+    "scope": { "max_files_changed": 2 }
+  }
+}
