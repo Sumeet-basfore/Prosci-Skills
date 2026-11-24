@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+// Static contract check. Reads each repo's AGENTS.md factory block and proves the commands
+// resolve against that repo's own toolchain. Never executes anything.
+//
+//   bin/context-doctor                 every git repo under <home>/projects
+//   bin/context-doctor --repos a,b     named repos only
+//   bin/context-doctor --json          machine readable
+//   bin/context-doctor --root <dir>    the directory that contains projects/
+
+import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parseFactoryBlock, checkCommands, RUN_ORDER } from "./lib/factory-block.mjs";
+
+const args = process.argv.slice(2);
+const flag = (name) => args.includes(name);
+const value = (name, fallback) => {
+  const i = args.indexOf(name);
+  return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
+};
+
+// The repo can live anywhere, including inside projects/, so find the home repo by walking up
+// to the first ancestor that has a projects/ directory.
+function findHomeRoot(start) {
+  let dir = start;
+  for (;;) {
+    if (existsSync(join(dir, "projects"))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return start;
+    dir = parent;
+  }
+}
+
+const root = value("--root", findHomeRoot(dirname(fileURLToPath(import.meta.url))));
+const projectsDir = join(root, "projects");
+const asJson = flag("--json");
+const only = value("--repos", null);
+
+function repoNames() {
+  if (only) return only.split(",").map((s) => s.trim()).filter(Boolean);
+  return readdirSync(projectsDir)
+    .filter((name) => existsSync(join(projectsDir, name, ".git")))
+    .sort();
+}
+
+const rows = [];
+for (const repo of repoNames()) {
+  const dir = join(projectsDir, repo);
+  if (!existsSync(dir)) {
+    rows.push({ repo, verdict: "FAIL", errors: ["repo-not-found"], warnings: [] });
+    continue;
+  }
+  const agentsPath = join(dir, "AGENTS.md");
+  if (!existsSync(agentsPath) || !statSync(agentsPath).isFile()) {
+    rows.push({ repo, verdict: "FAIL", errors: ["no-agents-md"], warnings: [] });
+    continue;
+  }
+  const { commands, errors } = parseFactoryBlock(readFileSync(agentsPath, "utf8"));
+  const checked = checkCommands(dir, commands);
+  const allErrors = [...errors, ...checked.errors];
+  rows.push({
+    repo,
+    verdict: allErrors.length ? "FAIL" : "PASS",
+    errors: allErrors,
+    warnings: checked.warnings,
+    commands,
+  });
+}
+
+const failed = rows.filter((r) => r.verdict === "FAIL");
+
+if (asJson) {
+  console.log(JSON.stringify({ rows, summary: { total: rows.length, failed: failed.length } }, null, 2));
+} else {
+  const width = Math.max(...rows.map((r) => r.repo.length), 4);
+  for (const row of rows) {
+    const detail = row.verdict === "PASS" ? Object.keys(row.commands ?? {}).join(",") : row.errors.join(" ");
+    const warn = row.warnings?.length ? `  warn ${row.warnings.join(" ")}` : "";
+    console.log(`${row.repo.padEnd(width)}  ${row.verdict.padEnd(4)}  ${detail}${warn}`);
+  }
+  console.log(`\n${rows.length - failed.length} pass, ${failed.length} fail of ${rows.length}`);
+  if (failed.length) {
+    console.log("a repo needs an AGENTS.md block shaped like:");
+    console.log("  ```factory");
+    for (const key of RUN_ORDER) console.log(`  ${key}: <command>`);
+    console.log("  ```");
+  }
+}
+
+process.exit(failed.length ? 1 : 0);
