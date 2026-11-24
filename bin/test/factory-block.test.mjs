@@ -91,3 +91,11 @@ test("doctor exits 1 on a repo without a block and 0 on a valid one", () => {
   const onlyGood = spawnSync(process.execPath, [join(binDir, "context-doctor"), "--root", root, "--repos", "good"], { encoding: "utf8" });
   assert.equal(onlyGood.status, 0);
 });
+
+test("a root without a projects directory is a clean refusal, not a stack trace", () => {
+  const root = fixture({ "README.md": "no projects here" });
+  const run = spawnSync(process.execPath, [join(binDir, "context-doctor"), "--root", root], { encoding: "utf8" });
+  assert.equal(run.status, 2);
+  assert.match(run.stderr, /no projects directory/);
+  assert.equal(run.stdout, "");
+});

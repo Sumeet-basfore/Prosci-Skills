@@ -43,6 +43,11 @@ function repoNames() {
     .sort();
 }
 
+if (!existsSync(projectsDir)) {
+  console.error(`no projects directory at ${projectsDir}, pass --root <dir>`);
+  process.exit(2);
+}
+
 const rows = [];
 for (const repo of repoNames()) {
   const dir = join(projectsDir, repo);
