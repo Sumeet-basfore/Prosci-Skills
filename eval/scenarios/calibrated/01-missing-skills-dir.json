@@ -1,0 +1,35 @@
+{
+ "id": "cal-missing-skills-dir",
+ "layer": "calibrated",
+ "fixture": "real-work/t1",
+ "request": "bin/install-skills crashes with a stack trace when a repo has no skills directory. Make it fail with a clear message and a distinct exit code instead, and add a test that covers it.",
+ "expect_route": "prosci-fix",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test bin/test/*.test.mjs",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'rm -rf /tmp/cal-skills-bak && mv skills /tmp/cal-skills-bak && node bin/install-skills --check --target /tmp/cal-x >/tmp/cal-out 2>/tmp/cal-err; code=$?; mv /tmp/cal-skills-bak skills; test $code -eq 2'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qi skills /tmp/cal-err && ! grep -q \"at ModuleJob\" /tmp/cal-err'",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 4
+  }
+ },
+ "leak_terms": [
+  "no skills found",
+  "process.exit(2)"
+ ],
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/calibrated/reference/t1.sh\""
+ ]
+}

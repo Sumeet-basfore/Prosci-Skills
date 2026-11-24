@@ -1,0 +1,251 @@
+#!/usr/bin/env node
+// Install the Prosci skills into a harness skills directory, or remove them again.
+//
+//   bin/install-skills --check
+//   bin/install-skills --harness pi
+//   bin/install-skills --target <dir> --copy
+//   bin/install-skills --harness pi --remove
+//   bin/install-skills --harness pi --dry-run
+//
+// Rules this script keeps, because a skill installer that loses a user's files is worse than none:
+//   - it never overwrites or deletes an entry it did not create
+//   - it never deletes a copy the user edited
+//   - a link it did not create is left alone, and the conflict is reported
+//   - an interrupted install is repaired on the next run, not left half owned
+//   - every relative ../prosci-x/SKILL.md reference is resolved after install, or it fails
+
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, symlinkSync, rmSync, cpSync, lstatSync, readlinkSync, unlinkSync } from "node:fs";
+import { join, dirname, resolve, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+
+const REPO = dirname(dirname(fileURLToPath(import.meta.url)));
+const SKILLS = join(REPO, "skills");
+const MARKER = ".prosci-install.json";
+
+const HARNESSES = {
+  pi: (home) => join(home, ".agents", "skills"),
+  claude: (home) => join(home, ".claude", "skills"),
+  codex: (home) => join(home, ".codex", "skills"),
+  cursor: (home) => join(home, ".cursor", "skills"),
+  opencode: (home) => join(home, ".config", "opencode", "skills"),
+};
+
+const argv = process.argv.slice(2);
+const has = (f) => argv.includes(f);
+const value = (f, d = null) => {
+  const i = argv.indexOf(f);
+  return i >= 0 && argv[i + 1] ? argv[i + 1] : d;
+};
+
+const asJson = has("--json");
+const dryRun = has("--dry-run");
+const remove = has("--remove");
+const check = has("--check");
+const copy = has("--copy");
+const home = process.env.HOME ?? ".";
+const harness = value("--harness");
+let target = value("--target");
+
+if (harness) {
+  const dir = HARNESSES[harness];
+  if (!dir) {
+    console.error(`unknown harness '${harness}'. known: ${Object.keys(HARNESSES).join(", ")}`);
+    process.exit(2);
+  }
+  target = dir(home);
+}
+
+function skillNames() {
+  return readdirSync(SKILLS)
+    .filter((n) => n === "prosci" || n.startsWith("prosci-"))
+    .sort();
+}
+
+const sha = (file) => createHash("sha256").update(readFileSync(file)).digest("hex");
+const declaredName = (file) => /^name:\s*(\S+)/m.exec(readFileSync(file, "utf8"))?.[1] ?? null;
+
+function refsOf(file) {
+  const text = readFileSync(file, "utf8");
+  return [...new Set([...text.matchAll(/\.\.\/([a-z-]+)\/SKILL\.md/g)].map((m) => m[1]))];
+}
+
+function readMarker(dir) {
+  const file = join(dir, MARKER);
+  if (!existsSync(file)) return null;
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return { state: "unreadable", entries: {}, mode: null };
+  }
+}
+
+function writeMarker(dir, marker) {
+  if (dryRun) return;
+  writeFileSync(join(dir, MARKER), `${JSON.stringify(marker, null, 2)}\n`);
+}
+
+// What is on disk for one skill, judged against what the marker claims.
+function inspect(dir, name, entry) {
+  const path = join(dir, name);
+  if (!existsSync(path)) return { name, state: "missing" };
+  const stat = lstatSync(path);
+  if (stat.isSymbolicLink()) {
+    const points = resolve(dir, readlinkSync(path));
+    if (!entry) return { name, state: "unowned", path };
+    return { name, state: points === resolve(entry.source) ? "ours" : "modified", path, points };
+  }
+  if (!stat.isDirectory()) return { name, state: "unowned", path };
+  const skillFile = join(path, "SKILL.md");
+  if (!existsSync(skillFile)) return { name, state: "unowned", path };
+  if (!entry || entry.kind !== "copy") return { name, state: "unowned", path };
+  return { name, state: sha(skillFile) === entry.sha256 ? "ours" : "modified", path };
+}
+
+function verify(dir, names) {
+  const problems = [];
+  for (const name of names) {
+    const file = join(dir, name, "SKILL.md");
+    if (!existsSync(file)) {
+      problems.push(`${name}: SKILL.md missing after install`);
+      continue;
+    }
+    const declared = declaredName(file);
+    if (declared !== name) problems.push(`${name}: declares name '${declared}'`);
+    for (const ref of refsOf(file)) {
+      const refPath = resolve(dirname(file), "..", ref, "SKILL.md");
+      if (!existsSync(refPath)) problems.push(`${name}: reference ../${ref}/SKILL.md does not resolve`);
+    }
+  }
+  return problems;
+}
+
+const names = skillNames();
+
+if (check) {
+  const dir = target ?? process.cwd();
+  const marker = readMarker(dir);
+  const report = {
+    target: dir,
+    marker: marker ? { state: marker.state, mode: marker.mode, installedAt: marker.installedAt } : null,
+    entries: names.map((name) => inspect(dir, name, marker?.entries?.[name])),
+    problems: [],
+  };
+  report.problems = verify(dir, report.entries.filter((e) => e.state !== "missing").map((e) => e.name));
+  if (asJson) console.log(JSON.stringify(report, null, 2));
+  else {
+    console.log(`target ${dir}`);
+    console.log(marker ? `marker: ${marker.state} (${marker.mode}) from ${marker.installedAt}` : "marker: none, nothing installed by this script");
+    for (const e of report.entries) console.log(`  ${e.name.padEnd(20)} ${e.state}`);
+    for (const p of report.problems) console.log(`  BROKEN ${p}`);
+  }
+  process.exit(report.problems.length ? 1 : 0);
+}
+
+if (!target) {
+  console.error("usage: bin/install-skills (--harness <name> | --target <dir>) [--copy] [--remove] [--check] [--dry-run]");
+  process.exit(2);
+}
+
+const dir = resolve(target);
+mkdirSync(dir, { recursive: true });
+let marker = readMarker(dir);
+
+if (remove) {
+  if (!marker) {
+    console.log(`nothing to remove, no ${MARKER} in ${dir}`);
+    process.exit(0);
+  }
+  const kept = {};
+  const removed = [];
+  const refused = [];
+  for (const [name, entry] of Object.entries(marker.entries ?? {})) {
+    const state = inspect(dir, name, entry);
+    if (state.state === "missing") continue;
+    if (state.state !== "ours") {
+      kept[name] = entry;
+      refused.push(`${name}: ${state.state}, left in place`);
+      continue;
+    }
+    if (!dryRun) {
+      if (entry.kind === "link") unlinkSync(state.path);
+      else rmSync(state.path, { recursive: true, force: true });
+    }
+    removed.push(name);
+  }
+  const remaining = Object.keys(kept).length;
+  if (!dryRun) {
+    if (remaining) writeMarker(dir, { ...marker, entries: kept, state: "partial" });
+    else rmSync(join(dir, MARKER), { force: true });
+  }
+  if (asJson) console.log(JSON.stringify({ removed, refused, remaining }, null, 2));
+  else {
+    console.log(`removed ${removed.length}${removed.length ? `: ${removed.join(", ")}` : ""}`);
+    for (const r of refused) console.log(`  KEPT ${r}`);
+  }
+  process.exit(refused.length ? 1 : 0);
+}
+
+// Install. A run that died mid-way left state "installing" and a list of what it had created.
+// Remove exactly those entries so the retry starts clean. Anything not listed is left alone.
+if (marker && marker.state === "installing") {
+  for (const [name, entry] of Object.entries(marker.entries ?? {})) {
+    const state = inspect(dir, name, entry);
+    if (state.state !== "ours") continue;
+    if (!dryRun) {
+      if (entry.kind === "link") unlinkSync(state.path);
+      else rmSync(state.path, { recursive: true, force: true });
+    }
+  }
+  marker = null;
+}
+
+const previous = marker;              // what the last complete run recorded, for ownership
+const entries = {};
+const created = [];
+const conflicts = [];
+
+const next = { state: "installing", mode: copy ? "copy" : "link", installedAt: new Date().toISOString(), entries: {} };
+writeMarker(dir, next);
+
+function ownedNow(name) {
+  return inspect(dir, name, previous?.entries?.[name]).state === "ours";
+}
+
+for (const name of names) {
+  const dest = join(dir, name);
+  const source = join(SKILLS, name);
+
+  if (existsSync(dest) && !ownedNow(name)) {
+    // Something is already there that this script did not create. Refuse rather than replace it.
+    conflicts.push(`${name}: already exists and is not owned by this install`);
+    continue;
+  }
+
+  if (!dryRun) {
+    if (existsSync(dest)) {
+      if (lstatSync(dest).isSymbolicLink()) unlinkSync(dest);
+      else rmSync(dest, { recursive: true, force: true });
+    }
+    if (copy) cpSync(source, dest, { recursive: true });
+    else symlinkSync(relative(dir, source), dest, "dir");
+  }
+  entries[name] = copy
+    ? { kind: "copy", sha256: sha(join(dest, "SKILL.md")), source }
+    : { kind: "link", sha256: sha(join(source, "SKILL.md")), source };
+  created.push(name);
+  // Record after each entry so a crash leaves an exact list, never a half-owned directory.
+  writeMarker(dir, { ...next, entries });
+}
+
+const problems = dryRun ? [] : verify(dir, names);
+writeMarker(dir, { state: problems.length ? "broken" : "complete", mode: copy ? "copy" : "link", installedAt: new Date().toISOString(), entries });
+
+if (asJson) {
+  console.log(JSON.stringify({ target: dir, mode: copy ? "copy" : "link", created, conflicts, problems, dryRun }, null, 2));
+} else {
+  console.log(`${dryRun ? "would install" : "installed"} ${created.length} skills into ${dir} (${copy ? "copy" : "link"})`);
+  for (const c of conflicts) console.log(`  CONFLICT ${c}`);
+  for (const p of problems) console.log(`  BROKEN ${p}`);
+}
+process.exit(problems.length || conflicts.length ? 1 : 0);

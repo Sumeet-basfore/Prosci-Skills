@@ -1,0 +1,18 @@
+{
+ "id": "cal-version-flag",
+ "layer": "calibrated",
+ "fixture": "real-work/t2",
+ "request": "bin/verify has no way to report its own version, which makes it hard to tell which copy a repo is running. Add --version, printing the version from package.json on one line and exiting 0.",
+ "expect_route": "prosci-ship",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "node --test bin/test/*.test.mjs", "exit": 0 },
+    { "run": "sh -c 'node bin/verify --version | grep -qE \"^[0-9]+[.][0-9]+[.][0-9]+$\"'", "exit": 0 }
+   ]
+  },
+  "scope": { "max_files_changed": 4 }
+ },
+ "leak_terms": ["--version", "0.0.1"],
+ "reference_fix": ["sh \"$EVAL_DIR/scenarios/calibrated/reference/t2.sh\""]
+}

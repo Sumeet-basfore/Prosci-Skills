@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+// Installs the factory workflow into a repository, so its pull requests get a server-side
+// check. Writes one file, then prints the branch protection command. Does not run it.
+//
+//   bin/install-gate ../lore
+//   bin/install-gate ../lore --owner meow687687 --gate-repo prosci
+
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+
+const templatePath = join(dirname(fileURLToPath(import.meta.url)), "templates", "factory-workflow.yml");
+
+const argv = process.argv.slice(2);
+const flagValue = (name, fallback) => {
+  const i = argv.indexOf(name);
+  return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback;
+};
+const VALUE_FLAGS = new Set(["--owner", "--gate-repo"]);
+let repoArg = null;
+for (let i = 0; i < argv.length; i += 1) {
+  if (VALUE_FLAGS.has(argv[i])) {
+    i += 1;
+    continue;
+  }
+  if (!argv[i].startsWith("--") && repoArg === null) repoArg = argv[i];
+}
+
+if (!repoArg) {
+  console.error("usage: bin/install-gate <repo> [--owner <owner>] [--gate-repo <name>]");
+  process.exit(2);
+}
+
+const repoDir = resolve(repoArg);
+const workflowPath = join(repoDir, ".github", "workflows", "factory.yml");
+const gateRepo = flagValue("--gate-repo", "prosci");
+
+function remoteOwner() {
+  const r = spawnSync("git", ["-C", repoDir, "remote", "get-url", "origin"], { encoding: "utf8" });
+  if (r.status !== 0) return null;
+  const match = /github\.com[:/]([^/]+)\//.exec(r.stdout.trim());
+  return match ? match[1] : null;
+}
+
+const owner = flagValue("--owner", remoteOwner());
+if (!owner) {
+  console.error("cannot tell the GitHub owner, pass --owner <owner>");
+  process.exit(2);
+}
+
+if (existsSync(workflowPath)) {
+  console.error(`${workflowPath} already exists, not overwriting`);
+  process.exit(1);
+}
+
+const workflow = readFileSync(templatePath, "utf8")
+  .replaceAll("__OWNER__", owner)
+  .replaceAll("__GATE_REPO__", gateRepo);
+
+mkdirSync(dirname(workflowPath), { recursive: true });
+writeFileSync(workflowPath, workflow);
+
+const remote = spawnSync("git", ["-C", repoDir, "remote", "get-url", "origin"], { encoding: "utf8" }).stdout?.trim() ?? "";
+const slug = /github\.com[:/](.+?)(?:\.git)?$/.exec(remote)?.[1] ?? "<owner>/<repo>";
+
+console.log(`wrote ${workflowPath}`);
+console.log("next, on a branch, then open a PR so the check exists before you require it:");
+console.log(`  git -C ${repoArg} switch -c factory-gate`);
+console.log(`  git -C ${repoArg} add .github/workflows/factory.yml && git -C ${repoArg} commit -m "ci: require the factory gate"`);
+console.log(`  git -C ${repoArg} push -u origin factory-gate && gh pr create --fill -R ${slug}`);
+console.log("after that PR runs green, require the check:");
+console.log(
+  `  gh api -X PUT repos/${slug}/branches/main/protection --input - <<'JSON'\n` +
+    `  {"required_status_checks":{"strict":true,"contexts":["factory"]},"enforce_admins":true,\n` +
+    `   "required_pull_request_reviews":null,"restrictions":null}\n  JSON`,
+);

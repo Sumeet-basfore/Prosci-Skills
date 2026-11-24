@@ -1,0 +1,158 @@
+#!/usr/bin/env node
+// Runs a repo's factory contract block and records a receipt. The receipt is the evidence a
+// reviewer reruns. Nothing is skipped: a missing contract or a missing test command is a FAIL.
+//
+//   bin/verify ../lore
+//   bin/verify ../lore --file tests/test_cli.py   runs test1 instead of test
+//   bin/verify ../lore --dry-run
+//   bin/verify ../lore --json
+//   bin/verify ../lore --state-dir /tmp/factory   receipts elsewhere, used by the tests
+
+import { readFileSync, existsSync, appendFileSync, mkdirSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { parseFactoryBlock, checkCommands, RUN_ORDER } from "./lib/factory-block.mjs";
+
+const argv = process.argv.slice(2);
+const hasFlag = (name) => argv.includes(name);
+const flagValue = (name, fallback) => {
+  const i = argv.indexOf(name);
+  return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback;
+};
+
+const VALUE_FLAGS = new Set(["--file", "--state-dir"]);
+let repoArg = null;
+for (let i = 0; i < argv.length; i += 1) {
+  const arg = argv[i];
+  if (VALUE_FLAGS.has(arg)) {
+    i += 1;
+    continue;
+  }
+  if (!arg.startsWith("--") && repoArg === null) repoArg = arg;
+}
+
+const stateDir = resolve(flagValue("--state-dir", join(process.env.HOME ?? ".", ".local/state/factory")));
+const singleFile = flagValue("--file", null);
+const asJson = hasFlag("--json");
+const dryRun = hasFlag("--dry-run");
+const started = Date.now();
+const ran = [];
+
+if (!repoArg) {
+  console.error("usage: bin/verify <repo> [--file <path>] [--dry-run] [--json] [--state-dir <dir>]");
+  process.exit(2);
+}
+
+const repoDir = resolve(repoArg);
+const rel = relative(process.cwd(), repoDir) || ".";
+
+function git(args) {
+  const r = spawnSync("git", ["-C", repoDir, ...args], { encoding: "utf8" });
+  return r.status === 0 ? r.stdout.trim() : null;
+}
+
+function receiptOf(record) {
+  const { receipt, ...body } = record;
+  return createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 12);
+}
+
+function write(record) {
+  record.receipt = receiptOf(record);
+  mkdirSync(stateDir, { recursive: true });
+  appendFileSync(
+    join(stateDir, "verify.jsonl"),
+    `${JSON.stringify({ ...record, failure: record.failure ? { key: record.failure.key } : null })}\n`,
+  );
+  return record;
+}
+
+function finish(record, exitCode) {
+  if (asJson) {
+    console.log(JSON.stringify(record, null, 2));
+  } else if (record.verdict === "PASS") {
+    console.log(`PASS ${record.ms}ms receipt ${record.receipt}`);
+  } else {
+    const tail = record.failure?.output?.split("\n").slice(-20).join("\n");
+    console.log(`FAIL ${record.reason} receipt ${record.receipt}${tail ? `\n${tail}` : ""}`);
+  }
+  process.exit(exitCode);
+}
+
+function fail(reason, failure = null) {
+  finish(
+    write({
+      repo: rel,
+      ts: new Date().toISOString(),
+      sha: git(["rev-parse", "--short", "HEAD"]) ?? "no-git",
+      dirty: (git(["status", "--porcelain"]) ?? "").length > 0,
+      verdict: "FAIL",
+      reason,
+      ms: Date.now() - started,
+      commands: ran,
+      failure,
+    }),
+    1,
+  );
+}
+
+const agentsPath = join(repoDir, "AGENTS.md");
+if (!existsSync(agentsPath)) fail("no-agents-md");
+
+const { commands, errors } = parseFactoryBlock(readFileSync(agentsPath, "utf8"));
+if (errors.length) {
+  const only = errors.length === 1 && errors[0] === "no-test-command";
+  fail(only ? "no-test-command" : `contract:${errors.join(",")}`);
+}
+
+const checked = checkCommands(repoDir, commands);
+if (checked.errors.length) fail(`contract:${checked.errors.join(",")}`);
+if (checked.warnings.length) console.error(`warn ${checked.warnings.join(" ")}`);
+if (singleFile && !("test1" in commands)) fail("no-test1-command");
+
+const plan = [];
+for (const key of RUN_ORDER) {
+  if (key === "test1" && !singleFile) continue;
+  if (key === "test" && singleFile) continue;
+  if (!(key in commands)) continue;
+  plan.push({ key, command: commands[key].replaceAll("{file}", singleFile ?? "") });
+}
+
+if (dryRun) {
+  const record = write({
+    repo: rel,
+    ts: new Date().toISOString(),
+    sha: git(["rev-parse", "--short", "HEAD"]) ?? "no-git",
+    dirty: (git(["status", "--porcelain"]) ?? "").length > 0,
+    verdict: "DRY",
+    reason: "dry-run",
+    ms: Date.now() - started,
+    commands: plan,
+  });
+  if (asJson) console.log(JSON.stringify(record, null, 2));
+  else for (const step of plan) console.log(`${step.key}: ${step.command}`);
+  process.exit(0);
+}
+
+for (const step of plan) {
+  const t0 = Date.now();
+  const r = spawnSync(step.command, { shell: true, cwd: repoDir, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  ran.push({ key: step.key, command: step.command, exit: r.status ?? -1, ms: Date.now() - t0 });
+  if (r.status !== 0) {
+    fail(`${step.key}-failed`, { key: step.key, exit: r.status, output: `${r.stdout ?? ""}${r.stderr ?? ""}` });
+  }
+}
+
+finish(
+  write({
+    repo: rel,
+    ts: new Date().toISOString(),
+    sha: git(["rev-parse", "--short", "HEAD"]) ?? "no-git",
+    dirty: (git(["status", "--porcelain"]) ?? "").length > 0,
+    verdict: "PASS",
+    reason: "ok",
+    ms: Date.now() - started,
+    commands: ran,
+  }),
+  0,
+);
