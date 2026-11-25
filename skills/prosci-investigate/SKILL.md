@@ -84,6 +84,48 @@ usual ones. Box 1 is the question answered. Box 6 is nothing modified and nothin
 2 and 3 do not apply unless you ran something to establish behaviour, in which case they apply
 fully.
 
+## Tracing and evidence
+
+### One question, one path
+
+Write the question in the form the answer takes: "why does the cache miss on every second request", not "look at
+the cache". Then write the shortest path from the named symptom to the decision that produces it, and read only
+along that path.
+
+### Reading along a path
+
+For each hop, record: the input, the branch taken, the value produced. A trace you cannot reconstruct is a
+guess with notes.
+
+- Entry point: the route/handler/command that names the feature.
+- The deciding function: the `if`, the query, the lookup.
+- The state it reads: row, cache key, config, request field.
+- The tests that pin the behaviour: they describe intent better than comments.
+
+### Instrument when the code does not tell you
+
+Add a log at the boundary where the value is already wrong and one where it is still right. Move the pair until
+they meet. That is a binary search over execution, and it settles "probably a race" in minutes.
+
+### Evidence versus inference
+
+| statement | label |
+| --- | --- |
+| "`src/cache.mjs:41` omits the key prefix for GET" | evidence (file, line) |
+| "the miss is probably caused by the TTL" | inference; state the check that would settle it |
+
+A recommendation may rest on inference, but it has to be labelled. Readers act on evidence and forgive
+inference; they cannot forgive inference dressed as evidence.
+
+### Traps
+
+- **Correlation.** The change and the failure appeared together; that is a lead, not a cause. Check the diff and
+  the failure separately.
+- **Stale cache or build output.** Delete the cache, rebuild, reproduce before theorising.
+- **Clock and timezone.** Compare timestamps in UTC, not local time.
+- **Ordering.** Log lines interleave; sequence numbers beat timestamps.
+- **Sample of one.** A failing request may be data-dependent; try the same shape with different data.
+
 ## Reply
 
 The question, the answer in one or two sentences, the mechanism, the evidence with locations, what
