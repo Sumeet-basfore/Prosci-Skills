@@ -1,0 +1,327 @@
+{
+  "schema": 1,
+  "plan": "e2-parallel",
+  "planHash": "68acea5fc4a160a3",
+  "profile": "economy",
+  "backend": "pi",
+  "approved": true,
+  "authorization": {
+    "maxExecutions": 1,
+    "executions": 1,
+    "maxRetriesPerUnit": 1,
+    "requestsUsed": 11,
+    "maxRequests": 60
+  },
+  "requests": {
+    "reserved": 11,
+    "limit": 60,
+    "logged": 11
+  },
+  "enforcement": {
+    "approval": "enforced by this controller (plan hash)",
+    "concurrency": "enforced by this controller",
+    "dependencies": "enforced by this controller",
+    "ownership": "checked from git after each unit",
+    "deadline": "enforced by killing the process tree",
+    "tokens": "reported, not enforced",
+    "estimatedCostUsd": "advisory"
+  },
+  "limits": {
+    "maxConcurrency": 2,
+    "deadlineMs": 1200000,
+    "profile": {
+      "maxAgents": 3,
+      "concurrency": 2,
+      "retries": 1,
+      "wallClockMinutes": 30,
+      "tokens": 150000,
+      "estimatedCostUsd": 0.05
+    }
+  },
+  "budget": {
+    "profile": "economy",
+    "unitTokens": 70000,
+    "unitEstimatedCostUsd": 0.03,
+    "limits": {
+      "maxAgents": 3,
+      "concurrency": 2,
+      "retries": 1,
+      "wallClockMinutes": 30,
+      "tokens": 150000,
+      "estimatedCostUsd": 0.05
+    },
+    "enforcement": {
+      "tokens": "enforceable when the execution mechanism reports usage; the proxy caps requests, not tokens",
+      "requests": "enforceable by eval/harness/proxy.mjs for evaluation runs",
+      "estimatedCostUsd": "advisory: derived from a price table, not provider billing",
+      "reportedProviderCost": "advisory: available only when the provider reports it",
+      "maxAgents": "advisory: the harness decides how many processes start",
+      "concurrency": "advisory: same",
+      "wallClockMinutes": "enforceable by killing the process tree",
+      "retries": "enforceable by the caller's loop, not by a skill"
+    }
+  },
+  "units": [
+    {
+      "id": "u1-limit",
+      "role": "implementer",
+      "model": "claude-haiku-5-5",
+      "status": "succeeded",
+      "attempts": 1,
+      "branch": "prosci/e2-parallel/68acea/u1-limit",
+      "worktree": "/home/sumeet/e2-workspace/out/worktrees/u1-limit",
+      "evidence": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "kind": "success",
+          "pgid": 13,
+          "ms": 8345,
+          "groupKilled": false,
+          "detail": "8345ms",
+          "reportedModel": [
+            "prosci-proxy/claude-haiku-5-5"
+          ],
+          "toolCalls": [
+            "read",
+            "read",
+            "edit",
+            "edit",
+            "bash"
+          ],
+          "usage": {
+            "input": 2,
+            "output": 216,
+            "cacheRead": 2878,
+            "cacheWrite": 597,
+            "totalTokens": 3693,
+            "cost": {
+              "input": 4.0000000000000003e-7,
+              "output": 0.000216,
+              "cacheRead": 0.000057560000000000005,
+              "cacheWrite": 0.00014925,
+              "total": 0.00042321000000000004,
+              "totalFromProvider": false
+            },
+            "cacheWrite1h": 0,
+            "reasoning": 0
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "at": "step-1",
+          "seq": 1,
+          "to": "ready",
+          "detail": ""
+        },
+        {
+          "at": "step-2",
+          "seq": 2,
+          "to": "running",
+          "detail": "attempt 1"
+        },
+        {
+          "at": "step-3",
+          "seq": 5,
+          "to": "succeeded",
+          "detail": "checks passed (1)"
+        }
+      ],
+      "planRetries": 1,
+      "retriesClamped": null,
+      "checksRun": [
+        {
+          "check": "node --test test/limit.test.mjs",
+          "ok": true,
+          "detail": "✔ a request above the default is clamped to it (1.949199ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 182.555077\n"
+        }
+      ],
+      "changedFiles": [
+        "src/limit.mjs",
+        "test/limit.test.mjs"
+      ],
+      "predecessorCommits": [],
+      "tokens": null,
+      "costUsd": null
+    },
+    {
+      "id": "u2-format",
+      "role": "implementer",
+      "model": "claude-haiku-5-5",
+      "status": "succeeded",
+      "attempts": 1,
+      "branch": "prosci/e2-parallel/68acea/u2-format",
+      "worktree": "/home/sumeet/e2-workspace/out/worktrees/u2-format",
+      "evidence": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "kind": "success",
+          "pgid": 23,
+          "ms": 9533,
+          "groupKilled": false,
+          "detail": "9533ms",
+          "reportedModel": [
+            "prosci-proxy/claude-haiku-5-5"
+          ],
+          "toolCalls": [
+            "bash",
+            "bash",
+            "edit",
+            "write",
+            "bash"
+          ],
+          "usage": {
+            "input": 2,
+            "output": 260,
+            "cacheRead": 2998,
+            "cacheWrite": 1040,
+            "totalTokens": 4300,
+            "cost": {
+              "input": 4.0000000000000003e-7,
+              "output": 0.00026,
+              "cacheRead": 0.00005996,
+              "cacheWrite": 0.00026,
+              "total": 0.00058036,
+              "totalFromProvider": false
+            },
+            "cacheWrite1h": 0,
+            "reasoning": 0
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "at": "step-1",
+          "seq": 3,
+          "to": "ready",
+          "detail": ""
+        },
+        {
+          "at": "step-2",
+          "seq": 4,
+          "to": "running",
+          "detail": "attempt 1"
+        },
+        {
+          "at": "step-3",
+          "seq": 6,
+          "to": "succeeded",
+          "detail": "checks passed (1)"
+        }
+      ],
+      "planRetries": 1,
+      "retriesClamped": null,
+      "checksRun": [
+        {
+          "check": "node --test test/format.test.mjs",
+          "ok": true,
+          "detail": "✔ formatCount(5) returns \"5\" (5.394465ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 174.444808\n"
+        }
+      ],
+      "changedFiles": [
+        "src/report.mjs",
+        "test/format.test.mjs"
+      ],
+      "predecessorCommits": [],
+      "tokens": null,
+      "costUsd": null
+    },
+    {
+      "id": "u3-verify",
+      "role": "verifier",
+      "model": "claude-haiku-5-5",
+      "status": "succeeded",
+      "attempts": 1,
+      "branch": "prosci/e2-parallel/68acea/u3-verify",
+      "worktree": "/home/sumeet/e2-workspace/out/worktrees/u3-verify",
+      "evidence": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "kind": "success",
+          "pgid": 135,
+          "ms": 10357,
+          "groupKilled": false,
+          "detail": "10357ms",
+          "reportedModel": [
+            "prosci-proxy/claude-haiku-5-5"
+          ],
+          "toolCalls": [
+            "bash",
+            "bash",
+            "write",
+            "bash"
+          ],
+          "usage": {
+            "input": 2,
+            "output": 246,
+            "cacheRead": 3468,
+            "cacheWrite": 178,
+            "totalTokens": 3894,
+            "cost": {
+              "input": 4.0000000000000003e-7,
+              "output": 0.00024599999999999996,
+              "cacheRead": 0.00006936,
+              "cacheWrite": 0.0000445,
+              "total": 0.00036026,
+              "totalFromProvider": false
+            },
+            "cacheWrite1h": 0,
+            "reasoning": 0
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "at": "step-1",
+          "seq": 7,
+          "to": "ready",
+          "detail": ""
+        },
+        {
+          "at": "step-2",
+          "seq": 8,
+          "to": "running",
+          "detail": "attempt 1"
+        },
+        {
+          "at": "step-3",
+          "seq": 9,
+          "to": "succeeded",
+          "detail": "checks passed (2)"
+        }
+      ],
+      "planRetries": 1,
+      "retriesClamped": null,
+      "checksRun": [
+        {
+          "check": "node --test",
+          "ok": true,
+          "detail": "✔ the default limit survives into formatted output (2.948453ms)\n✔ formatCount(5) returns \"5\" (2.735648ms)\n✔ a request above the default is clamped to it (2.100086ms)\n✔ a report line carries its label "
+        },
+        {
+          "check": "grep -qi 'pass' docs/verification.md",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "changedFiles": [
+        "docs/verification.md"
+      ],
+      "predecessorCommits": [
+        {
+          "branch": "prosci/e2-parallel/68acea/u1-limit",
+          "sha": "37e3716b2ffd271015d78720ab29248c2ad2f2e3"
+        },
+        {
+          "branch": "prosci/e2-parallel/68acea/u2-format",
+          "sha": "c55b75819d09d11a8df630c780f01f67b03c2cde"
+        }
+      ],
+      "tokens": null,
+      "costUsd": null
+    }
+  ]
+}

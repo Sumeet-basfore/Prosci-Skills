@@ -37,6 +37,8 @@ sandbox() {
     --ro-bind /etc /etc \
     --ro-bind /home/sumeet/.local/lib/node_modules /home/sumeet/.local/lib/node_modules \
     --ro-bind /home/sumeet/.local/bin /home/sumeet/.local/bin \
+    --ro-bind /home/sumeet/.pi/agent/install /home/sumeet/.pi/agent/install \
+    --ro-bind /home/sumeet/.pi/agent/bin/pi /home/sumeet/.pi/agent/bin/pi \
     --tmpfs /tmp \
     --tmpfs /home/sumeet/personal-repo \
     --bind "$WORKSPACE" "$WORKSPACE" \
