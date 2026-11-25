@@ -18,6 +18,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { loadRegistries, validatePlan, handoffText } from "./lib/swarm.mjs";
+import { createRecord, loadRecord, saveRecord, claimExecution, effectiveRetries, chargeRequests } from "./lib/exec-auth.mjs";
 
 const args = process.argv.slice(2);
 const planPath = args.find((a) => !a.startsWith("--"));
@@ -63,6 +64,28 @@ if (!["fake", "pi"].includes(backend)) {
   process.exit(2);
 }
 
+// Authorization: an explicit file that caps executions, retries and requests. The plan hash alone is not an
+// approval — it is reusable, which is how three executions happened under one authorization.
+const authPath = flag("--authorization", null);
+let auth = null;
+if (authPath) {
+  auth = loadRecord(authPath, planHash) ?? createRecord({
+    planHash,
+    maxExecutions: Number(flag("--max-executions", 1)),
+    maxRetriesPerUnit: Number(flag("--max-retries", 1)),
+    maxRequests: Number(flag("--max-requests", 100)),
+  });
+  const claimed = claimExecution(auth, { planHash });
+  if (!claimed.ok) {
+    console.error(`execution refused: ${claimed.reason}`);
+    process.exit(2);
+  }
+  saveRecord(authPath, auth);
+} else if (backend === "pi") {
+  console.error("a paid backend requires --authorization <file>; the plan hash alone is not a spend approval");
+  process.exit(2);
+}
+
 const outDir = resolve(flag("--out", "swarm-run"));
 mkdirSync(join(outDir, "handoffs"), { recursive: true });
 mkdirSync(join(outDir, "worktrees"), { recursive: true });
@@ -94,6 +117,7 @@ function persist() {
     profile: profileName,
     backend,
     approved: true,
+    authorization: auth ? { maxExecutions: auth.maxExecutions, executions: auth.executions, maxRetriesPerUnit: auth.maxRetriesPerUnit, requestsUsed: auth.requestsUsed, maxRequests: auth.maxRequests } : null,
     enforcement: {
       approval: "enforced by this controller (plan hash)",
       concurrency: "enforced by this controller",
@@ -108,6 +132,7 @@ function persist() {
     units: units.map((u) => ({
       id: u.id, role: u.role, model: u.model, status: u.status, attempts: u.attempts,
       branch: u.branch, worktree: u.worktree, evidence: u.evidence, transitions: u.transitions,
+      planRetries: u.budget?.retries ?? 0, retriesClamped: u.retriesClamped ?? null,
       checksRun: u.checksRun ?? [], changedFiles: u.changedFiles ?? [], predecessorCommits: u.predecessorCommits ?? [],
       tokens: u.tokens ?? null, costUsd: u.costUsd ?? null,
     })),
@@ -249,9 +274,20 @@ function runUnit(unit) {
   const handoff = handoffText(unit, profileName, registries.roles);
   writeFileSync(join(outDir, "handoffs", `${unit.id}.md`), handoff);
 
-  const retries = unit.budget?.retries ?? 0;
+  const planRetries = unit.budget?.retries ?? 0;
+  const retries = auth ? effectiveRetries(auth, planRetries) : planRetries;
+  if (auth && retries !== planRetries) unit.retriesClamped = { plan: planRetries, authorized: retries };
   for (let attempt = 1; attempt <= retries + 1; attempt += 1) {
     unit.attempts = attempt;
+    if (auth) {
+      // Each attempt spends at least one request; a failed or interrupted attempt is not refundable.
+      const charged = chargeRequests(auth, 1);
+      saveRecord(authPath, auth);
+      if (!charged.ok) {
+        transition(unit, "failed", `request budget exhausted (${charged.used}/${charged.limit})`);
+        return;
+      }
+    }
     transition(unit, "running", `attempt ${attempt}`);
     const result = backend === "fake" ? fakeWorker(unit, worktree) : piWorker(unit, worktree, handoff);
     unit.evidence.push({ attempt, ...result });

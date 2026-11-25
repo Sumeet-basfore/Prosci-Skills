@@ -66,6 +66,46 @@ other raised — ships silently.
 8. **Preserve unrelated work.** Other branches, stashes, and uncommitted files stay untouched. If a
    merge requires discarding someone's work, stop and ask.
 
+## Conflict taxonomy and integration order
+
+### Four kinds of conflict, only one of which Git reports
+
+| kind | example | detected by |
+| --- | --- | --- |
+| textual | both edit the same lines | `git merge` |
+| semantic | one lowers `LIMIT`, the other batches 8 | the combined-state check |
+| temporal | A renames a field, B reads the old name | running B after A |
+| contract | A adds a required field, B's consumer omits it | exercising the consumer |
+
+Textual conflicts are the easy case: the tool stops you. The other three are why this route exists.
+
+### Order
+
+1. Shared contract first (types, schema, event shape).
+2. Producer before consumer.
+3. The change with the widest blast radius before the one that depends on it.
+4. Two changes that both edit the same constant: no safe order — that is a decision, not a merge.
+
+### Combined-state check
+
+Not "both suites pass": those were written before the other change existed. Run the path that crosses them —
+the batch against the lowered limit, the client against the new response, the stacked branch against the merged
+base. If no such check exists, write one before merging; it is the only evidence that integration worked.
+
+### Recovery
+
+- Local, unpublished: `git reset --hard <sha>` restores exactly.
+- Published: `git revert -m 1 <merge>` keeps history honest; a force-push rewrites everyone's base.
+- If a merge dropped work (a conflict resolution that deleted a hunk), reverting the merge is the only safe
+  undo; do not "re-apply" by hand on top.
+
+### Anti-patterns
+
+- **Merge and pray.** All branches at once, then one check at the end; a failure points nowhere.
+- **Reverting a merge without `-m 1`.** Reverts the wrong parent and silently drops the branch.
+- **Resolving a conflict by taking "ours" wholesale.** It compiles and throws away the other change.
+- **Force-pushing a shared branch to "clean up" integration history.** Everyone's local base is now wrong.
+
 ## Output
 
 - The base commit and each change, with its individual proof.

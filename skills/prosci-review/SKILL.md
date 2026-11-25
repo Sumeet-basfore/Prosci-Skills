@@ -112,6 +112,55 @@ Then, after the findings:
 Skip style a formatter owns. Skip taste with no consequence. A review that manufactures findings
 to look thorough wastes the author's time.
 
+## Review procedure and defect catalogue
+
+### Read in this order, stop at the first level that fails
+
+1. **Intent.** Does the diff do what the description says? Read the description first, then the diff. A diff
+   that also refactors, or also reformats, hides its own intent — ask for a split.
+2. **Correctness.** Boundary values, empty input, ordering, null, error paths, state transitions.
+3. **Security.** Authorisation on every read and write, input validation at the boundary, injection, secrets in
+   logs, unsafe deserialisation, SSRF, path traversal.
+4. **Concurrency.** Shared mutable state, check-then-act races, lock ordering, retries without idempotency,
+   unbounded concurrency, cancellation.
+5. **Performance.** N+1 queries, work inside a loop that could be batched, unbounded result sets, sync I/O on a
+   hot path, allocations per item.
+6. **Maintainability.** Naming, duplication, test quality, dead code, comments that lie.
+
+Reviewing in the order a diff is written is how a naming nit gets more attention than a lost write.
+
+### Defect catalogue worth scanning for
+
+| class | symptom in a diff |
+| --- | --- |
+| boundary | `<` where `<=` belongs, missing empty case, off-by-one in pagination |
+| error swallowing | `catch {}` with a log and no rethrow, `\|\| true` |
+| check-then-act | read a row, decide, write without a transaction or conditional |
+| resource leak | a handle, stream or subscription opened and not closed on the error path |
+| N+1 | a query inside a `map` over rows |
+| float money | `0.1 + 0.2`, division by 100 without rounding |
+| time | local timezone arithmetic, `Date.now()` in a test |
+| authz | a new endpoint that checks authentication but not ownership |
+| retries | a write retried without an idempotency key |
+| unbounded | `Promise.all` over an unbounded input, a queue with no cap |
+
+### Comment style
+
+Each finding: **where**, **what breaks**, **the fix**. Optional: why it matters if it is not obvious.
+
+- "`src/report.mjs:42` — `rows.reduce` has no initial value; an empty file throws instead of printing 0. Pass
+  `0` as the initial value."
+- Not: "The reduce might be a problem."
+
+Severity: **blocking** (incorrect, insecure, data loss), **should fix** (performance, maintainability with a
+concrete cost), **nit** (style, naming). A review with ten nits and no severity is not a review.
+
+### What not to do
+
+- Do not rewrite the author's approach in comments; propose it once, in prose, outside the line comments.
+- Do not approve because the tests pass: tests are evidence of what they cover, nothing else.
+- Do not review a diff you wrote in the same session without re-reading it as if it were a stranger's.
+
 ## Approving
 
 Approve when the change does the thing, the evidence is real, the edges are handled, and nothing

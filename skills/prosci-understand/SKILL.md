@@ -60,6 +60,47 @@ Understand turns a one-off look around into a small, verified model that the rep
 6. **Name the unknowns.** End with what you could not verify and what would settle it. An honest gap
    is worth more than a confident guess.
 
+## Reconnaissance with a stop rule
+
+### What to read, in order
+
+1. **Instructions.** `AGENTS.md`, `README.md`, `CONTRIBUTING.md`. They state intent; the code states reality.
+   When they disagree, the code wins and the instruction is a finding.
+2. **Manifest and commands.** `package.json`/`pyproject.toml`/`go.mod`, lockfile, CI config. Then **run the
+   commands** — a command that does not run is the most valuable fact you will find today.
+3. **Entry points.** The route table, the CLI dispatch, the exported API. This is how the code is reached.
+4. **Boundaries.** Directories or modules and the one thing each owns. Not every file: the map, not the
+   territory.
+5. **The path to your intended change.** Tests covering that area, then the code from entry point to the line
+   you will touch.
+
+Stop when the path closes: you can name the entry point, the module, the state, and the check.
+
+### Risk signals
+
+| signal | why it matters |
+| --- | --- |
+| no test on the path you will change | you cannot detect your own regression |
+| global mutable state / singletons | tests and parallel work will interfere |
+| generated files checked in | edits get overwritten; find the generator |
+| handwritten SQL with string concatenation | injection surface at the boundary |
+| a `TODO` on the exact path | the previous author knew something you do not |
+| two implementations of the same concept | the older one is still used somewhere |
+
+### What to persist, and what not to
+
+Persist only what is durable and verified: the commands with their observed result, the module boundaries in one
+line each, the conventions a change must follow, and the areas with no tests.
+
+Do not persist: file-by-file descriptions (stale in a week), anything inferred but unchecked, secrets or
+environment values, anything already in the README.
+
+### Anti-patterns
+
+- Reading the whole tree before running anything.
+- Trusting the README's commands without running them.
+- Writing a 200-line architecture document nobody reads; the next agent needs five facts, not fifty.
+
 ## Output
 
 - A short briefing in the reply: entry points, boundaries, commands with their observed result,

@@ -93,6 +93,41 @@ than a test.
 
 If the repo has no checks, say so in the pull request.
 
+## Documentation that stays true
+
+### Write from claims, not from structure
+
+List the claims the document makes ("install with X", "the flag defaults to Y", "this returns 201"). Each is a
+check: run the command, read the code that sets the default, call the endpoint. A document is a set of verified
+claims with prose between them.
+
+### Drift detection
+
+Documentation rots at the points where code moves. Cheap checks:
+
+- every command in the doc is executed in CI or by a `make docs-check`;
+- every referenced file path exists;
+- every flag mentioned appears in `--help` output;
+- every code sample is extracted and run, not retyped.
+
+If a claim cannot be checked mechanically, say when it was last verified and by what.
+
+### Structure by reader
+
+| reader | wants | not |
+| --- | --- | --- |
+| newcomer | what this is, install, first success in five minutes | architecture history |
+| operator | commands, env vars, failure modes, rollback | design rationale |
+| contributor | conventions, test command, where things live | marketing |
+| evaluator | limitations, what is proven, what is not | claims without evidence |
+
+### Anti-patterns
+
+- Aspirational docs: describing the intended behaviour as if it shipped.
+- Screenshots without alt text or a caption that says what to look at.
+- A README that lists features but not limitations; readers discover the limits at the worst moment.
+- Copying the code into the doc; link to the file and describe the contract.
+
 ## Reply
 
 The audience, the claims you found with their locations, what you rewrote, the commands you ran

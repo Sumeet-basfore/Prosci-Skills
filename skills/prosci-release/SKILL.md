@@ -95,6 +95,45 @@ second version to paper over the first.
 One line in the release notes: how to go back, who to tell, and whether the artifact can be
 unpublished. A release with no stated rollback is a decision nobody thought about.
 
+## Preflight and version decisions
+
+### Preflight, in order
+
+1. Clean tree, on the intended commit: `git status`, `git rev-parse HEAD`.
+2. The full suite, the build, and the artifact build — run, not assumed.
+3. Changelog entries match the diff: no "improvements" that are not in the commits.
+4. Version bump matches the change class (table below).
+5. The artifact is reproducible and its hash recorded; the tag points at the commit that produced it.
+
+### Version decision
+
+| change | bump | examples |
+| --- | --- | --- |
+| fixes, docs, internals | patch | bug fix, dependency patch, README |
+| additive, compatible | minor | new flag, new endpoint, new optional field |
+| breaking for a consumer | major | removed export, renamed field, changed default |
+| never published | no bump | a repo that ships nothing |
+
+"When in doubt, minor" is wrong for a breaking change and dishonest for a fix.
+
+### Artifact proof
+
+A release is a file, not a commit. Record: the command that built it, the hash, and one command that installs
+and runs it from scratch. If you cannot install your own artifact in a clean place, you have not released.
+
+### Post-release
+
+- Tag and artifact hash published together.
+- Rollback: the previous version identifier and the command to reinstate it.
+- A note of what a consumer will notice, in one line.
+
+### Anti-patterns
+
+- Tagging from a dirty tree.
+- Publishing an artifact nobody installed.
+- A changelog written from memory rather than from `git log`.
+- Deleting a failed release instead of marking it; downstream pins break silently.
+
 ## Reply
 
 The version and why, the artifact you inspected, the commands and their output, the install check,

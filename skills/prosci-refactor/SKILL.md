@@ -59,6 +59,60 @@ checked it before and after.
 7. **Stop at the named defect.** Unrelated cleanup, a rename you noticed, a formatting pass: leave them.
    Report them as separate work instead.
 
+## Refactoring safely
+
+### Preconditions
+
+- The suite is green. A refactor on a red suite cannot distinguish your damage from the existing failure.
+- You can run the behaviour check in one command and it takes seconds. If not, make it fast first.
+- You have named the structural defect with a measurement. "It feels messy" is not a defect; "money formatting
+  is written three times" is.
+
+### Characterization before change
+
+If the behaviour has no test, write one that pins the **current** output — including the parts you find ugly. It
+is a photograph, not an endorsement. Then refactor. The test may be deleted later, but not before the new shape
+has its own tests.
+
+For a surface that is hard to unit test, pin it from outside: run the CLI on a fixture and compare stdout and
+exit code; hit the endpoint and snapshot the body shape.
+
+### Seams, in order of preference
+
+1. **Extract the duplicated body** into one function, keep call sites. Smallest possible move.
+2. **Move the function** to the module that owns its data. Update imports in one commit.
+3. **Introduce a parameter** to remove ambient state (clock, config, environment).
+4. **Split the module** when it has two reasons to change. Move tests with the code in the same commit.
+5. **Strangler** for large surfaces: new path beside the old, route a slice of traffic, delete the old when the
+   slice is 100% and the old has been quiet for a release.
+
+### Worked example
+
+Defect: `toFixed(2)` in `receipt.mjs`, `invoice.mjs`, `refund.mjs`.
+
+Step 1: add `test/reports.test.mjs` asserting the three exact output strings (pins behaviour).
+Step 2: add `src/money.mjs` with `formatCents`, and switch `receipt.mjs` to it. Suite green.
+Step 3: switch the other two, one commit each.
+Step 4: assert the structural defect is gone: `grep -c "toFixed(2)" src/*.mjs` sums to 1.
+Step 5: assert the contract: run the three functions and compare to the pinned strings.
+
+Every step is revertible on its own, and no step changes an output.
+
+### Anti-patterns
+
+- **Refactor plus feature.** The diff cannot be reviewed for either.
+- **Big-bang rename.** Hundreds of files, one commit, no way to bisect a regression.
+- **Abstraction with one caller.** A layer you will remove in a month.
+- **Changing the public contract while calling it cleanup.** That is a breaking change; it needs its own
+  release note and deprecation.
+- **Deleting the characterization test** as soon as the refactor lands, before the new tests cover the same
+  behaviour.
+
+### When to stop
+
+Stop when the named defect is measurably gone. Noticing three more things is normal; write them down and leave
+them. A refactor that keeps going is a rewrite with no acceptance criteria.
+
 ## Output
 
 - The named defect and the target shape.

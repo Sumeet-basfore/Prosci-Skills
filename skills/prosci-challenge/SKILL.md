@@ -59,6 +59,54 @@ if it separates "this will not work" from "I would have written it differently".
 7. **State what would change your mind.** One line per blocking defect: the evidence that would make it
    not a defect.
 
+## Claim extraction and falsification
+
+### Turn prose into claims
+
+Read the proposal and write one row per load-bearing claim:
+
+| claim | what must be true | falsifier |
+| --- | --- | --- |
+| "the import is idempotent" | re-running produces no duplicates | run it twice, count rows |
+| "writes are append-only" | no truncation or rewrite path | grep for `writeFile`, `truncate`, flags |
+| "the existing tests cover it" | a test exercises this path | search the suite for the path, run it |
+| "it fits in half a day" | the unknown schema is already known | list what is unknown |
+
+A claim with no falsifier is an assumption; label it and say what would settle it.
+
+### Failure modes worth walking through, every time
+
+Empty input · duplicate submit · concurrent write · partial failure · retry after timeout · rollback · operator
+error · data that grew 10× · the dependency being down · the feature being switched off mid-flight.
+
+Each one you can state with a concrete input is worth more than a paragraph of risk language.
+
+### Severity ladder
+
+- **Blocking:** contradicts a stated constraint, cannot work as described, or has an unowned failure mode.
+- **Should fix:** works, but creates a maintenance or operational cost that will be paid soon.
+- **Optional:** naming, order, style, later improvement.
+
+Ten optional notes and no blocking defect is a failed challenge, not a thorough one.
+
+### Fallacies to refuse
+
+- **Appeal to scale.** "It will be fine at our size" without a number and a margin.
+- **Sunk cost.** "We already built half of it" — the question is what the remaining half costs.
+- **Survivorship.** "Company X does it this way" without their constraints.
+- **Unfalsifiable safety.** "It is idempotent in practice" — run it twice.
+
+### Worked example
+
+Proposal: truncate `data/records.json`, stream the vendor CSV into it, re-run on failure.
+
+Blocking defect 1: the repo rule says all writes go through `src/store.mjs`, which keeps a backup and journal.
+Blocking defect 2: truncating first destroys the only copy, and "re-run on failure" cannot restore it.
+Blocking defect 3: the proposal claims existing tests cover the import; there are none for it.
+
+Recommendation: revise. The fix is to import into a staging file through the store, verify the row count, then
+swap. Each of those is checkable, which is what makes it a proposal and not a wish.
+
 ## Output
 
 - The proposal in one sentence.
