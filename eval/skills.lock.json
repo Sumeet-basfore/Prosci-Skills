@@ -5,12 +5,12 @@
     {
       "name": "prosci",
       "declared": "prosci",
-      "sha256": "a8c25602a9147be1504447b0656c0cc9b91e6666ca7a51e84a9f329112a22002",
-      "bytes": 6516,
+      "sha256": "68c5ab9c3f993fae36f050d6fba1230fc5e68a35c2fd4135a997651fe3af18e9",
+      "bytes": 8297,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "a8c25602a9147be1504447b0656c0cc9b91e6666ca7a51e84a9f329112a22002"
+          "sha256": "68c5ab9c3f993fae36f050d6fba1230fc5e68a35c2fd4135a997651fe3af18e9"
         }
       ]
     },
@@ -29,12 +29,12 @@
     {
       "name": "prosci-bar",
       "declared": "prosci-bar",
-      "sha256": "57c5b930f7b6c7da1633d2a08bb550e19804e557ce274beb4df8818f27ccd13e",
-      "bytes": 4047,
+      "sha256": "76810680afc0e1addfee27eca92df9512ef80ac7f72b8d460ba95cef26465d4e",
+      "bytes": 5580,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "57c5b930f7b6c7da1633d2a08bb550e19804e557ce274beb4df8818f27ccd13e"
+          "sha256": "76810680afc0e1addfee27eca92df9512ef80ac7f72b8d460ba95cef26465d4e"
         }
       ]
     },
@@ -125,12 +125,12 @@
     {
       "name": "prosci-init",
       "declared": "prosci-init",
-      "sha256": "0a5b3fa16baa993a2839dbef439a18a52c476c923d0bee262a3fb736d4db2d03",
-      "bytes": 6488,
+      "sha256": "3b707e8097a7aed14fc7103162668d64784cff19c1981b84f983f5cfcba57a99",
+      "bytes": 8395,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "0a5b3fa16baa993a2839dbef439a18a52c476c923d0bee262a3fb736d4db2d03"
+          "sha256": "3b707e8097a7aed14fc7103162668d64784cff19c1981b84f983f5cfcba57a99"
         },
         {
           "path": "skill.json",

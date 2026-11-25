@@ -89,6 +89,35 @@ These must run in order: two edits to the same file, a change and its test when 
 the change, a migration and the code that reads the migrated table, anything sharing a lock, a
 port, a branch, or a scratch directory.
 
+## Routing rules that prevent the common misroutes
+
+| the request | the trap | the route |
+| --- | --- | --- |
+| "why does X happen" | turning the question into a patch | investigate; change nothing |
+| "make this better" | guessing the requirement | ship step 1: settle the spec, or challenge if it is a proposal |
+| "the tests are flaky" | fixing the assertion | fix: reproduce, then decide whether the test or the code lies |
+| "clean this up" | a behaviour change in disguise | refactor with characterization first |
+| "review this" | reviewing a plan as if it were code | review reads the diff; challenge reads the proposal |
+| "add a dependency" | installing it first | architect: the dependency is a decision with a cost |
+| "it is broken in prod" | editing first | verify: reproduce on the real surface, then fix |
+
+Misroutes share one shape: the request names a symptom and the agent answers with a change. Ask what the next
+artifact must be — a sentence, a decision, a plan, a diff, or evidence — and the route follows.
+
+### The non-negotiables, with a failure each
+
+1. **Evidence, not claims.** "Should pass" has shipped broken code in every codebase that tolerated it.
+2. **Smallest change.** A refactor inside a fix hides the fix from review.
+3. **One change per PR.** A mixed diff makes a regression unattributable.
+4. **Never weaken a check.** A lowered threshold converts a failure into a lie.
+5. **Read before writing.** Editing a function you have not read breaks its callers silently.
+
+### When to skip the router
+
+A one-line typo, a question with an obvious answer from the file in front of you, or a change already under
+review: answer, and say which route you would have taken if it grew. Ceremony on a trivial request teaches people
+to ignore the workflow.
+
 ## When you are stuck
 
 Say which step you are on, what you tried, and what you observed. A blocked report that names the

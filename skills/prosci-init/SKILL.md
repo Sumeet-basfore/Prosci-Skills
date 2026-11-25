@@ -111,6 +111,38 @@ setup a person cannot reverse is a setup they will not approve.
 - the reversal instruction;
 - what remains unverified.
 
+## Adoption: reading a survey correctly
+
+### What each finding implies
+
+| survey fact | what it means | what to do |
+| --- | --- | --- |
+| `commands.test` with `source: AGENTS.md` and `verified: null` | the instruction claims a command nobody has run | run it before repeating the claim |
+| `commands.test` absent, manifest has `scripts.test` | the instruction file is incomplete | add the verified command, not a new harness |
+| `risks: no-instructions` | nothing tells the next agent how to work | one `AGENTS.md` block, verified commands only |
+| `risks: no-test-command` | the repo cannot be verified | add the smallest test harness as its own change |
+| `risks: env-not-ignored` | a secret may be one commit from publication | stop, name the file (never the value), hand off |
+| `risks: dirty-tree` | the survey is a snapshot of moving state | say so; do not treat it as the base for a diff |
+| `unknowns: stacks` | no recognised manifest | ask, do not infer from a folder name |
+
+### Instruction-file quality
+
+A good `AGENTS.md` block has: the test command, the typecheck command if one exists, the build command if one
+exists, and one line of conventions a change must follow. It does not have: a feature tour, a directory tree
+nobody maintains, or commands the author has not run.
+
+### Adoption sequence for a repo with existing conventions
+
+1. Survey. 2. Run the commands it found. 3. Read two source files and one test on the path you will touch.
+4. Propose a patch to the instruction file only where it is wrong or missing. 5. Validate by re-running the
+survey and the commands. 6. State the reversal.
+
+### Anti-patterns
+
+- Writing a framework-shaped `AGENTS.md` for a repo that already has conventions.
+- Adding CI to a repo with no remote, or a lint config with rules nobody will follow.
+- Treating `--verify` as approval to run anything else; it runs one detected test command, nothing more.
+
 ## Failure handling
 
 - **Survey unavailable.** Stop. Do not reconstruct its output by hand.

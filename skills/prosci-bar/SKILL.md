@@ -77,6 +77,37 @@ Unmet when anything in that list appears without a line explaining why it is leg
 | testing the mock | the test asserts what the fake returned, so nothing about real behaviour is proven |
 | a green run from a stale build | the command did not rebuild, or ran against an old artifact |
 
+## The definition of done, by change type
+
+| change | evidence required | not evidence |
+| --- | --- | --- |
+| bug fix | a test that failed before and passes after, with the failing output | "the fix is obvious" |
+| feature | the new behaviour exercised on its real surface, plus the failure path | unit test of a helper |
+| refactor | same checks green before and after, and the structural defect measurably gone | "it looks cleaner" |
+| docs | every changed command run, every changed path exists | reading it back |
+| config/infra | the config applied and the effect observed; rollback exercised | YAML that parses |
+| release | the artifact installed from scratch and run | a green build |
+
+### Evidence standard
+
+- A command and its output. Not a summary of the output.
+- The command must be the one the repo documents; if it differs, say why.
+- The failure path counts as much as the happy path: one input that must be rejected, and proof that it is.
+- If a check was skipped, say so in the same sentence as the claim, not in a footnote.
+
+### When done is not your call
+
+Route to a human when: the change is irreversible (data deletion, schema change with rows), the check passes but
+you cannot explain why, or two requirements contradict each other. "Tests pass" does not resolve a product
+decision.
+
+### Anti-patterns
+
+- Green build presented as delivery.
+- A test added after the fix, without ever seeing it fail.
+- "Covered by existing tests" without naming which one.
+- Marking done while a known limitation is unstated.
+
 ## Report template
 
 Copy this into your reply and fill it honestly.
