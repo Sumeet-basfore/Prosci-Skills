@@ -3,7 +3,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, cpSync, readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, cpSync, readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync, chmodSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -86,12 +86,15 @@ test("does not modify the repository", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("never reads the credential store", () => {
+test("cannot read the credential store even when it is present", () => {
   const dir = mkdtempSync(join(tmpdir(), "survey-"));
   const home = join(dir, "home", ".pi", "agent");
   mkdirSync(home, { recursive: true });
   writeFileSync(join(home, "models.json"), JSON.stringify({ providers: { demo: { models: [{ id: "m-1" }] } } }));
+  // Locked down to owner-read-none *and* containing a sentinel: if the survey opened it, the run would
+  // either fail or leak the value. Both are observed.
   writeFileSync(join(home, "auth.json"), JSON.stringify({ demo: { key: "SENTINEL-SECRET-VALUE" } }));
+  chmodSync(join(home, "auth.json"), 0o000);
   const repo = join(dir, "repo");
   mkdirSync(repo);
   const r = spawnSync(process.execPath, [SURVEY, repo], { encoding: "utf8", env: { ...process.env, HOME: join(dir, "home") } });
@@ -99,5 +102,9 @@ test("never reads the credential store", () => {
   assert.ok(!r.stdout.includes("SENTINEL-SECRET-VALUE"), "survey output contains a credential value");
   assert.ok(!r.stdout.includes("auth.json"), "survey output names the auth store");
   assert.deepEqual(JSON.parse(r.stdout).facts.models.value.providers, [{ name: "demo", models: ["m-1"] }]);
+  // Non-access, not just non-leakage: the file is still unreadable after the run, so nothing in the survey
+  // widened its permissions or copied it.
+  assert.equal(statSync(join(home, "auth.json")).mode & 0o777, 0o000);
+  chmodSync(join(home, "auth.json"), 0o600);
   rmSync(dir, { recursive: true, force: true });
 });

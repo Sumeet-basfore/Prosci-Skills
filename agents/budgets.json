@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "note": "Advisory vs enforceable is stated per limit. Nothing here enforces spend by itself.",
+  "profiles": {
+    "economy": {
+      "tiers": { "architect": "economy", "planner": "economy", "implementer": "economy", "designer": "economy", "investigator": "economy", "reviewer": "economy", "verifier": "economy", "integrator": "economy" },
+      "modelByRole": { "architect": "claude-haiku-5-5", "planner": "claude-haiku-5-5", "implementer": "claude-haiku-5-5", "designer": "claude-haiku-5-5", "investigator": "claude-haiku-5-5", "reviewer": "claude-haiku-5-5", "verifier": "claude-haiku-5-5", "integrator": "claude-haiku-5-5" },
+      "limits": { "maxAgents": 3, "concurrency": 2, "retries": 1, "wallClockMinutes": 30, "tokens": 150000, "estimatedCostUsd": 0.05 }
+    },
+    "balanced": {
+      "tiers": { "architect": "balanced", "planner": "balanced", "implementer": "balanced", "designer": "balanced", "investigator": "balanced", "reviewer": "balanced", "verifier": "balanced", "integrator": "balanced" },
+      "modelByRole": { "architect": "claude-haiku-5-5", "planner": "claude-haiku-5-5", "implementer": "claude-haiku-5-5", "designer": "claude-haiku-5-5", "investigator": "claude-haiku-5-5", "reviewer": "claude-haiku-5-5", "verifier": "claude-haiku-5-5", "integrator": "claude-haiku-5-5" },
+      "limits": { "maxAgents": 5, "concurrency": 3, "retries": 2, "wallClockMinutes": 90, "tokens": 600000, "estimatedCostUsd": 0.2 }
+    },
+    "maximum-quality": {
+      "tiers": { "architect": "maximum-quality", "planner": "maximum-quality", "implementer": "maximum-quality", "designer": "maximum-quality", "investigator": "maximum-quality", "reviewer": "maximum-quality", "verifier": "maximum-quality", "integrator": "maximum-quality" },
+      "modelByRole": { "architect": "claude-haiku-5-5", "planner": "claude-haiku-5-5", "implementer": "claude-haiku-5-5", "designer": "claude-haiku-5-5", "investigator": "claude-haiku-5-5", "reviewer": "claude-haiku-5-5", "verifier": "claude-haiku-5-5", "integrator": "claude-haiku-5-5" },
+      "limits": { "maxAgents": 8, "concurrency": 4, "retries": 3, "wallClockMinutes": 240, "tokens": 2000000, "estimatedCostUsd": 1.0 }
+    },
+    "custom": {
+      "tiers": {},
+      "modelByRole": {},
+      "limits": {},
+      "note": "Fill from agents/budgets.local.json (gitignored) or pass --profile-file. No defaults: a custom profile with no limits is rejected."
+    }
+  },
+  "enforcement": {
+    "tokens": "enforceable when the execution mechanism reports usage; the proxy caps requests, not tokens",
+    "requests": "enforceable by eval/harness/proxy.mjs for evaluation runs",
+    "estimatedCostUsd": "advisory: derived from a price table, not provider billing",
+    "reportedProviderCost": "advisory: available only when the provider reports it",
+    "maxAgents": "advisory: the harness decides how many processes start",
+    "concurrency": "advisory: same",
+    "wallClockMinutes": "enforceable by killing the process tree",
+    "retries": "enforceable by the caller's loop, not by a skill"
+  }
+}

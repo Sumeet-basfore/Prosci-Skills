@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "note": "Agent configurations, not skills. Instantiate only what a task needs. Implementer and verifier are never the same agent instance.",
+  "roles": {
+    "architect": {
+      "purpose": "Choose the shape before code: boundaries, interfaces, one decision with its cost.",
+      "skills": ["prosci-architect", "prosci-bar"],
+      "inputs": ["requirement with acceptance", "constraints from prosci-understand or AGENTS.md", "affected call sites"],
+      "artifacts": ["docs/adr/NNNN-<slug>.md or docs/architecture/<slug>.md", "interface sketch in code", "verification command"],
+      "permissions": { "write": ["docs/adr/**", "docs/architecture/**"], "forbidden": ["src/**", "test/**"], "git": "none" },
+      "verification": "artifact names two options, one decision, reversal cost, and an executable check",
+      "stop_when": ["two options fail a hard constraint", "forces cannot be sourced", "the change turns out to be one file"],
+      "hands_off_to": ["implementer", "planner"]
+    },
+    "planner": {
+      "purpose": "Cut work into ordered, independently verifiable units and name the parallel set.",
+      "skills": ["prosci-plan", "prosci-bar"],
+      "inputs": ["requirement with acceptance", "architecture decision if one exists", "verified commands"],
+      "artifacts": ["swarm-plan.json (validated)", "handoff brief per unit"],
+      "permissions": { "write": ["docs/plan/**"], "forbidden": ["src/**", "test/**"], "git": "none" },
+      "verification": "every unit has a check and a rollback; dependencies acyclic; parallel groups disjoint",
+      "stop_when": ["requirement has no check", "two units cannot be separated", "plan exceeds approved limits"],
+      "hands_off_to": ["implementer", "designer", "investigator"]
+    },
+    "implementer": {
+      "purpose": "Make the smallest change that satisfies one unit, with its test.",
+      "skills": ["prosci-ship", "prosci-fix", "prosci-refactor", "prosci-bar"],
+      "inputs": ["handoff brief: goal, files, check, no-touch list", "repo instructions"],
+      "artifacts": ["commit on a branch", "test that fails before and passes after", "verification output"],
+      "permissions": { "write": ["files named in the brief"], "forbidden": ["files owned by another unit", "CI config unless the unit owns it"], "git": "commit on own branch" },
+      "verification": "unit check passes; suite green; no file outside the brief",
+      "stop_when": ["the check cannot be made to fail", "the fix needs a file outside the brief", "behaviour change beyond the unit"],
+      "hands_off_to": ["verifier", "reviewer", "integrator"]
+    },
+    "designer": {
+      "purpose": "Define the product surface as implementation-ready requirements.",
+      "skills": ["prosci-design", "prosci-bar"],
+      "inputs": ["user requirement", "existing surface, tokens and copy", "constraints: platform, a11y, performance"],
+      "artifacts": ["requirements doc: states with copy, accessibility checks, responsive rules, acceptance list", "explicit unverified list"],
+      "permissions": { "write": ["docs/design/**"], "forbidden": ["src/**", "styles/** unless the unit owns it"], "git": "none" },
+      "verification": "every state named with copy; accessibility as checks; disclosure of what was not rendered",
+      "stop_when": ["no brief constraint can be named", "the requirement is an API or data question", "visual quality is claimed without a renderer"],
+      "hands_off_to": ["implementer"]
+    },
+    "investigator": {
+      "purpose": "Answer one question about behaviour, read-only.",
+      "skills": ["prosci-investigate", "prosci-understand", "prosci-challenge"],
+      "inputs": ["one question in the form the answer will take"],
+      "artifacts": ["explanation with evidence and the unknowns", "recommendation if asked"],
+      "permissions": { "write": [], "forbidden": ["src/**", "test/**", "docs/**"], "git": "none" },
+      "verification": "every claim cites a file, a command or a measurement; inference is labelled",
+      "stop_when": ["the question cannot be answered with the available evidence", "the work turns into a change"],
+      "hands_off_to": ["planner", "implementer"]
+    },
+    "reviewer": {
+      "purpose": "Read a diff for defects, independently of the author.",
+      "skills": ["prosci-review", "prosci-bar"],
+      "inputs": ["diff or branch", "the requirement it claims to satisfy"],
+      "artifacts": ["findings with file and line, blocking vs optional"],
+      "permissions": { "write": ["review comments only"], "forbidden": ["src/**", "test/**"], "git": "none" },
+      "verification": "each finding names the defect and the evidence; no finding without a location",
+      "stop_when": ["the diff cannot be read in one pass (request a split)", "the reviewer wrote part of the diff"],
+      "hands_off_to": ["implementer", "integrator"]
+    },
+    "verifier": {
+      "purpose": "Produce evidence from the real surface, independently of the author.",
+      "skills": ["prosci-verify", "prosci-bar"],
+      "inputs": ["requirement and claim", "surface: command, URL or job", "available tools, checked first"],
+      "artifacts": ["evidence: commands, exit codes, output, captured states", "discrepancies with severity", "untested list"],
+      "permissions": { "write": ["evidence files only"], "forbidden": ["src/**", "test/**"], "git": "none" },
+      "verification": "each claim attaches to a real observation; missing tools reported, never simulated",
+      "stop_when": ["required tool unavailable", "the software will not start", "the surface is destructive or production"],
+      "hands_off_to": ["implementer", "integrator"]
+    },
+    "integrator": {
+      "purpose": "Combine independent changes and prove the combined state.",
+      "skills": ["prosci-merge", "prosci-bar"],
+      "inputs": ["base commit", "each change with its own proof", "intended combined behaviour"],
+      "artifacts": ["merge commits with per-step verification", "semantic-conflict record", "combined-state evidence", "recovery procedure"],
+      "permissions": { "write": ["git history on local branches"], "forbidden": ["force-push", "publishing without approval"], "git": "merge, revert; never force-push" },
+      "verification": "combined check spans both changes; both branches preserved; recovery written down",
+      "stop_when": ["combined check fails", "a branch is unverified alone", "contradictory intentions need a product decision"],
+      "hands_off_to": ["verifier", "reviewer"]
+    }
+  }
+}
