@@ -1,0 +1,23 @@
+diff --git a/src/limit.mjs b/src/limit.mjs
+index f1097f6..feaed19 100644
+--- a/src/limit.mjs
++++ b/src/limit.mjs
+@@ -1,4 +1,4 @@
+-export const DEFAULT_LIMIT = 10;
++export const DEFAULT_LIMIT = 5;
+ 
+ export function clampLimit(requested) {
+   return Math.min(requested, DEFAULT_LIMIT);
+diff --git a/test/limit.test.mjs b/test/limit.test.mjs
+index da191df..f318a04 100644
+--- a/test/limit.test.mjs
++++ b/test/limit.test.mjs
+@@ -3,6 +3,6 @@ import assert from "node:assert/strict";
+ import { DEFAULT_LIMIT, clampLimit } from "../src/limit.mjs";
+ 
+ test("a request above the default is clamped to it", () => {
+-  assert.equal(clampLimit(50), 10);
+-  assert.equal(DEFAULT_LIMIT, 10);
++  assert.equal(clampLimit(50), 5);
++  assert.equal(DEFAULT_LIMIT, 5);
+ });

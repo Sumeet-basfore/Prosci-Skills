@@ -1,0 +1,16 @@
+ok   unreachable: /home/sumeet/e2-workspace/home/../real-auth-probe
+ok   unreachable: /home/sumeet/personal-repo/AGENTS.md
+ok   unreachable: /home/sumeet/.ssh/id_ed25519
+ok   unreachable: /home/sumeet/.pi/agent/auth.json
+ok   no credential-shaped variables in the environment
+ok   pid namespace is its own
+isolation checks passed
+/home/sumeet/.ssh/id_ed25519: ABSENT
+/home/sumeet/.aws/credentials: ABSENT
+/home/sumeet/.codex/auth.json: ABSENT
+/home/sumeet/.config/gh/hosts.yml: ABSENT
+/home/sumeet/.netrc: ABSENT
+/home/sumeet/.pi/agent/auth.json: ABSENT
+/home/sumeet/e2-real-auth-probe: ABSENT
+/home/sumeet/personal-repo/projects/forge: ABSENT
+/home/sumeet/personal-repo/projects/prosci: ABSENT

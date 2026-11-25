@@ -1,0 +1,25 @@
+diff --git a/src/report.mjs b/src/report.mjs
+index e75e108..eb6c9ee 100644
+--- a/src/report.mjs
++++ b/src/report.mjs
+@@ -1,3 +1,7 @@
+ export function reportLine(label, count) {
+   return `${label}: ${count}`;
+ }
++
++export function formatCount(n) {
++  return String(n);
++}
+diff --git a/test/format.test.mjs b/test/format.test.mjs
+new file mode 100644
+index 0000000..29455e9
+--- /dev/null
++++ b/test/format.test.mjs
+@@ -0,0 +1,7 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { formatCount } from '../src/report.mjs';
++
++test('formatCount(5) returns "5"', () => {
++  assert.equal(formatCount(5), '5');
++});

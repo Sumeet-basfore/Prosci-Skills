@@ -1,0 +1,13 @@
+✔ the default limit survives into formatted output (3.65904ms)
+✔ formatCount(5) returns "5" (1.20119ms)
+✔ a request above the default is clamped to it (1.355171ms)
+✔ a report line carries its label and count (1.531013ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 331.615295
+u3 suite exit=0

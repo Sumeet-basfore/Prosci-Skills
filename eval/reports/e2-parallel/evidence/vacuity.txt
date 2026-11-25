@@ -1,0 +1,4 @@
+untouched combined=FAIL
+u1-only combined=FAIL
+u2-only combined=FAIL
+both combined=PASS
