@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const PROXY = join(dirname(fileURLToPath(import.meta.url)), "..", "proxy.mjs");
 
-const start = async (budget) => {
+const start = async (budget, extraEnv = {}) => {
   const dir = mkdtempSync(join(tmpdir(), "proxy-budget-"));
   const budgetFile = join(dir, "budget.json");
   const accessLog = join(dir, "access.jsonl");
@@ -19,7 +19,7 @@ const start = async (budget) => {
   writeFileSync(budgetFile, JSON.stringify({ limit: budget, used: 0 }));
   let stderr = "";
   const child = spawn(process.execPath, [PROXY], {
-    env: { ...process.env, PROXY_PORT: "0", PROXY_UPSTREAM: "http://127.0.0.1:1", PROXY_BUDGET_FILE: budgetFile, PROXY_ACCESS_LOG: accessLog, PI_CODING_AGENT_DIR: agentDir },
+    env: { ...process.env, PROXY_PORT: "0", PROXY_UPSTREAM: "http://127.0.0.1:1", PROXY_BUDGET_FILE: budgetFile, PROXY_ACCESS_LOG: accessLog, PI_CODING_AGENT_DIR: agentDir, ...extraEnv },
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stderr.on("data", (b) => { stderr += String(b); });
@@ -42,8 +42,8 @@ const warm = async (port) => {
   return false;
 };
 
-const ask = (port) => fetch(`http://127.0.0.1:${port}/inference/go/v1/messages`, {
-  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ model: "claude-haiku-5-5", messages: [] }),
+const ask = (port, { model = "claude-haiku-5-5", path = "/inference/go/v1/messages" } = {}) => fetch(`http://127.0.0.1:${port}${path}`, {
+  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ model, messages: [] }),
 }).then((r) => r.status).catch(() => "network");
 
 test("reserves before forwarding, so failed attempts still spend the budget", async () => {
@@ -77,6 +77,18 @@ test("a missing credential fails closed after reserving, not by resetting the co
     assert.ok(await warm(p.port), "proxy accepts requests");
     assert.equal(await ask(p.port), 503);
     // The reservation is taken before the credential check, so a misconfiguration cannot be retried for free.
+    assert.equal(JSON.parse(readFileSync(p.budgetFile, "utf8")).used, 1);
+  } finally { p.child.kill("SIGKILL"); rmSync(p.dir, { recursive: true, force: true }); }
+});
+
+test("refuses a model outside the series allowlist and spends nothing on it", async () => {
+  const p = await start(2, { PROXY_MODELS: "claude-haiku-5-5,kimi-k3.1-pro" });
+  try {
+    assert.ok(await warm(p.port), "proxy accepts requests");
+    assert.equal(await ask(p.port, { model: "claude-sonnet-4-5" }), 403);
+    assert.equal(JSON.parse(readFileSync(p.budgetFile, "utf8")).used, 0);
+    // An allowed model on the allowlist still reserves, on either compatible path.
+    assert.equal(await ask(p.port, { model: "kimi-k3.1-pro", path: "/inference/go/openai/v1/chat/completions" }), 502);
     assert.equal(JSON.parse(readFileSync(p.budgetFile, "utf8")).used, 1);
   } finally { p.child.kill("SIGKILL"); rmSync(p.dir, { recursive: true, force: true }); }
 });
