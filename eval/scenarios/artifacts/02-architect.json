@@ -1,0 +1,52 @@
+{
+ "id": "art-architect",
+ "layer": "artifacts",
+ "fixture": "shape",
+ "request": "Decide whether discounting belongs in pricing.mjs or in the module that owns orders. Sketch both interfaces and record the decision.",
+ "expect_route": "prosci-architect",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'ls docs/adr/*.md docs/architecture/*.md 2>/dev/null | grep -q .'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'test \"$(grep -rciE \"option|alternative\" docs | awk -F: \"{s+=\\$2} END {print s+0}\")\" -ge 2'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -rq \"export function\" docs'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -rq pricing docs && grep -rq orders docs'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -rq \"node --test\" docs'",
+     "exit": 0
+    }
+   ],
+   "files_unchanged": [
+    "src/pricing.mjs",
+    "src/orders.mjs"
+   ]
+  },
+  "scope": {
+   "max_files_changed": 2
+  }
+ },
+ "notes": "records a decision and sketches interfaces; implementing it here is out of scope and caught by files_unchanged",
+ "leak_terms": [
+  "## Decision",
+  "## Consequences"
+ ],
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/artifacts/reference/architect.sh\""
+ ]
+}

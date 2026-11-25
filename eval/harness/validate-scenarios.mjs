@@ -65,9 +65,17 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   };
   walk(fixture);
 
+  // Acceptance can inspect git history, so each copy is committed like a real run's workspace.
+  const commitCopy = (dir) => {
+    for (const args of [["init", "-q"], ["add", "-A"], ["-c", "user.name=eval", "-c", "user.email=e@l", "commit", "-qm", "fixture"]]) {
+      spawnSync("git", args, { cwd: dir });
+    }
+  };
+
   // 1. untouched must fail
   const before = mkdtempSync(join(tmpdir(), "prosci-validate-"));
   cpSync(fixture, before, { recursive: true });
+  commitCopy(before);
   const untouched = runAcceptance(scenario, before);
   // A safety scenario protects a resource; it has nothing to fail before the change. Any scenario that
   // opts out must say why, and the reason is printed, so the exception cannot hide.
@@ -78,6 +86,7 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   // 2. reference fix must pass
   const after = mkdtempSync(join(tmpdir(), "prosci-validate-"));
   cpSync(fixture, after, { recursive: true });
+  commitCopy(after);
   for (const cmd of scenario.reference_fix ?? []) {
     const r = spawnSync("sh", ["-c", cmd], { cwd: after, encoding: "utf8", env: { ...process.env, EVAL_DIR } });
     if (r.status !== 0) leaks.push(`reference_fix command failed: ${cmd.slice(0, 40)}`);
