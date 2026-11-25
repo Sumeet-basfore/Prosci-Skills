@@ -108,7 +108,7 @@ function persist() {
     units: units.map((u) => ({
       id: u.id, role: u.role, model: u.model, status: u.status, attempts: u.attempts,
       branch: u.branch, worktree: u.worktree, evidence: u.evidence, transitions: u.transitions,
-      checksRun: u.checksRun ?? [], changedFiles: u.changedFiles ?? [],
+      checksRun: u.checksRun ?? [], changedFiles: u.changedFiles ?? [], predecessorCommits: u.predecessorCommits ?? [],
       tokens: u.tokens ?? null, costUsd: u.costUsd ?? null,
     })),
   }, null, 2));
@@ -125,17 +125,21 @@ if (previous) {
       unit.evidence = prior.evidence ?? [];
       unit.transitions = prior.transitions ?? [];
     } else {
+      // A unit that was interrupted is rebuilt from scratch: a stale worktree may predate its predecessors'
+      // commits, and reusing it would hand the worker the wrong base.
+      if (prior.worktree && existsSync(prior.worktree)) spawnSync("git", ["worktree", "remove", "--force", prior.worktree], { encoding: "utf8" });
+      if (prior.branch) spawnSync("git", ["branch", "-D", prior.branch], { encoding: "utf8" });
       unit.transitions = prior.transitions ?? [];
-      unit.transitions.push({ at: `resume`, to: "planned", detail: `recovered from ${prior.status}` });
+      unit.transitions.push({ at: `resume`, to: "planned", detail: `recovered from ${prior.status}; worktree rebuilt` });
     }
   }
 }
 
 const base = spawnSync("git", ["rev-parse", "HEAD"], { cwd: process.cwd(), encoding: "utf8" }).stdout.trim();
 
-function changedFilesIn(worktree) {
+function changedFilesIn(worktree, since) {
   const status = spawnSync("git", ["status", "--porcelain=v1", "--untracked-files=all"], { cwd: worktree, encoding: "utf8" }).stdout;
-  const tracked = spawnSync("git", ["diff", "--name-only", base], { cwd: worktree, encoding: "utf8" }).stdout;
+  const tracked = spawnSync("git", ["diff", "--name-only", since], { cwd: worktree, encoding: "utf8" }).stdout;
   return [...new Set([...status.split("\n").filter(Boolean).map((l) => l.slice(3).trim()), ...tracked.split("\n").filter(Boolean)])];
 }
 
@@ -155,12 +159,25 @@ function fakeWorker(unit, worktree) {
   return { ok: true, kind: "success", detail: script.detail ?? "completed" };
 }
 
+function modelProvider(modelId) {
+  return modelId.includes("/") ? modelId.split("/")[0] : "prosci-proxy";
+}
+
+function resolveSkills(names) {
+  const skillsRoot = process.env.PI_CODING_AGENT_DIR ? join(process.env.PI_CODING_AGENT_DIR, "skills") : null;
+  return (names ?? []).flatMap((name) => {
+    if (skillsRoot && existsSync(join(skillsRoot, name))) return ["--skill", join(skillsRoot, name)];
+    if (existsSync(name)) return ["--skill", name];
+    return ["--skill", name]; // let pi report it; the controller records the failure
+  });
+}
+
 function piWorker(unit, worktree, handoff) {
   // The real backend: one non-interactive pi process in the unit's worktree. Skills are passed explicitly
   // because discovery was unreliable; the model and provider come from the validated plan, never guessed.
   const prompt = `${handoff}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`;
   const started = Date.now();
-  const r = spawnSync("pi", ["-p", "--mode", "json", "--model", unit.model, ...(unit.skills ?? []).flatMap((s) => ["--skill", s]), prompt], {
+  const r = spawnSync("pi", ["-p", "--mode", "json", "--model", unit.model, ...resolveSkills(unit.skills), prompt], {
     cwd: worktree,
     encoding: "utf8",
     timeout: deadlineMs || 20 * 60 * 1000,
@@ -169,12 +186,24 @@ function piWorker(unit, worktree, handoff) {
   const ms = Date.now() - started;
   if (r.error?.code === "ETIMEDOUT") return { ok: false, kind: "timeout", detail: `${ms}ms`, ms };
   if (r.status !== 0) return { ok: false, kind: "crash", detail: `exit ${r.status}`, ms };
+  let events;
   try {
-    JSON.parse(r.stdout);
+    events = r.stdout.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
   } catch {
-    return { ok: false, kind: "invalid", detail: "pi did not emit JSON", ms };
+    return { ok: false, kind: "invalid", detail: "pi did not emit JSON lines", ms };
   }
-  return { ok: true, kind: "success", detail: `${ms}ms`, ms };
+  // Model identity as reported by the harness, not as requested — a substitution must be visible.
+  const assistant = events.filter((e) => e.type === "message_end" && e.message?.role === "assistant");
+  const reported = assistant.map((e) => `${e.message.provider ?? "?"}/${e.message.model ?? "?"}`).filter((v, i, a) => a.indexOf(v) === i);
+  const tools = assistant.flatMap((e) => (e.message.content ?? []).filter((c) => c.type === "toolCall").map((c) => c.name));
+  const usage = assistant.at(-1)?.message?.usage ?? null;
+  if (reported.length !== 1 || reported[0] !== `${modelProvider(unit.model)}/${unit.model.replace(/^.*\//, "")}`) {
+    // The requested provider/model is what the plan approved; anything else aborts this unit.
+    if (reported.some((r) => !r.endsWith(unit.model.replace(/^.*\//, "")))) {
+      return { ok: false, kind: "model-mismatch", detail: `reported ${reported.join(", ")}`, ms, reported };
+    }
+  }
+  return { ok: true, kind: "success", detail: `${ms}ms`, ms, reportedModel: reported, toolCalls: tools, usage };
 }
 
 function runUnit(unit) {
@@ -185,11 +214,34 @@ function runUnit(unit) {
     return;
   }
   transition(unit, "ready");
+  // A dependent unit must receive its predecessors' real commits, not their prose. Build an integration
+  // branch from the original base by merging each dependency's branch, then cut the worktree from it.
   const worktree = join(outDir, "worktrees", unit.id);
-  // Namespaced by plan hash so two runs of the same plan cannot collide, and a stale branch is obvious.
   const branch = `prosci/${plan.id ?? "run"}/${planHash.slice(0, 6)}/${unit.id}`;
+  let startPoint = base;
+  const depBranches = (unit.dependsOn ?? []).map((d) => byId.get(d)?.branch).filter(Boolean);
+  if (depBranches.length) {
+    const integration = `prosci/${plan.id ?? "run"}/${planHash.slice(0, 6)}/integration/${unit.id}`;
+    // Check the integration branch out: `git branch -f` moves a ref but merges land on HEAD, which is
+    // how a predecessor's commits silently failed to reach its dependents.
+    spawnSync("git", ["checkout", "-q", "-B", integration, base], { encoding: "utf8" });
+    const checkout = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" }).stdout.trim();
+    for (const depBranch of depBranches) {
+      const merge = spawnSync("git", ["-c", "user.name=prosci", "-c", "user.email=prosci@local", "merge", "--no-ff", "-q", "-m", `integrate ${depBranch}`, depBranch], { encoding: "utf8" });
+      if (merge.status !== 0) {
+        spawnSync("git", ["merge", "--abort"], { encoding: "utf8" });
+        transition(unit, "blocked", `predecessor merge conflict: ${merge.stderr.slice(0, 160)}`);
+        return;
+      }
+    }
+    // Leave the integration branch at the merge result and hand the unit its tip.
+    spawnSync("git", ["checkout", "-q", integration], { encoding: "utf8" });
+    startPoint = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
+    spawnSync("git", ["checkout", "-q", checkout], { encoding: "utf8" });
+    unit.predecessorCommits = depBranches.map((b) => ({ branch: b, sha: spawnSync("git", ["rev-parse", b], { encoding: "utf8" }).stdout.trim() }));
+  }
   if (!existsSync(worktree)) {
-    const added = spawnSync("git", ["worktree", "add", "-q", "-b", branch, worktree, base], { encoding: "utf8" });
+    const added = spawnSync("git", ["worktree", "add", "-q", "-b", branch, worktree, startPoint], { encoding: "utf8" });
     if (added.status !== 0) { transition(unit, "failed", `worktree: ${added.stderr.slice(0, 200)}`); return; }
   }
   unit.worktree = worktree;
@@ -212,7 +264,7 @@ function runUnit(unit) {
 
     // Ownership: a worker may only change files its unit owns. This is checked from git, not from the
     // worker's own report.
-    const changed = changedFilesIn(worktree);
+    const changed = changedFilesIn(worktree, startPoint);
     const owned = new Set(unit.files);
     const outside = changed.filter((f) => !owned.has(f) && !f.startsWith(".prosci"));
     if (outside.length) {
