@@ -111,6 +111,20 @@ The coding harness and model provider you use see the conversation and the files
 flow, not this project's. The one outbound path in this repo is `eval/harness/proxy.mjs`, used only by
 evaluation runs to keep the provider key outside the sandbox; no skill calls it.
 
+## Project survey
+
+`bin/prosci-survey <repo>` reports what a repo is — stacks, commands with their source, tests, CI, harnesses,
+model providers — as JSON. Read-only, deterministic, and it never opens a credential store. `prosci-init`
+consumes it, recommends a configuration, and writes nothing until you approve.
+
+```sh
+bin/prosci-survey .            # facts only
+bin/prosci-survey . --verify   # also runs the detected test command
+```
+
+Same repo in, same JSON out; every field carries a `source`, and what it could not determine is `null` with
+a reason.
+
 ## Skill packages
 
 Each skill is a folder: `SKILL.md` holds the procedure, decision rules and mandatory requirements;

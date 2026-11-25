@@ -5,12 +5,12 @@
     {
       "name": "prosci",
       "declared": "prosci",
-      "sha256": "7ae30ddf35532a089fb448d2d6fa80c5177c92d13e5238a4c455133c8cb26de6",
-      "bytes": 6496,
+      "sha256": "a8c25602a9147be1504447b0656c0cc9b91e6666ca7a51e84a9f329112a22002",
+      "bytes": 6516,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "7ae30ddf35532a089fb448d2d6fa80c5177c92d13e5238a4c455133c8cb26de6"
+          "sha256": "a8c25602a9147be1504447b0656c0cc9b91e6666ca7a51e84a9f329112a22002"
         }
       ]
     },
@@ -125,12 +125,16 @@
     {
       "name": "prosci-init",
       "declared": "prosci-init",
-      "sha256": "6bd76b2768cc8f55077b13c50224530303f5d755761a3045b11b56db7df5a646",
-      "bytes": 3477,
+      "sha256": "0a5b3fa16baa993a2839dbef439a18a52c476c923d0bee262a3fb736d4db2d03",
+      "bytes": 6488,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "6bd76b2768cc8f55077b13c50224530303f5d755761a3045b11b56db7df5a646"
+          "sha256": "0a5b3fa16baa993a2839dbef439a18a52c476c923d0bee262a3fb736d4db2d03"
+        },
+        {
+          "path": "skill.json",
+          "sha256": "1b07d3e55e5472a81f89eab7f11ace5528c75ad4101f1cce6f926376aa56db7c"
         }
       ]
     },

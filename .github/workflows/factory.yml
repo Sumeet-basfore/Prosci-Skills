@@ -47,6 +47,7 @@ jobs:
           node eval/harness/validate-scenarios.mjs --layer phase5
           node eval/harness/audit-network.mjs
           node eval/harness/skill-lint.mjs
+          node eval/harness/validate-scenarios.mjs --layer init
           # A directory argument is not supported before Node 24, so name the files.
           node --test eval/harness/test/*.test.mjs
       - name: Keep the receipt

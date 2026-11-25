@@ -54,7 +54,7 @@ that land, not from large changes that stall.
 | change documentation only | `../prosci-docs/SKILL.md` | search for the claim, do not browse |
 | a behaviour change that also alters a command, a flag, or a default | `../prosci-ship/SKILL.md` first, then `../prosci-docs/SKILL.md` | finish the behaviour route, then search for the claims it invalidated |
 | ship a version, package, tag, or published artifact | `../prosci-release/SKILL.md` | preflight, then prove the artifact |
-| start a repo, or adopt one with no usable conventions | `../prosci-init/SKILL.md` | inspect before you create |
+| start a repo, or adopt one with no usable conventions | `../prosci-init/SKILL.md` | survey the repo first, approve before writing |
 | the scope is unclear, or the work is large | `../prosci-plan/SKILL.md` | settle the scope in step 1 before ordering work |
 
 Every route ends at `../prosci-bar/SKILL.md`. Read the bar once per session. Read the route

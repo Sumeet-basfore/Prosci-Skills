@@ -71,7 +71,10 @@
       "adopt",
       "empty repository",
       "no test command",
-      "onboard"
+      "onboard",
+      "no instructions",
+      "set up this repo",
+      "what the survey found"
     ],
     "prosci-understand": [
       "understand the repo",
