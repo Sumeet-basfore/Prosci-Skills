@@ -26,7 +26,9 @@ const BUDGET_FILE = process.env.PROXY_BUDGET_FILE ?? null;
 const ACCESS_LOG = process.env.PROXY_ACCESS_LOG ?? null;
 let reserved = 0;
 const MAX_BODY = 2 * 1024 * 1024;
-const MODELS = new Set(["claude-haiku-5-5"]);
+// A series may only ask for the models its plan names. Adding a model is a deliberate change to the
+// allowlist, not a side effect of a plan file.
+const MODELS = new Set(String(process.env.PROXY_MODELS ?? "claude-haiku-5-5").split(",").map((m) => m.trim()).filter(Boolean));
 let requests = 0;
 
 function realKey() {

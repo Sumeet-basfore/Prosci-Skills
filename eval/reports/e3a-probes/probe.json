@@ -1,0 +1,206 @@
+{
+  "startedAt": 1795632762711,
+  "finishedAt": 1795632780151,
+  "requestCap": 20,
+  "costCap": 0.02,
+  "budget": {
+    "schema": 1,
+    "limit": 20,
+    "used": 8
+  },
+  "allowlistDenied": true,
+  "isolation": {
+    "verifyOk": true,
+    "verify": [
+      "ok   unreachable: /home/sumeet/personal-repo/projects/prosci/eval/runs/e3a-probes/ws/home/../real-auth-probe",
+      "ok   unreachable: /home/sumeet/personal-repo/AGENTS.md",
+      "ok   unreachable: /home/sumeet/.ssh/id_ed25519",
+      "ok   unreachable: /home/sumeet/.pi/agent/auth.json",
+      "ok   no credential-shaped variables in the environment",
+      "ok   pid namespace is its own",
+      "isolation checks passed"
+    ],
+    "probes": [
+      {
+        "path": "/home/sumeet/.ssh/id_ed25519",
+        "state": "ABSENT"
+      },
+      {
+        "path": "/home/sumeet/.aws/credentials",
+        "state": "ABSENT"
+      },
+      {
+        "path": "/home/sumeet/.codex/auth.json",
+        "state": "ABSENT"
+      },
+      {
+        "path": "/home/sumeet/.config/gh/hosts.yml",
+        "state": "ABSENT"
+      },
+      {
+        "path": "/home/sumeet/.netrc",
+        "state": "ABSENT"
+      },
+      {
+        "path": "/home/sumeet/.pi/agent/auth.json",
+        "state": "ABSENT"
+      },
+      {
+        "path": "/home/sumeet/personal-repo/projects/prosci",
+        "state": "PRESENT"
+      },
+      {
+        "path": "/home/sumeet/personal-repo/projects/forge",
+        "state": "ABSENT"
+      }
+    ],
+    "positive": "ok"
+  },
+  "runs": [
+    {
+      "model": "prosci-proxy-anthropic/claude-haiku-5-5",
+      "reported": [
+        "prosci-proxy-anthropic/claude-haiku-5-5"
+      ],
+      "toolCalls": [
+        "read"
+      ],
+      "text": "amber",
+      "usage": {
+        "input": 2,
+        "output": 4,
+        "cacheRead": 2196,
+        "cacheWrite": 61,
+        "totalTokens": 2263,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "cost": 0.0000022,
+      "checks": {
+        "exitZero": true,
+        "identity": true,
+        "toolCalled": true,
+        "answer": true,
+        "usageReported": true
+      },
+      "ok": true
+    },
+    {
+      "model": "prosci-proxy-anthropic/claude-haiku-5-5",
+      "reported": [
+        "prosci-proxy-anthropic/claude-haiku-5-5"
+      ],
+      "toolCalls": [
+        "read"
+      ],
+      "text": "amber",
+      "usage": {
+        "input": 2,
+        "output": 4,
+        "cacheRead": 2257,
+        "cacheWrite": 0,
+        "totalTokens": 2263,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "cost": 0.0000022,
+      "checks": {
+        "exitZero": true,
+        "identity": true,
+        "toolCalled": true,
+        "answer": true,
+        "usageReported": true
+      },
+      "ok": true
+    },
+    {
+      "model": "prosci-proxy-anthropic/minimax-m3",
+      "reported": [
+        "prosci-proxy-anthropic/minimax-m3"
+      ],
+      "toolCalls": [
+        "read"
+      ],
+      "text": "amber",
+      "usage": {
+        "input": 127,
+        "output": 2,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "totalTokens": 1665,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0
+      },
+      "cost": 0.0000405,
+      "checks": {
+        "exitZero": true,
+        "identity": true,
+        "toolCalled": true,
+        "answer": true,
+        "usageReported": true
+      },
+      "ok": true
+    },
+    {
+      "model": "prosci-proxy-anthropic/minimax-m3",
+      "reported": [
+        "prosci-proxy-anthropic/minimax-m3"
+      ],
+      "toolCalls": [
+        "read"
+      ],
+      "text": "amber",
+      "usage": {
+        "input": 127,
+        "output": 2,
+        "cacheRead": 1536,
+        "cacheWrite": 0,
+        "totalTokens": 1665,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0
+      },
+      "cost": 0.0000405,
+      "checks": {
+        "exitZero": true,
+        "identity": true,
+        "toolCalled": true,
+        "answer": true,
+        "usageReported": true
+      },
+      "ok": true
+    }
+  ],
+  "totalCostEstimateUsd": 0.000085,
+  "costWithinCap": true,
+  "passed": false
+}

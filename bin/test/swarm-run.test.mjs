@@ -291,6 +291,60 @@ test("independent units actually overlap when concurrency allows it", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("records wall-clock and monotonic times without replacing sequence windows", () => {
+  const { dir, repo } = workspace();
+  const units = Array.from({ length: 2 }, (_, i) => unit({
+    id: `t${i}`, files: [`out/t${i}.txt`], checks: [`test -f out/t${i}.txt`],
+    fake: { outcome: "success", delayMs: 250, files: { [`out/t${i}.txt`]: "x\n" } },
+  }));
+  const out = join(dir, "out");
+  const r = run(writePlan(dir, { units }), { repo, out, extra: ["--concurrency", "2"] });
+  assert.equal(r.status, 0, r.stderr);
+
+  for (const u of r.ledger.units) {
+    assert.equal(typeof u.startedAt, "number");            // sequence stays
+    assert.ok(Number.isInteger(u.finishedAt));
+    assert.ok(u.startedAtEpoch > 0 && u.finishedAtEpoch >= u.startedAtEpoch);
+    assert.ok(u.startedAtMono > 0 && u.finishedAtMono >= u.startedAtMono);
+    for (const [i, t] of u.transitions.entries()) {
+      assert.ok(t.wall > 0 && t.mono > 0);
+      assert.ok(t.wall >= u.transitions[0].wall);
+      if (i) assert.ok(t.mono >= u.transitions[i - 1].mono, "monotonic clock went backwards");
+    }
+    // The `running` transition carries the same clock reading the unit record does.
+    const running = u.transitions.find((t) => t.to === "running");
+    assert.equal(running.wall, u.startedAtEpoch);
+    assert.equal(running.mono, u.startedAtMono);
+    const [ev] = u.evidence;
+    assert.ok(ev.finishedAtEpoch >= ev.startedAtEpoch);
+    assert.ok(ev.finishedAtMono >= ev.startedAtMono);
+    assert.ok(ev.ms >= 200, `monotonic duration too small: ${ev.ms}`);
+    assert.ok(ev.wallMs >= 200, `wall duration too small: ${ev.wallMs}`);
+    assert.equal(ev.finishedAtMono - ev.startedAtMono, ev.ms);
+    assert.equal(ev.finishedAtEpoch - ev.startedAtEpoch, ev.wallMs);
+  }
+
+  // The same overlap the sequence windows show also holds on the clocks, which is what E2 lacked.
+  const [a, b] = r.ledger.units;
+  assert.ok(a.startedAtEpoch <= b.finishedAtEpoch && b.startedAtEpoch <= a.finishedAtEpoch, "wall windows do not overlap");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("times every attempt, not only the last one", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [
+    unit({ budget: { tokens: 1000, estimatedCostUsd: 0.001, retries: 1 }, fake: { outcome: "fail", detail: "flaky" } }),
+  ] });
+  const out = join(dir, "out");
+  const r = run(plan, { repo, out });
+  assert.equal(r.status, 1);
+  const evidence = r.byId.get("u1").evidence;
+  assert.equal(evidence.length, 2);
+  assert.ok(evidence[0].startedAtMono < evidence[1].startedAtMono, "attempts share a start time");
+  for (const ev of evidence) assert.ok(ev.finishedAtEpoch > 0 && ev.finishedAtMono > 0);
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("dependent units never start before a predecessor succeeds", () => {
   const { dir, repo } = workspace();
   const plan = writePlan(dir, { units: [

@@ -24,7 +24,16 @@
       "tools": null,
       "taskCategories": [],
       "pricing": { "source": "unknown" },
-      "evidence": { "status": "unknown", "where": null, "caveat": "listed because the provider may serve it; nothing verified" }
+      "evidence": { "status": "unknown", "where": "eval/reports/e3a-probes/probe.json", "caveat": "not offered by opencode-go: the Pi catalogue lists it only under the opencode and anthropic providers, and no credential for those exists here. Unexamined for quality; do not assign." }
+    },
+    {
+      "id": "minimax-m3",
+      "provider": "opencode-go",
+      "contextLimit": 1000000,
+      "tools": true,
+      "taskCategories": [],
+      "pricing": { "source": "provider catalogue (Pi dist, opencode-go), not an invoice", "inputPerMTok": 0.3, "outputPerMTok": 1.2, "cacheReadPerMTok": 0.06, "cacheWritePerMTok": 0 },
+      "evidence": { "status": "measured", "where": "eval/reports/e3a-probes/probe.json", "caveat": "availability, requested identity, one read tool call and usage reporting, over two probes in an isolated sandbox. No evidence of architecture or review quality, and no capability ranking." }
     }
   ],
   "policy": {
