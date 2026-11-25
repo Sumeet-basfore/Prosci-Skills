@@ -21,6 +21,7 @@
 //   node eval/harness/behaviour.mjs --layer activation --condition router --repeats 3
 
 import { mkdtempSync, mkdirSync, cpSync, writeFileSync, readFileSync, existsSync, rmSync, copyFileSync, renameSync, readdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -205,8 +206,8 @@ function prepare(scenario, config) {
   // Skills live inside the scoped agent directory and are named explicitly on the command line.
   // Relying on discovery made a scoped run see zero skills while nine were on disk.
   const target = join(home, ".pi", "agent", "skills");
-  if (config === "current" || config === "frozen9") {
-    const installer = config === "frozen9" ? INSTALL_FROZEN : INSTALL;
+  if (config === "current" || config === "frozen9" || config === "baseline") {
+    const installer = config === "frozen9" || config === "baseline" ? INSTALL_FROZEN : INSTALL;
     const r = spawnSync(process.execPath, [installer, "--target", target, "--copy"], {
       encoding: "utf8",
       env: { ...process.env, HOME: home },
@@ -220,7 +221,7 @@ function prepare(scenario, config) {
       .map((name) => `${name}:${sha256(readFileSync(join(target, name, "SKILL.md"), "utf8"))}`);
     installedFingerprint = sha256(entries.join("\n")).slice(0, 12);
   }
-  return { base, home, workspace, extensions, skillsDir: config === "current" || config === "frozen9" ? target : null, installedFingerprint, baseSha };
+  return { base, home, workspace, extensions, skillsDir: config === "current" || config === "frozen9" || config === "baseline" ? target : null, installedFingerprint, baseSha };
 }
 
 function promptFor(request) {
@@ -382,6 +383,7 @@ for (const scenario of scenarios) {
       const leafReads = reads.filter((r) => r !== "prosci");
       const routeSelected = leafReads[0] ?? null;
       const downstreamLoad = leafReads.length > 0;
+      const referencesRead = reads.filter((r) => r.includes("references/"));
       // A negative scenario can forbid every skill, or name the heavy routes that must not fire. A
       // comment typo may legitimately use the docs route; it must not summon plan or architect.
       const forbidden = scenario.forbid_routes ?? null;
@@ -471,6 +473,16 @@ for (const scenario of scenarios) {
         detail: config === "current" ? `expected ${scenario.expect_route}, read ${reads.join(" > ") || "none"}` : "n/a for vanilla",
       };
 
+      if (flag("--keep-artifacts")) {
+        const dest = join(runsDir, "artifacts", `${scenario.id}-${config}-${rep}`);
+        mkdirSync(dest, { recursive: true });
+        for (const file of changed) {
+          const from = join(workspace, file);
+          if (!existsSync(from)) continue;
+          mkdirSync(join(dest, dirname(file)), { recursive: true });
+          copyFileSync(from, join(dest, file));
+        }
+      }
       const record = {
         series, layer: LAYER, scenario: scenario.id, config, condition: CONDITION, n: rep,
         model: SANDBOX ? PROXY_MODEL : MODEL, thinking: THINKING, fixture: scenario.fixture, harness: "pi",

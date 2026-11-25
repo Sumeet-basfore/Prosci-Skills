@@ -102,3 +102,89 @@ and reply assertions. Decision it answers: does the depth produce a better artif
   checkable; rendered visual quality is not, and the skill says so rather than claiming it.
 - **Disk note:** `/tmp` is a full 7.7 GB tmpfs shared with other work on this machine. Harness runs were
   moved to `TMPDIR=$HOME/.tmp/prosci`; nothing belonging to another project was removed.
+
+---
+
+## 7. Comparative evaluation, 18 runs, $0.0242 of $0.05
+
+Pre-upgrade set (`c790e37`, 17 skills, single files) versus Phase A (`b731b62`). Same model
+(`claude-haiku-5-5`, low), same instruction (`--instruction direct`), same sandbox, same frozen scenarios.
+
+**Environment pre-checks:** `/home` had 96 GB free; `/tmp` is a full 7.7 GB tmpfs shared with other work, so
+all runs used `TMPDIR=$HOME/.tmp/prosci`. The scratch root is not inside `~/.pi`, `~/.ssh` or this repo, and
+the sandbox binds the workspace and run home explicitly, so isolation is unchanged. No directory belonging
+to another project was removed or modified.
+
+| metric | Phase A | pre-upgrade |
+| --- | --- | --- |
+| route selected correctly | 9/9 | 9/9 |
+| **references loaded** | **0 of 18 required reads** | n/a (no references) |
+| acceptance | 4/9 | 3/9 |
+| tokens per run (mean) | 15,565 | 13,933 |
+| spend | $0.0242 total | — |
+
+### The result that matters: reference loading was zero
+
+Across nine upgraded runs, the agent **never opened a reference file**. `requires_read` failed in every run
+of every scenario, and the run transcripts contain no read whose path includes `references/`.
+
+Cause, from the evidence rather than assumption:
+
+1. **The manifest is invisible to the model.** `skill.json` is never rendered into context. `load_when`
+   clauses are documentation for us, not instructions to the agent.
+2. **The only visible pointer is prose mid-procedure** ("read `references/interaction-states.md`"), with a
+   path relative to a skill directory the agent has no reason to resolve.
+3. **Nothing in the task asks for a reference.** The request says "define the states"; the pointer lives in
+   step 4 of eight.
+
+So this is **instruction placement plus indirection**, not trigger clarity in the manifest — the manifest was
+never in play. A fix belongs in the visible body (a first-step line naming absolute-resolvable paths, or a
+harness that injects them), not in more references.
+
+### Correct knowledge application
+
+Separate from loading, and judged by the artifacts (preserved under
+`eval/runs/phase-a-compare/blind-review/`, labels anonymised, mapping in `blind-review-mapping.json`):
+
+- **Design**: both arms wrote substantial requirements documents (158–251 lines, 9–17 sections, contrast and
+  the "unverified" disclosure present in all six). States coverage: the pre-upgrade arm named all four in 1 of
+  3 runs; Phase A named three in 3 of 3 — the missing one is `loading` every time. No run was told to read a
+  reference, and the new skill's extra structure (brief, critique, disclosure) appears anyway, so the design
+  gain came from the rewritten **body**, not the references.
+- **Ship**: both arms implemented `discounts()` and kept the suite green. A spec file appeared in all six;
+  non-goals and rollback appeared in **1 of 6**, from the Phase A arm (rep 3, 69-line spec). The reference
+  that would have enforced those two fields was never read, and that run happened to include them anyway.
+- **Verify**: 6/6 in both arms, exit codes and the empty-file failure reported. The scenario is too easy to
+  separate the versions; it measures the reply, and both replies were correct.
+
+### Unnecessary reference loading
+
+Zero, trivially: nothing was loaded. The metric is in place (`activation.referencesRead`) and will matter only
+after loading works at all.
+
+### Token and monetary cost
+
+Phase A costs **+11.7% tokens** per run (15,565 vs 13,933) with no measured acceptance gain (4/9 vs 3/9, a
+single-run difference inside noise at n=3). The extra tokens come from longer skill bodies, not from
+references, since none were read.
+
+### Verdict
+
+**Inconclusive on quality, negative on mechanism.** The package format and the design body are live and
+structurally validated, but the progressive-loading half of Phase A did not function in practice. Reporting it
+as a success would be false; the honest position is that the knowledge is present and inert until the
+loading instruction is fixed.
+
+**Proposed fix, not implemented:** move the pointer to the first action of the procedure, name the directory
+the paths resolve against, and add one paid check (3 runs) that the read happens before any other
+contribution. No additional references, no longer bodies, no new infrastructure.
+
+## 8. What is unverified
+
+- **Visual quality**: no renderer is available in this environment, so no screenshots exist and no blind
+  visual review could be prepared. The anonymised A/B documents are for **requirements-document** review:
+  structure, state coverage, copy, accessibility specificity. Visual quality remains unverified, as the skill
+  itself requires us to say.
+- Design acceptance failed in both arms partly on assertion shape (`## Brief` versus `## 1. Brief`), which is
+  the same class of defect recorded in Phase 3; it was frozen and is reported, not adjusted.
+- n=3 per scenario. Nothing here supports a quality claim in either direction.
