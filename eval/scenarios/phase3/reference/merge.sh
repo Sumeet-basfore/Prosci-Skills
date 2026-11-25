@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
-git merge --no-ff -q feature-a -m "merge feature-a"
-git merge --no-ff -q feature-b -m "merge feature-b"
+git -c user.name=eval -c user.email=e@l merge --no-ff -q feature-a -m "merge feature-a"
+git -c user.name=eval -c user.email=e@l merge --no-ff -q feature-b -m "merge feature-b"
 # Combined state: batches of eight exceed the lowered limit of five. Lower the batch to the limit.
 python3 - <<'PY'
 p = "src/batch.mjs"
