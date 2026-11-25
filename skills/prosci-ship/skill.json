@@ -1,10 +1,29 @@
 {
   "name": "prosci-ship",
-  "triggers": ["build a feature", "change behaviour", "add a flag", "implement"],
-  "non_triggers": ["fix a defect → prosci-fix", "restructure without behaviour change → prosci-refactor", "review a diff → prosci-review"],
+  "triggers": [
+    "build a feature",
+    "change behaviour",
+    "add a flag",
+    "implement"
+  ],
+  "non_triggers": [
+    "fix a defect \u2192 prosci-fix",
+    "restructure without behaviour change \u2192 prosci-refactor",
+    "review a diff \u2192 prosci-review"
+  ],
   "references": [
-    { "path": "references/spec.md", "load_when": "writing the spec or negotiating scope before code" },
-    { "path": "references/tests.md", "load_when": "choosing what to test, or a test resists failing" },
-    { "path": "references/production.md", "load_when": "before the pull request: migrations, rollback, observability, deploy order" }
-  ]
+    {
+      "path": "references/spec.md",
+      "load_when": "writing the spec or negotiating scope before code"
+    },
+    {
+      "path": "references/tests.md",
+      "load_when": "choosing what to test, or a test resists failing"
+    },
+    {
+      "path": "references/production.md",
+      "load_when": "before the pull request: migrations, rollback, observability, deploy order"
+    }
+  ],
+  "note": "references are optional depth; essential rules are in SKILL.md and must not depend on a read"
 }

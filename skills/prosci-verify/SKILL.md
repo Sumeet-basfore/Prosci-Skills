@@ -9,6 +9,35 @@ The failure this route prevents: "it works" as a claim built from a passing unit
 crashes on an empty input and nobody ran it. Verify produces evidence by running the thing, and reports
 the difference between what was promised and what happened.
 
+## Read before you start
+
+Surface procedures are files next to this skill. Before running anything, open the one for your surface,
+resolving the path against **this skill's directory** (the folder containing this `SKILL.md`), not the repo
+under test.
+
+| surface | read |
+| --- | --- |
+| command line | `references/cli.md` |
+| HTTP API | `references/http.md` |
+| browser / rendered page | `references/browser.md` |
+
+If none matches, say so and stop rather than improvising a check that cannot run.
+
+## Essential knowledge (do not depend on a reference)
+
+**Capture per check:** command, stdout, stderr, exit code, and any file the command changed. `$?` after a
+pipe is the pipeline's status, not the command's.
+
+**CLI:** happy path, empty input, missing input, bad flag, no argument. Exit codes are the contract.
+
+**HTTP:** status code, body shape against the documented schema, cross-tenant access, idempotency of a
+repeated write, error bodies without stack traces or secrets.
+
+**Browser (only if a renderer exists):** flow completes, states render, keyboard path, focus visible,
+320px reflow, no console errors. No renderer means report that, never narrate a page you did not load.
+
+**Always:** write the check before running it; try at least one failure path; list what was not tested.
+
 ## When this runs
 
 - A behaviour claim needs proof on the real surface, not in a mock.

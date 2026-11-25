@@ -61,6 +61,10 @@ for (const name of names) {
     else {
       declared.add(rel);
       if (!body.includes(rel)) problems.push(`${name}: procedure never names ${rel}, so nothing will read it`);
+      // The pointer must appear early enough to act on: a reference mentioned in passing at the end is not
+      // a loading instruction. The first decision stage is the line budget that matters.
+      const early = body.split("\n").slice(0, 45).join("\n");
+      if (!early.includes(rel)) problems.push(`${name}: ${rel} is not named in the first 45 lines, so it is not loaded before the work starts`);
       const lines = readFileSync(resolved, "utf8").split("\n").length;
       if (lines > 250) warnings.push(`${name}: ${rel} is ${lines} lines; guideline is 250`);
     }
@@ -74,6 +78,12 @@ for (const name of names) {
   // Headings differ by skill (numbered steps, "Procedure", "The workflow"). What must exist is a body
   // that carries the rules, not one particular heading.
   if (!/^## /m.test(body) || body.length < 2000) problems.push(`${name}: SKILL.md body is too thin to carry rules`);
+}
+
+// Portable paths: a skill must not hard-code a machine-specific location.
+for (const name of names) {
+  const body = readFileSync(join(SKILLS_DIR, name, "SKILL.md"), "utf8");
+  if (/\/home\/[a-z]|\/Users\/[A-Za-z]|[A-Z]:\\/.test(body)) problems.push(`${name}: hard-coded absolute path in SKILL.md`);
 }
 
 // Path safety across every skill file.

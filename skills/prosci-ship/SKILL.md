@@ -8,6 +8,34 @@ description: "Build a feature or behaviour change the factory way: read the repo
 You own the change from intent to merge. These ten steps are the work. Skipping one is a decision
 to name out loud, not a shortcut to take quietly.
 
+## Read before you start
+
+Knowledge files sit next to this skill. Open the ones this change needs, resolving each path against **this
+skill's directory** (the folder containing this `SKILL.md`), not against the repo you are editing.
+
+| when | read |
+| --- | --- |
+| writing the spec or settling scope | `references/spec.md` |
+| choosing what to test | `references/tests.md` |
+| before the pull request: migrations, rollback, observability | `references/production.md` |
+
+The procedure below names them again at the step where they matter. If a file cannot be opened, say so and
+continue.
+
+## Essential knowledge (do not depend on a reference)
+
+**Spec, before code:** goal, non-goals, input → output shape, the one constraint, the command that proves it,
+the rollback. A spec missing non-goals or rollback is not reviewable.
+
+**Tests:** one behaviour per test, named as the behaviour; cover the failure path the change makes possible;
+see the test fail once before trusting it; no network, clock or unseeded randomness in unit tests.
+
+**Production, before the pull request:** migration forward-only and safe to re-run; state the deploy order
+and the rollback; log the new path without secrets; timeouts and idempotency for new dependencies; a feature
+flag for behaviour changes, with its removal condition.
+
+References hold the longer forms and checklists; the rules above hold regardless.
+
 ## 1. Read the repo before the request
 
 Read, in this order:
