@@ -1,0 +1,8 @@
+# E3b-2 acceptance anti-vacuity, 2026-11-25T19:41:12Z, fresh copy of repo
+untouched suite exit: 1
+untouched behaviour exit: 1
+implemented suite exit: 0
+real review exit: review cites src/stats.mjs:1 and is not a copy of the ADR
+0
+copied ADR as review exit: review is a copy of the architecture artifact
+1

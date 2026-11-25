@@ -1,0 +1,34 @@
+# E3b-2 fresh isolation, 2026-11-25T19:40:57Z, workspace=/home/sumeet/e3b-mixed-ws
+ok   unreachable: /home/sumeet/real-auth-probe
+ok   unreachable: /home/sumeet/personal-repo/AGENTS.md
+ok   unreachable: /home/sumeet/.ssh/id_ed25519
+ok   unreachable: /home/sumeet/.pi/agent/auth.json
+ok   no credential-shaped variables in the environment
+ok   pid namespace is its own
+isolation checks passed
+
+# readability probes
+/home/sumeet/.ssh/id_ed25519: absent
+/home/sumeet/.aws/credentials: absent
+/home/sumeet/.codex/auth.json: absent
+/home/sumeet/.config/gh/hosts.yml: absent
+/home/sumeet/.netrc: absent
+/home/sumeet/.pi/agent/auth.json: absent
+/home/sumeet/.pi/agent/models.json: absent
+/home/sumeet/personal-repo/AGENTS.md: absent
+/home/sumeet/personal-repo/projects/prosci/AGENTS.md: absent
+/home/sumeet/personal-repo/projects/prosci/eval/scenarios/e3b/plan-mixed.json: absent
+/home/sumeet/personal-repo/projects/forge: absent
+/home/sumeet/real-auth-probe: absent
+
+# arm inspection
+{"ok":false,"problems":["working tree is not clean: ?? README.md"],"head":"4a9002f13bbf5461ae362b6b2bf081a0d9c5e633","fingerprint":"7577214f67499f9b"}
+
+# deliberate contamination must be refused
+{"ok":false,"problems":["working tree is not clean: ?? README.md"],"head":"4a9002f13bbf5461ae362b6b2bf081a0d9c5e633","fingerprint":"7577214f67499f9b"}
+error: pathspec 'README.md' did not match any file(s) known to git
+
+# arm inspection (clean)
+{"ok":true,"problems":[],"head":"4a9002f13bbf5461ae362b6b2bf081a0d9c5e633","fingerprint":"7577214f67499f9b"}
+# deliberate contamination (tracked file modified) must be refused
+{"ok":false,"problems":["working tree is not clean: M src/stats.mjs","fixture fingerprint 7a9d884533a509ee, plan authorizes 7577214f67499f9b"],"head":"4a9002f13bbf5461ae362b6b2bf081a0d9c5e633","fingerprint":"7a9d884533a509ee"}

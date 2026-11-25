@@ -80,11 +80,44 @@ The invalid arm is preserved rather than deleted: `eval/reports/e3b/mixed/` (led
 
 Mechanically, yes: the mixed profile resolved to minimax-m3 for architect and reviewer and haiku-5-5 for implementer, and the CLI reported those identities. But only the economy arm executed under its own authorization on a clean base, so the experiment does not establish that the mixed profile executes correctly end-to-end. That question remains open and requires a fresh authorization.
 
-## Defects found (documented, not fixed in this change)
+## Defects found, then fixed
 
-- **D-005 — proxy lifecycle is manual and unverified.** Starting a second proxy on an occupied port fails silently into a log while the first keeps serving; the controller trusts its own budget file and cannot detect that its traffic went elsewhere. A port-ownership check at start (`EADDRINUSE` must abort the series) belongs at the harness boundary.
-- **D-006 — controller base and checkout leak across runs.** `base = HEAD` means a later run inherits an earlier run's integration branch, and the run leaves `HEAD` on an integration branch. Base should be recorded/validated against the fixture's initial commit and restored on exit.
-- **D-007 — access log has no model or path.** `proxy-access.jsonl` records `{at,status,reserved,budgetUsed}` only, so per-request model attribution relies on the CLI's self-report.
+- **D-005 — proxy lifecycle.** A second proxy on an occupied port failed into a log while the first kept serving, and the controller trusted its own budget file. Fixed: `proxy.mjs` exits 2 on bind failure; `proxyctl.mjs` refuses an occupied port, verifies `/__identity` before returning, records the real pid, and on stop kills the process group and waits until the process and port are gone. The harness asks `/__identity` and records it; the controller reads that file before claiming an authorization and refuses a proxy whose execution id or plan hash differs. (The run below used the equivalent in-controller check; it moved behind the harness file after `audit-network` correctly flagged `fetch` in shipped code.)
+- **D-006 — base and checkout leak.** `base = HEAD` inherited a previous run's integration branch. Fixed: plans bind `baseCommit` and `fixtureHash`; `inspectArm` rejects a different HEAD, a dirty tree, leftover run branches and a changed fixture fingerprint; the controller restores the base on exit. Paid runs require both fields.
+- **D-007 — request evidence.** Fixed: each access-log line carries `executionId`, `planHash`, `model`, `endpoint`, `reserved`, `status`, `budgetUsed` and `at`. Request headers, including the credential, are never logged.
+
+Regression coverage: `bin/test/exec-guard.test.mjs` (tree acceptance, HEAD/dirty/branch/fingerprint refusals, restore), `bin/test/swarm-run.test.mjs` (wrong base, dirty tree before authorization, foreign proxy), `eval/harness/test/proxy-lifecycle.test.mjs` (occupied port, two live proxies, separate budgets, identity mismatch, real stop, non-proxy listener).
+
+## E3b-2 — one fresh mixed execution after the corrections
+
+Authorization: user message m02232, one execution, 24 requests, 1 retry, concurrency 2, 20/10-minute deadlines, $0.02 advisory ceiling.
+
+Binding: fresh repo `4a9002f13bbf5461ae362b6b2bf081a0d9c5e633`, fixture fingerprint `7577214f67499f9b`, plan hash `2391b7dc75adc2db`, execution id `e3b-mixed-2`, proxy port 4322. Evidence: `eval/reports/e3b2/`.
+
+Pre-run checks (all model-free):
+- `sandbox.sh --verify` passes; every readability probe ABSENT (credentials, host Pi config, repo `AGENTS.md`, the plan file, `projects/forge`, the planted probe).
+- Clean arm inspection `{ok:true, head:4a9002f…, fingerprint:7577…}`. Adding one line to `src/stats.mjs` produced `ok:false` with both `working tree is not clean` and a changed fingerprint.
+- Fresh-copy anti-vacuity: untouched suite exit 1, behaviour exit 1; implemented exit 0; a real review accepted; a copied ADR rejected.
+
+Result: **2 succeeded, 1 failed; 24/24 requests reserved; 28 access-log lines (24 × 200, 4 × 429); base restored to `4a9002f`.**
+
+| Unit | Requested | Reported | Duration | Requests (successful) | Estimated $ |
+|---|---|---|---|---|---|
+| u1-architect | minimax-m3 | `prosci-proxy-anthropic/minimax-m3` | 54,339 ms | 9 | 0.009141 |
+| u2-implement | claude-haiku-5-5 | `prosci-proxy-anthropic/claude-haiku-5-5` | 13,980 ms | 8 | 0.002183 |
+| u3-review | minimax-m3 | `prosci-proxy-anthropic/minimax-m3` | 28,585 ms | 7, then 429s | 0.007087 |
+
+- Artifact propagation: u1 wrote `docs/adr/0001-median.md` (accepted; options A copy/sort and B caller-pre-sorts, decision, reversal cost). u2 started from u1's `5fde9362`, changed only `src/stats.mjs`; the integrated tree passes `node --test`. u3 started from `5fde9362` and `23a602c6`, read `prosci-review`, and produced no `docs/review.md` before the budget ran out.
+- u3 acceptance failed (`node tools/check-review.mjs docs/review.md docs/adr/0001-median.md`), the authorized retry consumed no request because the controller refused to spawn it at 24/24, and the unit is recorded `failed — request budget exhausted (24/24)`.
+- Skill loading: u1 read `prosci-architect`, u2 read no assigned skill, u3 read `prosci-review`. Its review still did not land before the cap, so reading the skill is not adherence.
+- Ownership: no violations. Processes: all process groups ended; proxy stopped with `{processAlive:false, portOpen:false}`; port 4322 refuses connections.
+- Cost: **$0.01841 estimated** from catalogue rates over every request's usage; provider-reported cost is 0, so this is not billing. It is under the advisory $0.02, but the binding limit was the 24-request cap.
+
+What this shows: the mixed profile's model assignments were applied exactly, and the arm executed on the authorized snapshot against its own proxy. It did not complete the plan. The reviewer needs more than the zero requests left after architect + implementer, so the request cap — not model capability — decided the outcome. No quality comparison with the economy arm is made.
+
+## Product limitation: assigned skills are not injected
+
+The controller passes `--skill <path>` to Pi, which registers the skill for discovery but does not put its body in the worker's instructions. Across all four E3b arms, only 3 of 9 unit runs opened their assigned `SKILL.md` (u1 mixed, u3 mixed, u3 economy). A worker can therefore satisfy acceptance while ignoring the procedure the plan assigned it. Proposed, not implemented: `prosci-swarm-run` should read each assigned skill and prepend its body (or a bounded excerpt) to the handoff prompt, so adherence does not depend on the model choosing to open a file it was already told about. This belongs in its own change with an eval that distinguishes injected vs discovered.
 
 ## Cost and limits
 
@@ -97,4 +130,6 @@ Mechanically, yes: the mixed profile resolved to minimax-m3 for architect and re
 - `eval/reports/e3b/isolation.txt`, `vacuity.txt`
 - `eval/reports/e3b/economy/{ledger.json,auth.json,request-budget.json,proxy-access.jsonl,proxy.log,artifacts/,raw/}`
 - `eval/reports/e3b/mixed/{ledger.json,auth.json,request-budget.json,proxy.log,artifacts/,raw/}`
+- `eval/reports/e3b2/{isolation.txt,vacuity.txt,mixed/…}` — corrected-arm evidence
+- `eval/harness/{proxyctl.mjs,proxy-identity.mjs}`, `bin/lib/exec-guard.mjs` + their tests
 - Code/config: `agents/budgets.json` (`mixed` profile), `bin/prosci-swarm-run` (per-unit wall+monotonic timestamps, raw output capture), `eval/harness/sandbox.sh` (probe path), `eval/harness/proxy.mjs` (`PROXY_MODELS` allowlist), `eval/fixtures/e3b-stats/`, `eval/scenarios/e3b/`.

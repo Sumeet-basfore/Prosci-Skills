@@ -12,7 +12,7 @@ const LOCK_STALE_MS = 5000;
 
 function withLock(path, fn) {
   const lock = `${path}.lock`;
-  const deadline = Date.now() + 2000;
+  const deadline = Date.now() + 10000; // contention from 20 workers can outlast a short retry loop
   while (true) {
     try {
       const fd = openSync(lock, "wx");

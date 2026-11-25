@@ -1,0 +1,417 @@
+{
+  "schema": 1,
+  "plan": "e3b-stats",
+  "planHash": "2391b7dc75adc2db",
+  "profile": "mixed",
+  "backend": "pi",
+  "approved": true,
+  "authorization": {
+    "maxExecutions": 1,
+    "executions": 1,
+    "maxRetriesPerUnit": 1,
+    "requestsUsed": 24,
+    "maxRequests": 24
+  },
+  "requests": {
+    "reserved": 24,
+    "limit": 24,
+    "logged": 28
+  },
+  "enforcement": {
+    "approval": "enforced by this controller (plan hash)",
+    "concurrency": "enforced by this controller",
+    "dependencies": "enforced by this controller",
+    "ownership": "checked from git after each unit",
+    "deadline": "enforced by killing the process tree",
+    "tokens": "reported, not enforced",
+    "estimatedCostUsd": "advisory"
+  },
+  "limits": {
+    "maxConcurrency": 2,
+    "deadlineMs": 1200000,
+    "profile": {
+      "maxAgents": 3,
+      "concurrency": 2,
+      "retries": 1,
+      "wallClockMinutes": 20,
+      "tokens": 150000,
+      "estimatedCostUsd": 0.02
+    }
+  },
+  "budget": {
+    "profile": "mixed",
+    "unitTokens": 90000,
+    "unitEstimatedCostUsd": 0.018,
+    "limits": {
+      "maxAgents": 3,
+      "concurrency": 2,
+      "retries": 1,
+      "wallClockMinutes": 20,
+      "tokens": 150000,
+      "estimatedCostUsd": 0.02
+    },
+    "enforcement": {
+      "tokens": "enforceable when the execution mechanism reports usage; the proxy caps requests, not tokens",
+      "requests": "enforceable by eval/harness/proxy.mjs for evaluation runs",
+      "estimatedCostUsd": "advisory: derived from a price table, not provider billing",
+      "reportedProviderCost": "advisory: available only when the provider reports it",
+      "maxAgents": "advisory: the harness decides how many processes start",
+      "concurrency": "advisory: same",
+      "wallClockMinutes": "enforceable by killing the process tree",
+      "retries": "enforceable by the caller's loop, not by a skill"
+    }
+  },
+  "units": [
+    {
+      "id": "u1-architect",
+      "role": "architect",
+      "model": "minimax-m3",
+      "status": "succeeded",
+      "attempts": 1,
+      "startedAt": 2,
+      "finishedAt": 3,
+      "startedAtEpoch": 1795635699166,
+      "finishedAtEpoch": 1795635753544,
+      "startedAtMono": 53519618,
+      "finishedAtMono": 53573995,
+      "branch": "prosci/e3b-stats/2391b7/u1-architect",
+      "worktree": "/home/sumeet/e3b-mixed-ws/out/mixed/worktrees/u1-architect",
+      "evidence": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "kind": "success",
+          "pgid": 18,
+          "ms": 54339,
+          "startedAtEpoch": 1795635699167,
+          "startedAtMono": 53519618,
+          "finishedAtEpoch": 1795635753505,
+          "finishedAtMono": 53573957,
+          "wallMs": 54338,
+          "groupKilled": false,
+          "detail": "54339ms",
+          "reportedModel": [
+            "prosci-proxy-anthropic/minimax-m3"
+          ],
+          "toolCalls": [
+            "read",
+            "bash",
+            "bash",
+            "bash",
+            "bash",
+            "bash",
+            "write",
+            "bash",
+            "bash",
+            "bash",
+            "edit",
+            "bash"
+          ],
+          "usage": {
+            "input": 181,
+            "output": 660,
+            "cacheRead": 10880,
+            "cacheWrite": 0,
+            "totalTokens": 11721,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0,
+              "totalFromProvider": false
+            },
+            "cacheWrite1h": 0
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "at": "step-1",
+          "seq": 1,
+          "to": "ready",
+          "detail": "",
+          "wall": 1795635699150,
+          "mono": 53519602
+        },
+        {
+          "at": "step-2",
+          "seq": 2,
+          "to": "running",
+          "detail": "attempt 1",
+          "wall": 1795635699166,
+          "mono": 53519618
+        },
+        {
+          "at": "step-3",
+          "seq": 3,
+          "to": "succeeded",
+          "detail": "checks passed (2)",
+          "wall": 1795635753544,
+          "mono": 53573995
+        }
+      ],
+      "planRetries": 1,
+      "retriesClamped": null,
+      "checksRun": [
+        {
+          "check": "test -f docs/adr/0001-median.md",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "check": "grep -qi '## Decision' docs/adr/0001-median.md",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "changedFiles": [
+        "docs/adr/0001-median.md"
+      ],
+      "predecessorCommits": [],
+      "tokens": null,
+      "costUsd": null
+    },
+    {
+      "id": "u2-implement",
+      "role": "implementer",
+      "model": "claude-haiku-5-5",
+      "status": "succeeded",
+      "attempts": 1,
+      "startedAt": 5,
+      "finishedAt": 6,
+      "startedAtEpoch": 1795635753592,
+      "finishedAtEpoch": 1795635767874,
+      "startedAtMono": 53574044,
+      "finishedAtMono": 53588326,
+      "branch": "prosci/e3b-stats/2391b7/u2-implement",
+      "worktree": "/home/sumeet/e3b-mixed-ws/out/mixed/worktrees/u2-implement",
+      "evidence": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "kind": "success",
+          "pgid": 116,
+          "ms": 13980,
+          "startedAtEpoch": 1795635753593,
+          "startedAtMono": 53574044,
+          "finishedAtEpoch": 1795635767573,
+          "finishedAtMono": 53588024,
+          "wallMs": 13980,
+          "groupKilled": false,
+          "detail": "13980ms",
+          "reportedModel": [
+            "prosci-proxy-anthropic/claude-haiku-5-5"
+          ],
+          "toolCalls": [
+            "bash",
+            "bash",
+            "bash",
+            "write",
+            "bash",
+            "bash",
+            "bash"
+          ],
+          "usage": {
+            "input": 2,
+            "output": 342,
+            "cacheRead": 7520,
+            "cacheWrite": 305,
+            "totalTokens": 8169,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0,
+              "totalFromProvider": false
+            },
+            "cacheWrite1h": 0,
+            "reasoning": 0
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "at": "step-1",
+          "seq": 4,
+          "to": "ready",
+          "detail": "",
+          "wall": 1795635753545,
+          "mono": 53573996
+        },
+        {
+          "at": "step-2",
+          "seq": 5,
+          "to": "running",
+          "detail": "attempt 1",
+          "wall": 1795635753592,
+          "mono": 53574044
+        },
+        {
+          "at": "step-3",
+          "seq": 6,
+          "to": "succeeded",
+          "detail": "checks passed (2)",
+          "wall": 1795635767874,
+          "mono": 53588326
+        }
+      ],
+      "planRetries": 1,
+      "retriesClamped": null,
+      "checksRun": [
+        {
+          "check": "node --test",
+          "ok": true,
+          "detail": "✔ odd count returns the middle value (1.720138ms)\n✔ even count returns the mean of the middle two (0.344141ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1"
+        },
+        {
+          "check": "node -e \"import('./src/stats.mjs').then(m => { const a = m.median([5,1,3]); const b = m.median([4,1,3,2]); if (a !== 3 || b !== 2.5) process.exit(1); })\"",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "changedFiles": [
+        "src/stats.mjs"
+      ],
+      "predecessorCommits": [
+        {
+          "branch": "prosci/e3b-stats/2391b7/u1-architect",
+          "sha": "5fde9362f0c07e6aa273a9e3edc7c7802c7485f9"
+        }
+      ],
+      "tokens": null,
+      "costUsd": null
+    },
+    {
+      "id": "u3-review",
+      "role": "reviewer",
+      "model": "minimax-m3",
+      "status": "failed",
+      "attempts": 2,
+      "startedAt": 10,
+      "finishedAt": 11,
+      "startedAtEpoch": 1795635796659,
+      "finishedAtEpoch": 1795635796659,
+      "startedAtMono": 53617110,
+      "finishedAtMono": 53617111,
+      "branch": "prosci/e3b-stats/2391b7/u3-review",
+      "worktree": "/home/sumeet/e3b-mixed-ws/out/mixed/worktrees/u3-review",
+      "evidence": [
+        {
+          "attempt": 1,
+          "ok": true,
+          "kind": "acceptance",
+          "pgid": 239,
+          "ms": 28585,
+          "startedAtEpoch": 1795635767944,
+          "startedAtMono": 53588395,
+          "finishedAtEpoch": 1795635796529,
+          "finishedAtMono": 53616980,
+          "wallMs": 28585,
+          "groupKilled": false,
+          "detail": "node tools/check-review.mjs docs/review.md docs/adr/0001-median.md",
+          "reportedModel": [
+            "prosci-proxy-anthropic/minimax-m3"
+          ],
+          "toolCalls": [
+            "bash",
+            "bash",
+            "read",
+            "read",
+            "read",
+            "read",
+            "read",
+            "bash",
+            "read",
+            "bash",
+            "bash",
+            "bash",
+            "bash",
+            "bash",
+            "bash",
+            "bash"
+          ],
+          "usage": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "totalTokens": 0,
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0
+            }
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "at": "step-1",
+          "seq": 7,
+          "to": "ready",
+          "detail": "",
+          "wall": 1795635767875,
+          "mono": 53588326
+        },
+        {
+          "at": "step-2",
+          "seq": 8,
+          "to": "running",
+          "detail": "attempt 1",
+          "wall": 1795635767943,
+          "mono": 53588394
+        },
+        {
+          "at": "step-3",
+          "seq": 9,
+          "to": "ready",
+          "detail": "acceptance, retrying",
+          "wall": 1795635796658,
+          "mono": 53617109
+        },
+        {
+          "at": "step-4",
+          "seq": 10,
+          "to": "running",
+          "detail": "attempt 2",
+          "wall": 1795635796659,
+          "mono": 53617110
+        },
+        {
+          "at": "step-5",
+          "seq": 11,
+          "to": "failed",
+          "detail": "request budget exhausted (24/24)",
+          "wall": 1795635796659,
+          "mono": 53617111
+        }
+      ],
+      "planRetries": 1,
+      "retriesClamped": null,
+      "checksRun": [
+        {
+          "check": "node tools/check-review.mjs docs/review.md docs/adr/0001-median.md",
+          "ok": false,
+          "detail": "node:fs:620\n    return binding.readFileUtf8(path, stringToFlags(options.flag));\n                   ^\n\nError: ENOENT: no such file or directory, open 'docs/review.md'\n    at readFileSync (node:fs:620:2"
+        }
+      ],
+      "changedFiles": [],
+      "predecessorCommits": [
+        {
+          "branch": "prosci/e3b-stats/2391b7/u1-architect",
+          "sha": "5fde9362f0c07e6aa273a9e3edc7c7802c7485f9"
+        },
+        {
+          "branch": "prosci/e3b-stats/2391b7/u2-implement",
+          "sha": "23a602c66207a41a0ee1913e97aacc738bbc6262"
+        }
+      ],
+      "tokens": null,
+      "costUsd": null
+    }
+  ]
+}
