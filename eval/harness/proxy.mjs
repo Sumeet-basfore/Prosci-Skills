@@ -102,7 +102,17 @@ const server = createServer((req, res) => {
     delete headers.host;
     delete headers.authorization;
     delete headers["x-api-key"];
-    headers["x-api-key"] = key();
+    let localKey;
+    try {
+      localKey = key();
+    } catch (error) {
+      // No credential is a configuration failure, not a provider failure; say so instead of resetting.
+      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 503, reserved: Boolean(reservation), error: String(error) }) + "\n");
+      res.writeHead(503, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: `no upstream credential: ${String(error)}` }));
+      return;
+    }
+    headers["x-api-key"] = localKey;
     headers.authorization = `Bearer ${key()}`;
     // The gateway routes on a session header. One per series is honest: these runs are sessions.
     headers["x-opencode-session"] ??= `prosci-eval-${process.pid}`;

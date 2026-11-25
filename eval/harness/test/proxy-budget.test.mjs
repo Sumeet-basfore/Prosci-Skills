@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,10 +12,14 @@ const start = async (budget) => {
   const dir = mkdtempSync(join(tmpdir(), "proxy-budget-"));
   const budgetFile = join(dir, "budget.json");
   const accessLog = join(dir, "access.jsonl");
+  // A throwaway agent dir keeps the proxy's key lookup local and independent of the machine.
+  const agentDir = join(dir, "agent");
+  mkdirSync(agentDir, { recursive: true });
+  writeFileSync(join(agentDir, "auth.json"), JSON.stringify({ "opencode-go": { key: "test-key" } }));
   writeFileSync(budgetFile, JSON.stringify({ limit: budget, used: 0 }));
   let stderr = "";
   const child = spawn(process.execPath, [PROXY], {
-    env: { ...process.env, PROXY_PORT: "0", PROXY_UPSTREAM: "http://127.0.0.1:1", PROXY_BUDGET_FILE: budgetFile, PROXY_ACCESS_LOG: accessLog },
+    env: { ...process.env, PROXY_PORT: "0", PROXY_UPSTREAM: "http://127.0.0.1:1", PROXY_BUDGET_FILE: budgetFile, PROXY_ACCESS_LOG: accessLog, PI_CODING_AGENT_DIR: agentDir },
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stderr.on("data", (b) => { stderr += String(b); });
@@ -23,7 +27,7 @@ const start = async (budget) => {
     child.stdout.on("data", (b) => { const m = /listening (\d+)/.exec(String(b)); if (m) resolve(Number(m[1])); });
     child.on("exit", () => reject(new Error(`proxy exited: ${stderr}`)));
   });
-  return { child, port, budgetFile, accessLog, dir };
+  return { child, port, budgetFile, accessLog, dir, agentDir };
 };
 
 // Warm-up uses a rejected path: the proxy checks method/path before reserving, so this spends nothing.
@@ -63,5 +67,16 @@ test("a zero budget refuses every request without forwarding", async () => {
     assert.ok(await warm(p.port), "proxy accepts requests");
     assert.equal(await ask(p.port), 429);
     assert.equal(JSON.parse(readFileSync(p.budgetFile, "utf8")).used, 0);
+  } finally { p.child.kill("SIGKILL"); rmSync(p.dir, { recursive: true, force: true }); }
+});
+
+test("a missing credential fails closed after reserving, not by resetting the connection", async () => {
+  const p = await start(2);
+  try {
+    rmSync(join(p.agentDir, "auth.json"));
+    assert.ok(await warm(p.port), "proxy accepts requests");
+    assert.equal(await ask(p.port), 503);
+    // The reservation is taken before the credential check, so a misconfiguration cannot be retried for free.
+    assert.equal(JSON.parse(readFileSync(p.budgetFile, "utf8")).used, 1);
   } finally { p.child.kill("SIGKILL"); rmSync(p.dir, { recursive: true, force: true }); }
 });
