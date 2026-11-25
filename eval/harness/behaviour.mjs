@@ -205,12 +205,13 @@ function prepare(scenario, config) {
     if (r.status !== 0) throw new Error(`install failed for config ${config}: ${r.stderr}`);
   }
   let installedFingerprint = "none";
+  const baseSha = git(["rev-parse", "HEAD"], workspace).out.trim();
   if (config !== "vanilla") {
     const entries = readdirSync(target).filter((n) => n === "prosci" || n.startsWith("prosci-")).sort()
       .map((name) => `${name}:${sha256(readFileSync(join(target, name, "SKILL.md"), "utf8"))}`);
     installedFingerprint = sha256(entries.join("\n")).slice(0, 12);
   }
-  return { base, home, workspace, extensions, skillsDir: config === "current" || config === "frozen9" ? target : null, installedFingerprint };
+  return { base, home, workspace, extensions, skillsDir: config === "current" || config === "frozen9" ? target : null, installedFingerprint, baseSha };
 }
 
 function promptFor(request) {
@@ -341,10 +342,11 @@ for (const scenario of scenarios) {
       let extensions = [];
       let skillsDir = null;
       let installedFingerprint = "none";
+      let baseSha = "HEAD";
       let agentRun;
       let parsed;
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        ({ base, home, workspace, extensions, skillsDir, installedFingerprint } = prepare(scenario, config));
+        ({ base, home, workspace, extensions, skillsDir, installedFingerprint, baseSha } = prepare(scenario, config));
         agentRun = agent(workspace, home, promptFor(scenario.request), extensions, skillsDir);
         parsed = existsSync(agentRun.path)
           ? parsePiRun(agentRun.path)
@@ -357,7 +359,10 @@ for (const scenario of scenarios) {
       }
       const invalid = (parsed.errors ?? []).some((e) => /overloaded|rate.?limit|api_error|ECONN/i.test(String(e)));
       const acceptance = runAcceptance(scenario, workspace);
-      const changed = changedFiles(workspace);
+      // "fixture" means: measure against the commit the agent started from, which is the only base
+      // that reports an integration's files.
+      const since = scenario.changes_since === "fixture" ? baseSha : (scenario.changes_since ?? "HEAD");
+      const changed = changedFiles(workspace, since);
       const reads = prosciReads(parsed);
       const skills = systemSkills(agentRun.path);
 

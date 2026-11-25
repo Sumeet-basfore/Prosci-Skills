@@ -1,0 +1,42 @@
+{
+ "id": "p3v2-design",
+ "layer": "phase3-v2",
+ "fixture": "checkout-surface",
+ "request": "Define the design requirements for the payment screen: the states, the copy, the keyboard and screen-reader behaviour, and the responsive behaviour.",
+ "expect_route": "prosci-design",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    }
+   ],
+   "files_unchanged": [
+    "src/screen.html",
+    "styles/tokens.css"
+   ]
+  },
+  "scope": {
+   "max_files_changed": 2
+  }
+ },
+ "reply_or_file": {
+  "file_globs": [
+   "docs/design/**/*.md"
+  ]
+ },
+ "reply_contains": [
+  "empty",
+  "loading",
+  "error",
+  "success",
+  "(aria|screen reader|accessible name)",
+  "focus",
+  "(320|breakpoint|responsive)",
+  "Pay invoice",
+  "(not visually (verified|inspected)|visual inspection)"
+ ],
+ "notes": "v2: the requirements may live in the reply or in docs/design; the surface used is recorded. v1 required the file and is preserved with its result.",
+ "reference_reply": "States: empty 'You have no invoices due', loading 'Checking the amount', error 'We could not take the payment. Try again.', success 'Paid. We emailed your receipt.' Accessibility: the button's accessible name is 'Pay invoice', errors are announced with role=alert and aria-live, and focus returns to it after a retry. Responsive at 320px the action is full width. No rendered surface was available, so visual inspection was not performed."
+}

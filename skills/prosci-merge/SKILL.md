@@ -82,8 +82,12 @@ other raised — ships silently.
   with its own test.
 - **A branch cannot be verified on its own.** Stop. Integration without individual proof produces a
   result nobody can attribute.
-- **Two changes assume contradictory things.** Stop and escalate: this is a product decision, not a merge
-  conflict. Name both assumptions.
+- **Two approved intentions genuinely conflict.** Two products want opposite behaviour: that is a
+  decision, not a merge. Stop, name both intentions, and escalate.
+- **A constraint meets a value.** One change sets the policy, the other sets a number that now violates
+  it. That is not a decision for a human: the constraint stays and the value conforms. Resolve it in a
+  small commit with a test, and say which side you treated as the constraint. Escalating this is
+  unnecessary escalation standing in for engineering work.
 - **The merge would touch published history.** Do not force-push. Report the situation and ask.
 - **You cannot run the combined surface** (missing service, credential, dataset). Say so and merge
   nothing that claims verification; a merge with unverified combined state is a finding, not a pass.
@@ -93,7 +97,8 @@ other raised — ships silently.
 1. The base commit and every input branch are named, with each one's own check and output.
 2. The merge order is stated with a reason; ordering conflicts are escalated, not guessed.
 3. At least one semantic conflict was looked for by name — a constant, default, bound, schema, or enum —
-   and the result recorded, including "none found, checked these".
+   and the result recorded, including "none found, checked these". A constraint violated by a value is
+   resolved, not escalated.
 4. A combined-state check exists that exercises both changes together, with its output.
 5. The recovery command is written down and is safe for the branch's publication state.
 6. No unrelated branch, stash, or file was modified; no force-push or reset without authorization.
