@@ -37,7 +37,9 @@ function realKey() {
   return key;
 }
 
-const key = realKey();
+let cachedKey = null;
+// Read lazily: the budget and denial paths must work without credentials (CI, negative tests).
+const key = () => (cachedKey ??= realKey());
 let idle = setTimeout(() => process.exit(0), IDLE_MS);
 
 const server = createServer((req, res) => {
@@ -102,7 +104,7 @@ const server = createServer((req, res) => {
     delete headers.authorization;
     delete headers["x-api-key"];
     headers["x-api-key"] = key;
-    headers.authorization = `Bearer ${key}`;
+    headers.authorization = `Bearer ${key()}`;
     // The gateway routes on a session header. One per series is honest: these runs are sessions.
     headers["x-opencode-session"] ??= `prosci-eval-${process.pid}`;
 
