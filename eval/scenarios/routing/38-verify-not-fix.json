@@ -1,0 +1,12 @@
+{
+  "id": "route-verify-not-fix",
+  "layer": "routing",
+  "request": "the export command is writing wrong totals; fix it",
+  "expect": [
+    "prosci-fix"
+  ],
+  "forbid": [
+    "prosci-verify"
+  ],
+  "why": "correcting behaviour is a fix; verification only produces evidence"
+}

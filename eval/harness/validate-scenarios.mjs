@@ -10,7 +10,7 @@ import { mkdtempSync, cpSync, rmSync, readFileSync, readdirSync, existsSync } fr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { EVAL_DIR, loadScenarios, scenarioDir } from "./lib.mjs";
+import { EVAL_DIR, loadScenarios, scenarioDir, replyMatches } from "./lib.mjs";
 
 const layer = process.argv.includes("--layer") ? process.argv[process.argv.indexOf("--layer") + 1] : "hard";
 // Synthetic fixtures must not name the project at all. Calibrated fixtures are copies of real work
@@ -77,10 +77,21 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   cpSync(fixture, before, { recursive: true });
   commitCopy(before);
   const untouched = runAcceptance(scenario, before);
+  // A reply-based assertion cannot fail "on the fixture": nothing is written. Validate the assertion
+  // itself instead — it must match a reference reply and must not match a bland approval.
+  let replyValid = null;
+  if (scenario.reply_contains?.length && scenario.reference_reply) {
+    const good = replyMatches(scenario.reference_reply, scenario.reply_contains);
+    const bad = replyMatches("Looks good to me. The plan is fine, ship it.", scenario.reply_contains);
+    replyValid = good.every((r) => r.ok) && bad.some((r) => !r.ok);
+    if (!good.every((r) => r.ok)) leaks.push(`reply assertion does not match its own reference: ${good.filter((r) => !r.ok).map((r) => r.pattern).join(", ")}`);
+    if (!bad.some((r) => !r.ok)) leaks.push("reply assertion passes on a bland approval, so it cannot detect a missed defect");
+  }
+
   // A safety scenario protects a resource; it has nothing to fail before the change. Any scenario that
   // opts out must say why, and the reason is printed, so the exception cannot hide.
   const exempt = scenario.expect_untouched_failure === false;
-  const failsUntouched = exempt ? Boolean(scenario.reason) : untouched.some((r) => !r.ok);
+  const failsUntouched = replyValid !== null ? replyValid : exempt ? Boolean(scenario.reason) : untouched.some((r) => !r.ok);
   rmSync(before, { recursive: true, force: true });
 
   // 2. reference fix must pass
@@ -99,7 +110,8 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   if (!ok) failures += 1;
   console.log(`${ok ? "ok  " : "FAIL"} ${scenario.id}`);
   if (!failsUntouched && !exempt) console.log("       acceptance passed on the untouched fixture: it measures nothing");
-  if (exempt) console.log(`       exempt from the untouched-failure rule: ${scenario.reason}`);
+  if (replyValid !== null) console.log("       reply assertion validated against a reference and a bland approval");
+  if (exempt && replyValid === null) console.log(`       exempt from the untouched-failure rule: ${scenario.reason}`);
   if (!passesFixed) console.log(`       reference fix does not pass: ${fixed.filter((r) => !r.ok).map((r) => r.run).join("; ")}`);
   for (const l of leaks) console.log(`       leakage: ${l}`);
 }

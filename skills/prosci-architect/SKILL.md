@@ -58,7 +58,8 @@ Architect makes the shape explicit before code exists, and records it where the 
    Decision, Consequences. If it keeps design docs elsewhere, write there. If it keeps none, write
    `docs/architecture/<slug>.md` and add one line to the instruction file pointing at it. One page.
    Consequences must include reversibility: what it costs to undo, and by when undoing stops being
-   cheap.
+   cheap. The artifact must also name the command that will verify the decision, so a later reader can
+   check the claim instead of trusting it.
 
 7. **Hand back.** Link the artifact, do not implement. `prosci-ship` continues with the chosen shape.
 
@@ -90,7 +91,8 @@ Plus one line in the PR or reply linking the artifact.
 1. The artifact names at least two options, each with an interface sketch in code, not prose.
 2. The chosen option is tied to the named forces; the reason is one sentence a reviewer can disagree
    with.
-3. Consequences state the reversal cost.
+3. Consequences state the reversal cost, and the artifact names an executable command that verifies
+   the decision (a test command, a probe, or a one-line script).
 4. No code is changed by this route; the only added files are the artifact and one pointer line.
 5. The artifact is at most one page.
 6. The eventual pull request links it, or the reply says why no artifact was warranted.

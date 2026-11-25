@@ -1,0 +1,8 @@
+{
+ "id": "route-refactor",
+ "layer": "routing",
+ "request": "extract the duplicated money formatting out of the three report modules without changing any output",
+ "expect": ["prosci-refactor"],
+ "forbid": ["prosci-ship", "prosci-fix"],
+ "why": "structure only, behaviour explicitly unchanged"
+}

@@ -43,6 +43,9 @@ that land, not from large changes that stall.
 | learn a repo you have not worked in | `../prosci-understand/SKILL.md` | run its tests before reading code |
 | choose a shape: boundaries, types, two options | `../prosci-architect/SKILL.md` | name the forces first |
 | split work into ordered, verifiable units | `../prosci-plan/SKILL.md` | write the check for each unit |
+| improve structure without changing behaviour | `../prosci-refactor/SKILL.md` | pin the behaviour first |
+| attack a proposal before it is built | `../prosci-challenge/SKILL.md` | restate it, then cite evidence |
+| prove the software works on its real surface | `../prosci-verify/SKILL.md` | write the check before running |
 | fix a bug or a failing test | `../prosci-fix/SKILL.md` | reproduce it |
 | review a diff or a pull request | `../prosci-review/SKILL.md` | read the diff, then the surrounding code |
 | explain how something works, or which option to pick | `../prosci-investigate/SKILL.md` | write the question in one sentence |
@@ -54,6 +57,10 @@ that land, not from large changes that stall.
 
 Every route ends at `../prosci-bar/SKILL.md`. Read the bar once per session. Read the route
 before the first edit, not after.
+
+Refactor preserves behaviour, ship changes it, fix corrects it. Review reads a diff, challenge reads a
+proposal. Verify produces evidence; the bar judges it. Asking the wrong one is how a cleanup becomes a
+behaviour change.
 
 Understand, architect and plan are not steps every change takes. Understand is for an unfamiliar
 repo, architect for a shape that is not obvious, plan for work larger than one change. A small change

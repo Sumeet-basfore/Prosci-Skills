@@ -54,9 +54,10 @@ reverted on its own.
 6. **Decide what happens when a check fails.** Default: revert the unit, do not patch forward. Say which
    failures would instead justify stopping the whole plan.
 
-7. **Record it where it will be read.** Plan in the issue or PR body for work inside one session; a
-   `docs/plan/<slug>.md` file only when the work spans sessions or agents. A plan nobody can find is a
-   plan nobody follows.
+7. **Record it where it will be read.** The plan may live in the reply or the PR body when one session
+   finishes the work. Write `docs/plan/<slug>.md` when the work spans sessions, more than one agent or
+   person takes a unit, or the project requires a durable record. A plan nobody can find is a plan
+   nobody follows, and a plan file for a two-hour task is a file nobody reads twice.
 
 ## Output
 
@@ -82,4 +83,5 @@ reverted on its own.
 3. Every parallel group contains only units with disjoint files and no shared process.
 4. The approval list names each irreversible or user-visible step.
 5. Each unit has a rollback that is smaller than the unit.
-6. The plan exists in a place the next session will look.
+6. The plan exists on a surface that matches its lifetime: the reply or PR body for one session, a file
+   for multi-session or multi-agent work.

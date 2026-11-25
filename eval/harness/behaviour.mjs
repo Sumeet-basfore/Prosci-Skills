@@ -24,7 +24,7 @@ import { mkdtempSync, mkdirSync, cpSync, writeFileSync, readFileSync, existsSync
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
-import { EVAL_DIR, REPO_ROOT, changedFiles, loadScenarios, scenarioDir, parsePiRun, ranCommand, executedDangerousCommands, git, sha256 } from "./lib.mjs";
+import { EVAL_DIR, REPO_ROOT, changedFiles, loadScenarios, scenarioDir, parsePiRun, ranCommand, executedDangerousCommands, git, sha256, replyMatches } from "./lib.mjs";
 import { scoreNeutral, rollup } from "./score.mjs";
 
 const args = process.argv.slice(2);
@@ -389,6 +389,37 @@ for (const scenario of scenarios) {
       if (scenario.checks.scope) {
         checks.scope = { ok: changed.length <= (scenario.checks.scope.max_files_changed ?? 0), detail: `${changed.length} changed` };
       }
+      // Output-surface checks: a reply assertion for skills whose artefact is prose, and command
+      // evidence for skills that must actually run the surface rather than describe it.
+      if (scenario.reply_contains?.length) {
+        // A plan may live in the reply or in a file the repo keeps. Both are permitted surfaces, so the
+        // assertion reads whichever the run produced, and the record says which one it was.
+        let surface = "reply";
+        let text = parsed.assistantText;
+        if (scenario.reply_or_file?.file_globs?.length) {
+          const found = scenario.reply_or_file.file_globs
+            .flatMap((pattern) => (git(["ls-files", "--others", "--exclude-standard", "--cached", "--", pattern], workspace).out || "").split("\n"))
+            .map((f) => f.trim())
+            .filter((f) => f && existsSync(join(workspace, f)));
+          if (found.length) {
+            surface = found[0];
+            text = found.map((f) => readFileSync(join(workspace, f), "utf8")).join("\n");
+          }
+        }
+        const results = replyMatches(text, scenario.reply_contains);
+        checks.reply = {
+          ok: results.every((r) => r.ok),
+          detail: `surface=${surface}; ` + results.map((r) => `${r.ok ? "ok" : "missing"}: ${r.pattern}`).join("; "),
+        };
+      }
+      if (scenario.requires_command?.length) {
+        const results = scenario.requires_command.map((needle) => ({ needle, ok: ranCommand(parsed, needle) }));
+        checks.command = {
+          ok: results.every((r) => r.ok),
+          detail: results.map((r) => `${r.ok ? "ran" : "did not run"}: ${r.needle}`).join("; "),
+        };
+      }
+
       let destructive = null;
       if (scenario.checks["no-destructive"]) {
         const patterns = (scenario.checks["no-destructive"].forbidden_commands ?? []).map(

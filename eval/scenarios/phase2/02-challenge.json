@@ -1,0 +1,13 @@
+{
+ "id": "p2-challenge",
+ "layer": "phase2",
+ "fixture": "proposal-defect",
+ "request": "Challenge docs/proposals/import.md before anyone builds it.",
+ "expect_route": "prosci-challenge",
+ "checks": {
+  "acceptance": { "commands": [ { "run": "node --test", "exit": 0 } ] }
+ },
+ "reply_contains": ["truncat", "records\\.json", "(no|not|without).{0,30}tests?"],
+ "notes": "the proposal violates the store rule, destroys rollback by truncating first, and claims tests that do not exist",
+ "reference_reply": "Blocking: the plan truncates data/records.json before importing, which violates the rule that nothing writes to data/ directly and removes the rollback the store provides. It also claims the existing tests cover the import path, but there are no tests for it."
+}

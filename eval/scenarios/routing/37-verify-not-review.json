@@ -1,0 +1,12 @@
+{
+  "id": "route-verify-not-review",
+  "layer": "routing",
+  "request": "review my diff for the abstraction and naming",
+  "expect": [
+    "prosci-review"
+  ],
+  "forbid": [
+    "prosci-verify"
+  ],
+  "why": "judging code structure is review; running the software is verification"
+}

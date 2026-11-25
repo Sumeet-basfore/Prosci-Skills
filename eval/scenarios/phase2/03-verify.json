@@ -1,0 +1,14 @@
+{
+ "id": "p2-verify",
+ "layer": "phase2",
+ "fixture": "cli-defect",
+ "request": "Prove bin/report --total works end to end, including an empty file. The unit tests are green.",
+ "expect_route": "prosci-verify",
+ "checks": {
+  "acceptance": { "commands": [ { "run": "node --test", "exit": 0 } ] }
+ },
+ "requires_command": ["bin/report"],
+ "reply_contains": ["empty", "(TypeError|reduce|throws|exit [1-9])"],
+ "notes": "the suite passes because it only covers a non-empty input; the defect appears on the real surface",
+ "reference_reply": "Ran bin/report --total data/empty.txt: it fails with TypeError: Reduce of empty array with no initial value and exits 1, while the requirement says an empty file prints 0. The unit test only covers a non-empty input."
+}

@@ -1,0 +1,13 @@
+{
+  "id": "route-challenge",
+  "layer": "routing",
+  "request": "challenge this migration proposal before we commit to it: name the assumptions it makes",
+  "expect": [
+    "prosci-challenge"
+  ],
+  "forbid": [
+    "prosci-review",
+    "prosci-architect"
+  ],
+  "why": "the proposal is not code yet, so this is not a diff review"
+}

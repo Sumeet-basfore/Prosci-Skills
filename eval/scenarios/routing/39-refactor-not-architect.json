@@ -1,0 +1,12 @@
+{
+  "id": "route-refactor-not-architect",
+  "layer": "routing",
+  "request": "we want to split billing into three services; compare two shapes and recommend one to adopt",
+  "expect": [
+    "prosci-architect"
+  ],
+  "forbid": [
+    "prosci-refactor"
+  ],
+  "why": "a new boundary with alternatives is architecture, not a behaviour-preserving restructure"
+}
