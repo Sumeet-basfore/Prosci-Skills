@@ -20,7 +20,7 @@
 //   node eval/harness/behaviour.mjs --smoke --model anthropic/claude-haiku-5-5
 //   node eval/harness/behaviour.mjs --layer activation --condition router --repeats 3
 
-import { mkdtempSync, mkdirSync, cpSync, writeFileSync, readFileSync, existsSync, rmSync, copyFileSync, renameSync } from "node:fs";
+import { mkdtempSync, mkdirSync, cpSync, writeFileSync, readFileSync, existsSync, rmSync, copyFileSync, renameSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -53,9 +53,10 @@ const series = value("--series", `${LAYER}-${CONDITION}-${new Date().toISOString
 const runsDir = join(EVAL_DIR, "runs", series);
 mkdirSync(runsDir, { recursive: true });
 
-const skillsFingerprint = existsSync(join(EVAL_DIR, "skills.lock.json"))
-  ? sha256(readFileSync(join(EVAL_DIR, "skills.lock.json"), "utf8")).slice(0, 12)
-  : "none";
+const skillsFingerprint = process.env.PROSCI_FINGERPRINT
+  ?? (existsSync(join(EVAL_DIR, "skills.lock.json"))
+    ? sha256(readFileSync(join(EVAL_DIR, "skills.lock.json"), "utf8")).slice(0, 12)
+    : "none");
 
 const scenarios = loadScenarios(scenarioDir(LAYER)).filter((s) => {
   if (onlyScenario) return s.id === onlyScenario;
@@ -65,7 +66,11 @@ const scenarios = loadScenarios(scenarioDir(LAYER)).filter((s) => {
 if (SMOKE) scenarios.splice(1);
 
 const realHome = process.env.HOME;
-const INSTALL = join(REPO_ROOT, "bin", "install-skills");
+// A comparison needs two skill sets from one harness. The install source is overridable so the
+// frozen nine can be installed from a worktree at its tag without touching this tree.
+const INSTALL = process.env.PROSCI_INSTALL ?? join(REPO_ROOT, "bin", "install-skills");
+const INSTALL_FROZEN = process.env.PROSCI_INSTALL_FROZEN ?? INSTALL;
+const SKILL_SET = process.env.PROSCI_SKILL_SET ?? "expanded";
 
 // Injected once per run for the agentsmd and extension conditions. One sentence, no route table, so
 // the variable under test stays small.
@@ -186,14 +191,21 @@ function prepare(scenario, config) {
   // Skills live inside the scoped agent directory and are named explicitly on the command line.
   // Relying on discovery made a scoped run see zero skills while nine were on disk.
   const target = join(home, ".pi", "agent", "skills");
-  if (config === "current") {
-    const r = spawnSync(process.execPath, [INSTALL, "--target", target, "--copy"], {
+  if (config === "current" || config === "frozen9") {
+    const installer = config === "frozen9" ? INSTALL_FROZEN : INSTALL;
+    const r = spawnSync(process.execPath, [installer, "--target", target, "--copy"], {
       encoding: "utf8",
       env: { ...process.env, HOME: home },
     });
-    if (r.status !== 0) throw new Error(`install failed for config current: ${r.stderr}`);
+    if (r.status !== 0) throw new Error(`install failed for config ${config}: ${r.stderr}`);
   }
-  return { base, home, workspace, extensions, skillsDir: config === "current" ? target : null };
+  let installedFingerprint = "none";
+  if (config !== "vanilla") {
+    const entries = readdirSync(target).filter((n) => n === "prosci" || n.startsWith("prosci-")).sort()
+      .map((name) => `${name}:${sha256(readFileSync(join(target, name, "SKILL.md"), "utf8"))}`);
+    installedFingerprint = sha256(entries.join("\n")).slice(0, 12);
+  }
+  return { base, home, workspace, extensions, skillsDir: config === "current" || config === "frozen9" ? target : null, installedFingerprint };
 }
 
 function promptFor(request) {
@@ -323,10 +335,11 @@ for (const scenario of scenarios) {
       let workspace;
       let extensions = [];
       let skillsDir = null;
+      let installedFingerprint = "none";
       let agentRun;
       let parsed;
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        ({ base, home, workspace, extensions, skillsDir } = prepare(scenario, config));
+        ({ base, home, workspace, extensions, skillsDir, installedFingerprint } = prepare(scenario, config));
         agentRun = agent(workspace, home, promptFor(scenario.request), extensions, skillsDir);
         parsed = existsSync(agentRun.path)
           ? parsePiRun(agentRun.path)
@@ -393,7 +406,7 @@ for (const scenario of scenarios) {
       }
       checks.adherence = { ok: adher.ok, applies: adher.ok !== null, detail: adher.parts.map((p) => `${p.name}:${p.ok ? "ok" : "no"}`).join(", ") };
       checks["route-named"] = {
-        ok: config === "current" ? reads.includes(scenario.expect_route) || routeSelected === scenario.expect_route : null,
+        ok: config === "vanilla" ? null : reads.includes(scenario.expect_route) || routeSelected === scenario.expect_route,
         applies: config === "current",
         detail: config === "current" ? `expected ${scenario.expect_route}, read ${reads.join(" > ") || "none"}` : "n/a for vanilla",
       };
@@ -401,7 +414,8 @@ for (const scenario of scenarios) {
       const record = {
         series, layer: LAYER, scenario: scenario.id, config, condition: CONDITION, n: rep,
         model: SANDBOX ? PROXY_MODEL : MODEL, thinking: THINKING, fixture: scenario.fixture, harness: "pi",
-        sandbox: SANDBOX, instruction: value("--instruction", "default"),
+        sandbox: SANDBOX, instruction: value("--instruction", "default"), skillSet: SKILL_SET,
+        skillsInstalled: installedFingerprint,
         skillsFingerprint,
         durationMs: Date.now() - started,
         agentExit: agentRun.status,
@@ -432,7 +446,7 @@ for (const scenario of scenarios) {
 
 writeFileSync(
   join(runsDir, "summary.json"),
-  `${JSON.stringify({ series, layer: LAYER, condition: CONDITION, model: SANDBOX ? PROXY_MODEL : MODEL, thinking: THINKING, sandbox: SANDBOX, instruction: value("--instruction", "default"), repeats: REPEATS, configs: CONFIGS, capUsd: MAX_COST, spentUsd: Number(spent.toFixed(4)), skillsFingerprint, runs, rollup: rollup(runs.filter((r) => typeof r.neutralScore === "number")) }, null, 2)}\n`,
+  `${JSON.stringify({ series, layer: LAYER, condition: CONDITION, skillSet: SKILL_SET, model: SANDBOX ? PROXY_MODEL : MODEL, thinking: THINKING, sandbox: SANDBOX, instruction: value("--instruction", "default"), repeats: REPEATS, configs: CONFIGS, capUsd: MAX_COST, spentUsd: Number(spent.toFixed(4)), skillsFingerprint, runs, rollup: rollup(runs.filter((r) => typeof r.neutralScore === "number")) }, null, 2)}\n`,
 );
 
 console.log(`\nseries ${series}: ${runs.length} runs, condition ${CONDITION}, model ${MODEL} at ${THINKING}, spent $${spent.toFixed(4)} of $${MAX_COST}`);

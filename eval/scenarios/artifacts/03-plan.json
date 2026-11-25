@@ -1,0 +1,25 @@
+{
+ "id": "art-plan",
+ "layer": "artifacts",
+ "fixture": "shape",
+ "request": "Break the move of discounting into its own module into ordered work units with a check for each, and mark which units can run at the same time.",
+ "expect_route": "prosci-plan",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "node --test", "exit": 0 },
+    { "run": "sh -c 'ls docs/plan/*.md 2>/dev/null | grep -q .'", "exit": 0 },
+    { "run": "sh -c 'test \"$(grep -rhcE \"^[[:space:]]*[-*][[:space:]]\" docs/plan | awk \"{s+=\\$1} END {print s+0}\")\" -ge 3'", "exit": 0 },
+    { "run": "sh -c 'test \"$(grep -rHow \"node --test\" docs/plan | wc -l)\" -ge 2'", "exit": 0 },
+    { "run": "sh -c 'grep -rqiE \"rollback|revert\" docs/plan'", "exit": 0 },
+    { "run": "sh -c 'grep -rqiE \"depends|after|blocked by\" docs/plan'", "exit": 0 },
+    { "run": "sh -c 'grep -rqi parallel docs/plan'", "exit": 0 }
+   ],
+   "files_unchanged": ["src/pricing.mjs"]
+  },
+  "scope": { "max_files_changed": 3 }
+ },
+ "notes": "requirement coverage is proxied by 3 units with 2 runnable checks; genuine independence needs review, not a grep",
+ "leak_terms": ["## Units", "rollback", "parallel"],
+ "reference_fix": ["sh \"$EVAL_DIR/scenarios/artifacts/reference/plan.sh\""]
+}

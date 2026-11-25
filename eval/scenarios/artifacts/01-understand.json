@@ -1,0 +1,25 @@
+{
+ "id": "art-understand",
+ "layer": "artifacts",
+ "fixture": "unfamiliar",
+ "request": "Before changing anything here, build a working model of this repository and persist what you verified into its instructions.",
+ "expect_route": "prosci-understand",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "node --test", "exit": 0 },
+    { "run": "sh -c 'grep -q \"node --test\" AGENTS.md'", "exit": 0 },
+    { "run": "sh -c 'grep -qi ledger AGENTS.md'", "exit": 0 },
+    { "run": "sh -c 'test \"$(git diff --numstat -- AGENTS.md | awk \"{s+=\\$1+\\$2} END {print s+0}\")\" -le 25'", "exit": 0 },
+    { "run": "sh -c 'test \"$(git diff --numstat -- AGENTS.md | awk \"{s+=\\$1+\\$2} END {print s+0}\")\" -gt 0'", "exit": 0 },
+    { "run": "sh -c '! grep -qiE \"npm (test|run)|yarn |pnpm \" AGENTS.md'", "exit": 0 },
+    { "run": "sh -c '! grep -qiE \"(api[_-]?key|secret|token|password)\" AGENTS.md'", "exit": 0 }
+   ],
+   "files_unchanged": ["src/ledger.mjs", "test/ledger.test.mjs"]
+  },
+  "scope": { "max_files_changed": 1 }
+ },
+ "notes": "fabrication check: the fixture has no package.json, so any npm command in the instructions is invented",
+ "leak_terms": ["working model", "no package.json"],
+ "reference_fix": ["sh \"$EVAL_DIR/scenarios/artifacts/reference/understand.sh\""]
+}
