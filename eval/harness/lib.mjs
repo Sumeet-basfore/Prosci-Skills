@@ -29,13 +29,25 @@ export function git(args, cwd) {
 
 // The nine skill folders, each with the hash of its SKILL.md. The fingerprint is the contract the
 // installer and the baseline tag are checked against.
+function filesUnder(dir, base = dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    return entry.isDirectory() ? filesUnder(full, base) : [relative(base, full)];
+  });
+}
+
+// Every file in the package is hashed, not only SKILL.md: a reference can drift while the body stays the
+// same, and the lockfile is supposed to be the contract between the repo and the install.
 export function fingerprintSkills() {
   const names = readdirSync(SKILLS_DIR).filter((n) => n === "prosci" || n.startsWith("prosci-")).sort();
   return names.map((name) => {
-    const file = join(SKILLS_DIR, name, "SKILL.md");
-    const text = readFileSync(file, "utf8");
+    const dir = join(SKILLS_DIR, name);
+    const text = readFileSync(join(dir, "SKILL.md"), "utf8");
     const declared = /^name:\s*(\S+)/m.exec(text)?.[1] ?? null;
-    return { name, declared, sha256: sha256(text), bytes: text.length };
+    const files = filesUnder(dir)
+      .sort()
+      .map((file) => ({ path: file, sha256: sha256(readFileSync(join(dir, file), "utf8")) }));
+    return { name, declared, sha256: sha256(text), bytes: text.length, files };
   });
 }
 

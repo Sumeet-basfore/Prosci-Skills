@@ -42,6 +42,9 @@ the difference between what was promised and what happened.
 2. **Check the harness exists.** Run the tool with `--version`, hit the health endpoint, load the page.
    If the required tool is missing, say so and stop — a verification you could not run is not a pass.
 
+Surface procedures: `references/cli.md`, `references/http.md`, `references/browser.md`. Read the one that
+matches the surface. If none matches, say so and stop rather than improvising a check that cannot run.
+
 3. **Exercise the real surface.** Build or start the software the way a user would. Run the CLI, call
    the endpoint, load the page, trigger the job. Capture the exact output, status code, or screenshot
    path.

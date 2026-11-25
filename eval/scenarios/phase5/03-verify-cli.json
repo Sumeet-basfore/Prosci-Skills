@@ -1,0 +1,38 @@
+{
+ "id": "p5-verify",
+ "layer": "phase5",
+ "fixture": "cli-defect",
+ "request": "Prove bin/report --total works on its real surface: the happy path, an empty file, a missing file and no argument. Report the exit codes and what you observed.",
+ "expect_route": "prosci-verify",
+ "requires_read": [
+  "references/cli.md"
+ ],
+ "requires_command": [
+  "bin/report"
+ ],
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    }
+   ]
+  }
+ },
+ "reply_contains": [
+  "(empty|0 bytes)",
+  "exit",
+  "(missing|not found)"
+ ],
+ "paraphrases": [
+  "The happy path prints 350 and exits 0. An empty file fails with a TypeError and exits 1, a missing file exits 1 with the path named, and no argument prints usage with exit 2.",
+  "Observed: sales prints 0, empty file throws TypeError (exit 1), missing file errors (exit 1), no argument gives usage (exit 2)."
+ ],
+ "bland_reply": "I ran the tests and they pass, so the CLI works.",
+ "wrong_reply": "The CLI works for every input; the empty file prints 0 as expected.",
+ "notes": "reply assertion has paraphrases and decoys; acceptance is the suite, so the defect still shows only in the reply.",
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/phase5/reference/verify.sh\""
+ ]
+}

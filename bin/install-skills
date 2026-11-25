@@ -120,6 +120,14 @@ function verify(dir, names) {
     const declared = declaredName(file);
     if (declared !== name) problems.push(`${name}: declares name '${declared}'`);
     for (const ref of refsOf(file)) {
+      // A package may carry a manifest; its references must resolve after install too.
+      const manifestPath = join(dir, name, "skill.json");
+      if (existsSync(manifestPath)) {
+        const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+        for (const entry of manifest.references ?? []) {
+          if (!existsSync(join(dir, name, entry.path))) problems.push(`${name}: reference ${entry.path} missing after install`);
+        }
+      }
       const refPath = resolve(dirname(file), "..", ref, "SKILL.md");
       if (!existsSync(refPath)) problems.push(`${name}: reference ../${ref}/SKILL.md does not resolve`);
     }

@@ -1,0 +1,64 @@
+{
+ "id": "p5-design",
+ "layer": "phase5",
+ "fixture": "checkout-surface",
+ "request": "Define the design requirements for the payment screen: states, copy, keyboard and screen-reader behaviour, typography and colour roles, and responsive behaviour. Record the requirements in docs/design/payment.md.",
+ "expect_route": "prosci-design",
+ "requires_read": [
+  "references/interaction-states.md",
+  "references/accessibility.md"
+ ],
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'test -f docs/design/payment.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qi \"## Brief\" docs/design/payment.md && grep -qi constraint docs/design/payment.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'for s in empty loading error success; do grep -qi \"$s\" docs/design/payment.md || exit 1; done'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qiE \"aria|accessible name|screen reader\" docs/design/payment.md && grep -qi focus docs/design/payment.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -q \"Pay invoice\" docs/design/payment.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qiE \"4\\.5:1|contrast\" docs/design/payment.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qiE \"320|breakpoint\" docs/design/payment.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qiE \"not (visually )?(verified|inspected)|unverified|nothing was rendered\" docs/design/payment.md'",
+     "exit": 0
+    }
+   ],
+   "files_unchanged": [
+    "src/screen.html",
+    "styles/tokens.css"
+   ]
+  },
+  "scope": {
+   "max_files_changed": 2
+  }
+ },
+ "notes": "reference loading and artefact quality are separate checks. The brief section forces intent before specifics.",
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/phase5/reference/design.sh\""
+ ]
+}

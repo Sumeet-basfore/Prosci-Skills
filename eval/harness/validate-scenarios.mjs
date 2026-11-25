@@ -98,7 +98,12 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   // A reply-based assertion cannot fail "on the fixture": nothing is written. Validate the assertion
   // itself instead — it must match a reference reply and must not match a bland approval.
   let replyValid = null;
-  if (scenario.reply_contains?.length && scenario.reference_reply) {
+  if (scenario.reply_contains?.length && scenario.paraphrases?.length) {
+    // Paraphrase-validated assertions are self-checking: two correct phrasings pass, two decoys fail.
+    const lint = lintReplyAssertion(scenario);
+    replyValid = lint.ok;
+    for (const problem of lint.problems) leaks.push(`reply assertion: ${problem}`);
+  } else if (scenario.reply_contains?.length && scenario.reference_reply) {
     const good = replyMatches(scenario.reference_reply, scenario.reply_contains);
     const bad = replyMatches("Looks good to me. The plan is fine, ship it.", scenario.reply_contains);
     replyValid = good.every((r) => r.ok) && bad.some((r) => !r.ok);

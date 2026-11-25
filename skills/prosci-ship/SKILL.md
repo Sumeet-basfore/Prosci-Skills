@@ -26,6 +26,9 @@ instructions. The next agent should not repeat this search.
 Do not invent a command. If you cannot find a test command, run one candidate and show the
 output. "There was probably a test suite" is not a finding.
 
+Read `references/spec.md` for the six-line form, the data-shape convention, and the failure modes worth
+writing down before you start.
+
 ## 2. Write the spec in three lines
 
 ```
@@ -73,6 +76,8 @@ Before writing, list the files you expect to touch. Then:
 - Keep values in the shape the platform gives you. Do not add a conversion layer.
 
 If the diff grows past roughly 300 changed lines, stop and ask whether it is two changes.
+
+Read `references/tests.md` if you are choosing what to test rather than adding one obvious assertion.
 
 ## 5. Make a test that can fail
 
@@ -145,6 +150,9 @@ The commands, the result, and how the surface was driven. Real output, not a cla
 ```
 
 Keep it under 40 lines. Long evidence goes in a comment or a linked file.
+
+Read `references/production.md` before the pull request for migration, rollback, observability and deploy
+order — the things that make a merge a shipped change.
 
 ## 9. Review your own diff
 

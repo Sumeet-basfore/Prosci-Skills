@@ -1,0 +1,10 @@
+{
+  "name": "prosci-verify",
+  "triggers": ["prove it works", "end to end", "exercise the real surface", "smoke check a release"],
+  "non_triggers": ["judge completion → prosci-bar", "review code → prosci-review", "fix what you find → prosci-fix"],
+  "references": [
+    { "path": "references/cli.md", "load_when": "verifying a command-line surface" },
+    { "path": "references/http.md", "load_when": "verifying an HTTP API" },
+    { "path": "references/browser.md", "load_when": "verifying a rendered browser surface" }
+  ]
+}
