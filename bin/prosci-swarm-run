@@ -116,7 +116,11 @@ if (auth) process.env.PROXY_BUDGET_FILE = budgetPath;
 const accessLogPath = join(outDir, "proxy-access.jsonl");
 process.env.PROXY_ACCESS_LOG = accessLogPath;
 
-const units = plan.units.map((u) => ({ ...u, status: "planned", attempts: 0, transitions: [], worktree: null, branch: null, evidence: [], startedAt: null, finishedAt: null }));
+// Sequence windows say what happened in what order; these say when. Wall time can jump, so duration
+// comes from the monotonic clock and both are recorded instead of one standing in for the other.
+const now = () => ({ wall: Date.now(), mono: Number(process.hrtime.bigint() / 1000000n) });
+
+const units = plan.units.map((u) => ({ ...u, status: "planned", attempts: 0, transitions: [], worktree: null, branch: null, evidence: [], startedAt: null, finishedAt: null, startedAtEpoch: null, finishedAtEpoch: null, startedAtMono: null, finishedAtMono: null }));
 const byId = new Map(units.map((u) => [u.id, u]));
 const previous = existsSync(ledgerPath) && has("--resume") ? JSON.parse(readFileSync(ledgerPath, "utf8")) : null;
 
@@ -124,9 +128,10 @@ let step = 0;
 const transition = (unit, to, detail = "") => {
   step += 1;
   unit.status = to;
-  if (to === "running") unit.startedAt = step;
-  if (["succeeded", "failed", "blocked", "cancelled"].includes(to)) unit.finishedAt = step;
-  unit.transitions.push({ at: `step-${unit.transitions.length + 1}`, seq: step, to, detail });
+  const when = now();
+  if (to === "running") Object.assign(unit, { startedAt: step, startedAtEpoch: when.wall, startedAtMono: when.mono });
+  if (["succeeded", "failed", "blocked", "cancelled"].includes(to)) Object.assign(unit, { finishedAt: step, finishedAtEpoch: when.wall, finishedAtMono: when.mono });
+  unit.transitions.push({ at: `step-${unit.transitions.length + 1}`, seq: step, to, detail, wall: when.wall, mono: when.mono });
   persist();
 };
 
@@ -153,6 +158,9 @@ function persist() {
     budget: validation.budget,
     units: units.map((u) => ({
       id: u.id, role: u.role, model: u.model, status: u.status, attempts: u.attempts,
+      startedAt: u.startedAt, finishedAt: u.finishedAt,
+      startedAtEpoch: u.startedAtEpoch, finishedAtEpoch: u.finishedAtEpoch,
+      startedAtMono: u.startedAtMono, finishedAtMono: u.finishedAtMono,
       branch: u.branch, worktree: u.worktree, evidence: u.evidence, transitions: u.transitions,
       planRetries: u.budget?.retries ?? 0, retriesClamped: u.retriesClamped ?? null,
       checksRun: u.checksRun ?? [], changedFiles: u.changedFiles ?? [], predecessorCommits: u.predecessorCommits ?? [],
@@ -262,14 +270,14 @@ async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onS
     }
   }
 
-  const startedAt = Date.now();
+  const start = now();
   const spec = unit.fake ?? { outcome: "success" };
   const spawned = backend === "fake"
     ? spawnGroup(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "lib", "fake-worker.mjs"), JSON.stringify(spec)], { cwd: worktree, env: process.env })
     : spawnGroup("pi", ["-p", "--mode", "json", "--model", unit.model, ...resolveSkills(unit.skills), `${handoff}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`], { cwd: worktree, env: process.env });
 
   // Recorded before the worker finishes, so a cancellation can still find and kill the group.
-  const evidence = { attempt, ok: false, kind: "running", pgid: spawned.pgid, ms: null };
+  const evidence = { attempt, ok: false, kind: "running", pgid: spawned.pgid, ms: null, startedAtEpoch: start.wall, startedAtMono: start.mono, finishedAtEpoch: null, finishedAtMono: null };
   unit.evidence.push(evidence);
   onSpawn(spawned.kill);
 
@@ -277,9 +285,10 @@ async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onS
   const timer = setTimeout(() => { timedOut = true; spawned.kill(); }, deadlineMs || 20 * 60 * 1000);
   const result = await spawned.done;
   clearTimeout(timer);
-  const ms = Date.now() - startedAt;
+  const end = now();
+  const ms = end.mono - start.mono;
 
-  Object.assign(evidence, { ms, groupKilled: timedOut });
+  Object.assign(evidence, { ms, wallMs: end.wall - start.wall, finishedAtEpoch: end.wall, finishedAtMono: end.mono, groupKilled: timedOut });
   if (timedOut) { Object.assign(evidence, { kind: "timeout", detail: `${ms}ms` }); return "timeout"; }
   if (result.error) { Object.assign(evidence, { kind: "crash", detail: String(result.error.message ?? result.error) }); return "crash"; }
 
@@ -291,7 +300,7 @@ async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onS
     try {
       events = result.stdout.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
     } catch {
-      unit.evidence.push({ ...base, kind: "invalid", detail: "pi did not emit JSON lines" });
+      Object.assign(evidence, { kind: "invalid", detail: "pi did not emit JSON lines" });
       return "invalid";
     }
     const assistant = events.filter((e) => e.type === "message_end" && e.message?.role === "assistant");
