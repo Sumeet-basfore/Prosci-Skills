@@ -55,3 +55,14 @@ bin/prosci-swarm emit  swarm-plan.json --out swarm/         # handoffs + ledger 
 ```
 
 `prosci-plan` carries the workflow; this directory is the data it reads.
+
+## Execution
+
+`bin/prosci-swarm-run` executes a validated plan: approval by plan hash, dependency order, bounded
+concurrency, one git worktree per unit, ownership checked from git, acceptance checks run by the controller,
+bounded retries, a global deadline, cancellation and `--resume`. It refuses to start without an approval that
+matches the plan.
+
+The **fake** backend is the default and is what the tests use. The **pi** backend spends money and needs
+`--allow-paid`; it has never been run. Neither backend is a sandbox: worktrees isolate files, not
+credentials.

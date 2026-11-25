@@ -125,6 +125,13 @@ bin/prosci-survey . --verify   # also runs the detected test command
 Same repo in, same JSON out; every field carries a `source`, and what it could not determine is `null` with
 a reason.
 
+## Multi-agent plans
+
+`bin/prosci-swarm check <plan.json>` validates a structured plan against `agents/` (roles, model capabilities,
+budgets). `bin/prosci-swarm-run` executes one after approval by plan hash, in an isolated worktree per unit.
+The fake backend is the tested one; the real backend has never been run. Worktrees isolate files, not
+credentials — see `docs/security.md`.
+
 ## Skill packages
 
 Each skill is a folder: `SKILL.md` holds the procedure, decision rules and mandatory requirements;
