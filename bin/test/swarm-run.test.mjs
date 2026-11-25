@@ -291,6 +291,18 @@ test("independent units actually overlap when concurrency allows it", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("saves each worker's raw output next to the ledger", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [unit({})] });
+  const out = join(dir, "out");
+  const r = run(plan, { repo, out });
+  assert.equal(r.status, 0, r.stderr);
+  const saved = readFileSync(join(out, "output", "u1-a1.stdout.jsonl"), "utf8");
+  assert.match(saved, /"ok":true/);
+  assert.ok(existsSync(join(out, "output", "u1-a1.stderr.txt")));
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("records wall-clock and monotonic times without replacing sequence windows", () => {
   const { dir, repo } = workspace();
   const units = Array.from({ length: 2 }, (_, i) => unit({

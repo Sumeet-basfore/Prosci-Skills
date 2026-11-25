@@ -1,0 +1,25 @@
+# E3b fresh isolation verification (model-free), 2026-11-25T19:10:09Z
+# workspace=/home/sumeet/e3b-workspace
+ok   unreachable: /home/sumeet/real-auth-probe
+ok   unreachable: /home/sumeet/personal-repo/AGENTS.md
+ok   unreachable: /home/sumeet/.ssh/id_ed25519
+ok   unreachable: /home/sumeet/.pi/agent/auth.json
+ok   no credential-shaped variables in the environment
+ok   pid namespace is its own
+isolation checks passed
+
+# readability probes (cat succeeds => leak)
+/home/sumeet/.ssh/id_ed25519: absent
+/home/sumeet/.aws/credentials: absent
+/home/sumeet/.codex/auth.json: absent
+/home/sumeet/.config/gh/hosts.yml: absent
+/home/sumeet/.netrc: absent
+/home/sumeet/.pi/agent/auth.json: absent
+/home/sumeet/.pi/agent/models.json: absent
+/home/sumeet/personal-repo/AGENTS.md: absent
+/home/sumeet/personal-repo/projects/prosci/AGENTS.md: absent
+/home/sumeet/personal-repo/projects/prosci/eval/scenarios/e3b/plan-economy.json: absent
+/home/sumeet/personal-repo/projects/forge: absent
+/home/sumeet/real-auth-probe: absent
+
+# credential-shaped env vars inside the sandbox (should be none)

@@ -68,7 +68,9 @@ if [ "${1:-}" = "--verify" ] || [ "${VERIFY_ONLY:-}" = "1" ]; then
       echo "ok   unreachable: $1"
     fi
   }
-  check_unreadable "$HOME_DIR/../real-auth-probe" # a probe the caller plants outside the boundary
+  # A probe the caller plants beside the workspace. Inside it would always be readable, which is a
+  # false alarm rather than a leak (the workspace is the one thing this boundary is meant to expose).
+  check_unreadable "$(dirname "$WORKSPACE")/real-auth-probe"
   check_unreadable "/home/sumeet/personal-repo/AGENTS.md"
   check_unreadable "/home/sumeet/.ssh/id_ed25519"
   check_unreadable "/home/sumeet/.pi/agent/auth.json"

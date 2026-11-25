@@ -92,6 +92,7 @@ if (authPath) {
 const outDir = resolve(flag("--out", "swarm-run"));
 mkdirSync(join(outDir, "handoffs"), { recursive: true });
 mkdirSync(join(outDir, "worktrees"), { recursive: true });
+mkdirSync(join(outDir, "output"), { recursive: true });
 const ledgerPath = join(outDir, "ledger.json");
 
 const maxConcurrency = Number(flag("--concurrency", plan.maxConcurrency ?? validation.profile.limits?.concurrency ?? 1));
@@ -284,6 +285,9 @@ async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onS
   let timedOut = false;
   const timer = setTimeout(() => { timedOut = true; spawned.kill(); }, deadlineMs || 20 * 60 * 1000);
   const result = await spawned.done;
+  // The raw stream is what proves which skills a worker actually opened; tool names alone do not.
+  writeFileSync(join(outDir, "output", `${unit.id}-a${attempt}.stdout.jsonl`), result.stdout ?? "");
+  writeFileSync(join(outDir, "output", `${unit.id}-a${attempt}.stderr.txt`), result.stderr ?? "");
   clearTimeout(timer);
   const end = now();
   const ms = end.mono - start.mono;

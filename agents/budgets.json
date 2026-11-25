@@ -17,6 +17,12 @@
       "modelByRole": { "architect": "claude-haiku-5-5", "planner": "claude-haiku-5-5", "implementer": "claude-haiku-5-5", "designer": "claude-haiku-5-5", "investigator": "claude-haiku-5-5", "reviewer": "claude-haiku-5-5", "verifier": "claude-haiku-5-5", "integrator": "claude-haiku-5-5" },
       "limits": { "maxAgents": 8, "concurrency": 4, "retries": 3, "wallClockMinutes": 240, "tokens": 2000000, "estimatedCostUsd": 1.0 }
     },
+    "mixed": {
+      "tiers": { "architect": "balanced", "planner": "economy", "implementer": "economy", "designer": "economy", "investigator": "economy", "reviewer": "balanced", "verifier": "economy", "integrator": "economy" },
+      "modelByRole": { "architect": "minimax-m3", "planner": "claude-haiku-5-5", "implementer": "claude-haiku-5-5", "designer": "claude-haiku-5-5", "investigator": "claude-haiku-5-5", "reviewer": "minimax-m3", "verifier": "claude-haiku-5-5", "integrator": "claude-haiku-5-5" },
+      "limits": { "maxAgents": 3, "concurrency": 2, "retries": 1, "wallClockMinutes": 20, "tokens": 150000, "estimatedCostUsd": 0.02 },
+      "note": "Role-specific profile: architecture and review on a second measured model, implementation on the cheap one. Model selection rests on E3a availability evidence only, not on comparative quality."
+    },
     "custom": {
       "tiers": {},
       "modelByRole": {},
