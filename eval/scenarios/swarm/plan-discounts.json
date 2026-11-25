@@ -1,0 +1,88 @@
+{
+  "id": "plan-discounts",
+  "profile": "balanced",
+  "maxConcurrency": 2,
+  "units": [
+    {
+      "id": "u1-architect",
+      "goal": "Decide where discount calculation lives and record the decision with an interface sketch.",
+      "role": "architect",
+      "skills": [
+        "prosci-architect"
+      ],
+      "files": [
+        "docs/adr/0001-discounts.md"
+      ],
+      "dependsOn": [],
+      "checks": [
+        "grep -q '## Decision' docs/adr/0001-discounts.md"
+      ],
+      "rollback": "delete docs/adr/0001-discounts.md",
+      "approval": {
+        "required": false
+      },
+      "budget": {
+        "tokens": 20000,
+        "estimatedCostUsd": 0.01,
+        "retries": 1
+      }
+    },
+    {
+      "id": "u2-implement",
+      "goal": "Add discounts(lines, percent) per the recorded decision, with a test that fails first.",
+      "role": "implementer",
+      "skills": [
+        "prosci-ship"
+      ],
+      "files": [
+        "src/pricing.mjs",
+        "test/pricing.test.mjs"
+      ],
+      "dependsOn": [
+        "u1-architect"
+      ],
+      "checks": [
+        "node --test",
+        "node -e \"import('./src/pricing.mjs').then(m=>m.discounts([{cents:1000}],10)[0]===900||process.exit(1))\""
+      ],
+      "rollback": "git revert the unit commit",
+      "approval": {
+        "required": false
+      },
+      "budget": {
+        "tokens": 40000,
+        "estimatedCostUsd": 0.02,
+        "retries": 2
+      }
+    },
+    {
+      "id": "u3-verify",
+      "goal": "Verify the CLI surface end to end, including an empty input, and report exit codes.",
+      "role": "verifier",
+      "skills": [
+        "prosci-verify"
+      ],
+      "files": [
+        "docs/verification/discounts.md"
+      ],
+      "dependsOn": [
+        "u2-implement"
+      ],
+      "checks": [
+        "node --test",
+        "grep -q 'exit' docs/verification/discounts.md"
+      ],
+      "rollback": "delete docs/verification/discounts.md",
+      "approval": {
+        "required": false
+      },
+      "budget": {
+        "tokens": 15000,
+        "estimatedCostUsd": 0.01,
+        "retries": 1
+      }
+    }
+  ],
+  "parallel": [],
+  "notes": "Realistic three-unit plan: architecture decision, implementation with a failing-first test, independent verification. Validated deterministically; no agents are spawned."
+}

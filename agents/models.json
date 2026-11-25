@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "note": "User-editable capability registry. Unknown stays unknown. Nothing here is inferred from a model name or price. Providers listed are those the survey found configured; this file selects among them only.",
+  "evidence": {
+    "measured": "verified by an evaluation in eval/reports/",
+    "documented": "stated by the provider and not verified here",
+    "untested": "available, no evidence",
+    "unknown": "we do not know; do not use for work that depends on the capability"
+  },
+  "models": [
+    {
+      "id": "claude-haiku-5-5",
+      "provider": "opencode-go",
+      "contextLimit": 200000,
+      "tools": true,
+      "taskCategories": ["implement", "review", "verify", "plan", "investigate", "design"],
+      "pricing": { "source": "estimate", "inputPerMTok": 0.2, "outputPerMTok": 1.0, "note": "harness price table, not provider-reported" },
+      "evidence": { "status": "measured", "where": "eval/reports/phase-0.1.md … phase-4.md", "caveat": "task-level results only; no capability ranking" }
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "provider": "opencode-go",
+      "contextLimit": null,
+      "tools": null,
+      "taskCategories": [],
+      "pricing": { "source": "unknown" },
+      "evidence": { "status": "unknown", "where": null, "caveat": "listed because the provider may serve it; nothing verified" }
+    }
+  ],
+  "policy": {
+    "unknownCapability": "excluded from assignment unless the plan explicitly allows untested models",
+    "unavailableModel": "rejected, never silently substituted",
+    "providerSwitch": "never automatic; requires a plan that names the provider and a human approval"
+  }
+}

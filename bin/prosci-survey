@@ -153,7 +153,8 @@ const fact = (value, source) => ({ value, source });
         reportsCost: providers.some(([, p]) => JSON.stringify(p).includes("cost")),
       }, "models.json provider and model ids only (auth store never read)");
     } catch {
-      out.unknowns.push({ field: "models", reason: "models.json present but unreadable" });
+      // Never substitute a default provider: an unreadable registry is an unknown, not an invitation.
+      out.unknowns.push({ field: "models", reason: "models.json present but unreadable; no fallback provider is assumed" });
     }
   } else {
     out.unknowns.push({ field: "models", reason: "no models.json at ~/.pi/agent" });

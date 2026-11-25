@@ -165,12 +165,12 @@
     {
       "name": "prosci-plan",
       "declared": "prosci-plan",
-      "sha256": "44b7cd7c7e71de78a3a8ee795083d3b9be3107e2a5a925af5da83c176ef10ce9",
-      "bytes": 4352,
+      "sha256": "78364c5909e189c9060905e6532b4ea60dffd32c5e2860b5763236254e5e3c19",
+      "bytes": 6393,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "44b7cd7c7e71de78a3a8ee795083d3b9be3107e2a5a925af5da83c176ef10ce9"
+          "sha256": "78364c5909e189c9060905e6532b4ea60dffd32c5e2860b5763236254e5e3c19"
         }
       ]
     },
