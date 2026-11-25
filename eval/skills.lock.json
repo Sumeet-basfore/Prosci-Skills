@@ -59,8 +59,8 @@
     {
       "name": "prosci-merge",
       "declared": "prosci-merge",
-      "sha256": "6a663449e41cf5ca81908561d53e750356caf0ff632ee35507c7afaa6780cebc",
-      "bytes": 5895
+      "sha256": "13bb9341733ef374775eb5b4ae8f911c87b5544158bb01385a9cdb0848651900",
+      "bytes": 6286
     },
     {
       "name": "prosci-plan",
