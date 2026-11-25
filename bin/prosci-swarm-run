@@ -14,11 +14,14 @@
 // Approval: --approve must equal `bin/prosci-swarm hash <plan>`. A different plan needs a new approval.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { loadRegistries, validatePlan, handoffText } from "./lib/swarm.mjs";
-import { createRecord, loadRecord, saveRecord, claimExecution, effectiveRetries, chargeRequests } from "./lib/exec-auth.mjs";
+import { spawnGroup, killGroup, groupAlive } from "./lib/proc.mjs";
+import { openBudget, usage } from "./lib/request-budget.mjs";
+import { createRecord, loadRecord, saveRecord, claimExecution, effectiveRetries } from "./lib/exec-auth.mjs";
 
 const args = process.argv.slice(2);
 const planPath = args.find((a) => !a.startsWith("--"));
@@ -98,14 +101,32 @@ if (limitConcurrency && maxConcurrency > limitConcurrency) {
   process.exit(2);
 }
 const deadlineMs = Number(flag("--deadline-min", 0)) * 60000;
+const unitDeadlineMs = Number(flag("--unit-deadline-min", 20)) * 60000;
 
-const units = plan.units.map((u) => ({ ...u, status: "planned", attempts: 0, transitions: [], worktree: null, branch: null, evidence: [] }));
+// P2: the proxy's own budget file is the atomic gate. It is opened to whatever is left of the execution's
+// request allowance, so concurrent workers cannot collectively exceed it.
+const budgetPath = join(outDir, "request-budget.json");
+const accessLines = () => {
+  try { return readFileSync(join(outDir, "proxy-access.jsonl"), "utf8").trim().split("\n").filter(Boolean).length; } catch { return 0; }
+};
+let budgetSnapshot = null;
+const requestAllowance = auth ? auth.maxRequests - auth.requestsUsed : Number.POSITIVE_INFINITY;
+if (Number.isFinite(requestAllowance)) openBudget(budgetPath, Math.max(0, requestAllowance));
+if (auth) process.env.PROXY_BUDGET_FILE = budgetPath;
+const accessLogPath = join(outDir, "proxy-access.jsonl");
+process.env.PROXY_ACCESS_LOG = accessLogPath;
+
+const units = plan.units.map((u) => ({ ...u, status: "planned", attempts: 0, transitions: [], worktree: null, branch: null, evidence: [], startedAt: null, finishedAt: null }));
 const byId = new Map(units.map((u) => [u.id, u]));
 const previous = existsSync(ledgerPath) && has("--resume") ? JSON.parse(readFileSync(ledgerPath, "utf8")) : null;
 
+let step = 0;
 const transition = (unit, to, detail = "") => {
+  step += 1;
   unit.status = to;
-  unit.transitions.push({ at: `step-${unit.transitions.length + 1}`, to, detail });
+  if (to === "running") unit.startedAt = step;
+  if (["succeeded", "failed", "blocked", "cancelled"].includes(to)) unit.finishedAt = step;
+  unit.transitions.push({ at: `step-${unit.transitions.length + 1}`, seq: step, to, detail });
   persist();
 };
 
@@ -118,6 +139,7 @@ function persist() {
     backend,
     approved: true,
     authorization: auth ? { maxExecutions: auth.maxExecutions, executions: auth.executions, maxRetriesPerUnit: auth.maxRetriesPerUnit, requestsUsed: auth.requestsUsed, maxRequests: auth.maxRequests } : null,
+    requests: budgetSnapshot ? { reserved: budgetSnapshot.used, limit: budgetSnapshot.limit, logged: accessLines() } : null,
     enforcement: {
       approval: "enforced by this controller (plan hash)",
       concurrency: "enforced by this controller",
@@ -168,79 +190,15 @@ function changedFilesIn(worktree, since) {
   return [...new Set([...status.split("\n").filter(Boolean).map((l) => l.slice(3).trim()), ...tracked.split("\n").filter(Boolean)])];
 }
 
-function fakeWorker(unit, worktree) {
-  // Deterministic stand-in for an agent: reads the unit's scripted behaviour from the plan.
-  const script = unit.fake ?? { outcome: "success" };
-  if (script.delayMs) spawnSync("sh", ["-c", `sleep ${(script.delayMs / 1000).toFixed(3)}`]);
-  if (script.outcome === "crash") return { ok: false, kind: "crash", detail: "worker exited without a result" };
-  if (script.outcome === "timeout") return { ok: false, kind: "timeout", detail: "deadline exceeded" };
-  if (script.outcome === "invalid") return { ok: false, kind: "invalid", detail: "result is not valid JSON" };
-  for (const [file, content] of Object.entries(script.files ?? {})) {
-    const path = join(worktree, file);
-    mkdirSync(join(path, ".."), { recursive: true });
-    writeFileSync(path, content);
-  }
-  if (script.outcome === "fail") return { ok: false, kind: "fail", detail: script.detail ?? "unit check failed" };
-  return { ok: true, kind: "success", detail: script.detail ?? "completed" };
-}
-
-function modelProvider(modelId) {
-  return modelId.includes("/") ? modelId.split("/")[0] : "prosci-proxy";
-}
-
-function resolveSkills(names) {
-  const skillsRoot = process.env.PI_CODING_AGENT_DIR ? join(process.env.PI_CODING_AGENT_DIR, "skills") : null;
-  return (names ?? []).flatMap((name) => {
-    if (skillsRoot && existsSync(join(skillsRoot, name))) return ["--skill", join(skillsRoot, name)];
-    if (existsSync(name)) return ["--skill", name];
-    return ["--skill", name]; // let pi report it; the controller records the failure
-  });
-}
-
-function piWorker(unit, worktree, handoff) {
-  // The real backend: one non-interactive pi process in the unit's worktree. Skills are passed explicitly
-  // because discovery was unreliable; the model and provider come from the validated plan, never guessed.
-  const prompt = `${handoff}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`;
-  const started = Date.now();
-  const r = spawnSync("pi", ["-p", "--mode", "json", "--model", unit.model, ...resolveSkills(unit.skills), prompt], {
-    cwd: worktree,
-    encoding: "utf8",
-    timeout: deadlineMs || 20 * 60 * 1000,
-    maxBuffer: 200 * 1024 * 1024,
-  });
-  const ms = Date.now() - started;
-  if (r.error?.code === "ETIMEDOUT") return { ok: false, kind: "timeout", detail: `${ms}ms`, ms };
-  if (r.status !== 0) return { ok: false, kind: "crash", detail: `exit ${r.status}`, ms };
-  let events;
-  try {
-    events = r.stdout.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
-  } catch {
-    return { ok: false, kind: "invalid", detail: "pi did not emit JSON lines", ms };
-  }
-  // Model identity as reported by the harness, not as requested — a substitution must be visible.
-  const assistant = events.filter((e) => e.type === "message_end" && e.message?.role === "assistant");
-  const reported = assistant.map((e) => `${e.message.provider ?? "?"}/${e.message.model ?? "?"}`).filter((v, i, a) => a.indexOf(v) === i);
-  const tools = assistant.flatMap((e) => (e.message.content ?? []).filter((c) => c.type === "toolCall").map((c) => c.name));
-  const usage = assistant.at(-1)?.message?.usage ?? null;
-  if (reported.length !== 1 || reported[0] !== `${modelProvider(unit.model)}/${unit.model.replace(/^.*\//, "")}`) {
-    // The requested provider/model is what the plan approved; anything else aborts this unit.
-    if (reported.some((r) => !r.endsWith(unit.model.replace(/^.*\//, "")))) {
-      return { ok: false, kind: "model-mismatch", detail: `reported ${reported.join(", ")}`, ms, reported };
-    }
-  }
-  return { ok: true, kind: "success", detail: `${ms}ms`, ms, reportedModel: reported, toolCalls: tools, usage };
-}
-
-function runUnit(unit) {
-  if (unit.status === "succeeded") return;
+// Prepare a unit: dependency integration, worktree, handoff. Git work is serialised because it mutates the
+// repository; only the worker runs concurrently.
+function prepareUnit(unit) {
   const missing = (unit.dependsOn ?? []).filter((d) => byId.get(d)?.status !== "succeeded");
   if (missing.length) {
     transition(unit, "blocked", `waiting on ${missing.join(", ")}`);
-    return;
+    return null;
   }
   transition(unit, "ready");
-  // A dependent unit must receive its predecessors' real commits, not their prose. Build an integration
-  // branch from the original base by merging each dependency's branch, then cut the worktree from it.
   const worktree = join(outDir, "worktrees", unit.id);
   const branch = `prosci/${plan.id ?? "run"}/${planHash.slice(0, 6)}/${unit.id}`;
   let startPoint = base;
@@ -256,111 +214,198 @@ function runUnit(unit) {
       if (merge.status !== 0) {
         spawnSync("git", ["merge", "--abort"], { encoding: "utf8" });
         transition(unit, "blocked", `predecessor merge conflict: ${merge.stderr.slice(0, 160)}`);
-        return;
+        return null;
       }
     }
-    // Leave the integration branch at the merge result and hand the unit its tip.
-    spawnSync("git", ["checkout", "-q", integration], { encoding: "utf8" });
-    startPoint = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
     spawnSync("git", ["checkout", "-q", checkout], { encoding: "utf8" });
+    startPoint = spawnSync("git", ["rev-parse", integration], { encoding: "utf8" }).stdout.trim();
     unit.predecessorCommits = depBranches.map((b) => ({ branch: b, sha: spawnSync("git", ["rev-parse", b], { encoding: "utf8" }).stdout.trim() }));
   }
   if (!existsSync(worktree)) {
     const added = spawnSync("git", ["worktree", "add", "-q", "-b", branch, worktree, startPoint], { encoding: "utf8" });
-    if (added.status !== 0) { transition(unit, "failed", `worktree: ${added.stderr.slice(0, 200)}`); return; }
+    if (added.status !== 0) { transition(unit, "failed", `worktree: ${added.stderr.slice(0, 200)}`); return null; }
   }
   unit.worktree = worktree;
   unit.branch = branch;
+  unit.startPoint = startPoint;
   const handoff = handoffText(unit, profileName, registries.roles);
   writeFileSync(join(outDir, "handoffs", `${unit.id}.md`), handoff);
-
-  const planRetries = unit.budget?.retries ?? 0;
-  const retries = auth ? effectiveRetries(auth, planRetries) : planRetries;
-  if (auth && retries !== planRetries) unit.retriesClamped = { plan: planRetries, authorized: retries };
-  for (let attempt = 1; attempt <= retries + 1; attempt += 1) {
-    unit.attempts = attempt;
-    if (auth) {
-      // Each attempt spends at least one request; a failed or interrupted attempt is not refundable.
-      const charged = chargeRequests(auth, 1);
-      saveRecord(authPath, auth);
-      if (!charged.ok) {
-        transition(unit, "failed", `request budget exhausted (${charged.used}/${charged.limit})`);
-        return;
-      }
-    }
-    transition(unit, "running", `attempt ${attempt}`);
-    const result = backend === "fake" ? fakeWorker(unit, worktree) : piWorker(unit, worktree, handoff);
-    unit.evidence.push({ attempt, ...result });
-
-    if (!result.ok) {
-      if (attempt <= retries && result.kind !== "timeout") { transition(unit, "ready", `${result.kind}, retrying`); continue; }
-      transition(unit, "failed", `${result.kind}: ${result.detail}`);
-      return;
-    }
-
-    // Ownership: a worker may only change files its unit owns. This is checked from git, not from the
-    // worker's own report.
-    const changed = changedFilesIn(worktree, startPoint);
-    const owned = new Set(unit.files);
-    const outside = changed.filter((f) => !owned.has(f) && !f.startsWith(".prosci"));
-    if (outside.length) {
-      transition(unit, "failed", `changed files outside ownership: ${outside.join(", ")}`);
-      return;
-    }
-    unit.changedFiles = changed;
-
-    // Acceptance checks run in the worktree, by the controller, not by the worker.
-    const checks = (unit.checks ?? []).map((check) => {
-      const r = spawnSync("sh", ["-c", check], { cwd: worktree, encoding: "utf8", timeout: 120000 });
-      return { check, ok: r.status === 0, detail: (r.stderr || r.stdout || "").slice(0, 200) };
-    });
-    unit.checksRun = checks;
-    const failed = checks.filter((c) => !c.ok);
-    if (failed.length) {
-      if (attempt <= retries) { transition(unit, "ready", `check failed, retrying: ${failed[0].check}`); continue; }
-      transition(unit, "failed", `acceptance failed: ${failed.map((c) => c.check).join("; ")}`);
-      return;
-    }
-    // Commit the unit's work on its branch so integration has something to merge.
-    spawnSync("sh", ["-c", `git add -A && git -c user.name=prosci -c user.email=prosci@local commit -qm "unit ${unit.id}: ${unit.goal.replace(/"/g, "'").slice(0, 60)}"`], { cwd: worktree });
-    transition(unit, "succeeded", `checks passed (${checks.length})`);
-    return;
-  }
+  return { worktree, handoff, startPoint };
 }
 
-// Dependency-ordered execution with bounded concurrency.
-persist();
-const running = [];
-const startedAt = Date.now();
-let cancelled = false;
-process.on("SIGINT", () => {
-  cancelled = true;
-  for (const u of units) if (u.status === "running" || u.status === "ready") transition(u, "cancelled", "interrupted by operator");
-  persist();
-  process.exit(130);
-});
+function resolveSkills(names) {
+  const skillsRoot = process.env.PI_CODING_AGENT_DIR ? join(process.env.PI_CODING_AGENT_DIR, "skills") : null;
+  return (names ?? []).flatMap((name) => {
+    if (skillsRoot && existsSync(join(skillsRoot, name))) return ["--skill", join(skillsRoot, name)];
+    if (existsSync(name)) return ["--skill", name];
+    return ["--skill", name];
+  });
+}
 
-while (true) {
-  if (deadlineMs && Date.now() - startedAt > deadlineMs) {
-    for (const u of units) if (["planned", "ready", "running"].includes(u.status)) transition(u, "cancelled", "global deadline exceeded");
+function modelProvider(modelId) {
+  return modelId.includes("/") ? modelId.split("/")[0] : "prosci-proxy";
+}
+
+// One attempt: a child process in the unit's worktree, in its own process group. Concurrency is real, and so
+// is the kill: a deadline or a cancellation signals the group, not just the child.
+async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onSpawn = () => {}) {
+  unit.attempts = attempt;
+  transition(unit, "running", `attempt ${attempt}`);
+
+  // P2: reservations happen at the proxy, immediately before forwarding. The controller only refuses to
+  // start a unit when the allowance is already spent, so attempts and requests stay separate quantities.
+  if (Number.isFinite(requestAllowance)) {
+    const state = usage(budgetPath);
+    if (state.used >= state.limit) {
+      transition(unit, "failed", `request budget exhausted (${state.used}/${state.limit})`);
+      return false;
+    }
+  }
+
+  const startedAt = Date.now();
+  const spec = unit.fake ?? { outcome: "success" };
+  const spawned = backend === "fake"
+    ? spawnGroup(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "lib", "fake-worker.mjs"), JSON.stringify(spec)], { cwd: worktree, env: process.env })
+    : spawnGroup("pi", ["-p", "--mode", "json", "--model", unit.model, ...resolveSkills(unit.skills), `${handoff}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`], { cwd: worktree, env: process.env });
+
+  // Recorded before the worker finishes, so a cancellation can still find and kill the group.
+  const evidence = { attempt, ok: false, kind: "running", pgid: spawned.pgid, ms: null };
+  unit.evidence.push(evidence);
+  onSpawn(spawned.kill);
+
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; spawned.kill(); }, deadlineMs || 20 * 60 * 1000);
+  const result = await spawned.done;
+  clearTimeout(timer);
+  const ms = Date.now() - startedAt;
+
+  Object.assign(evidence, { ms, groupKilled: timedOut });
+  if (timedOut) { Object.assign(evidence, { kind: "timeout", detail: `${ms}ms` }); return "timeout"; }
+  if (result.error) { Object.assign(evidence, { kind: "crash", detail: String(result.error.message ?? result.error) }); return "crash"; }
+
+  if (backend === "fake") {
+    if (spec.outcome === "crash" || result.code !== 0) { Object.assign(evidence, { kind: "crash", detail: `exit ${result.code}` }); return "crash"; }
+    if (spec.outcome === "invalid") { Object.assign(evidence, { kind: "invalid", detail: "result is not JSON" }); return "invalid"; }
+  } else {
+    let events;
+    try {
+      events = result.stdout.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
+    } catch {
+      unit.evidence.push({ ...base, kind: "invalid", detail: "pi did not emit JSON lines" });
+      return "invalid";
+    }
+    const assistant = events.filter((e) => e.type === "message_end" && e.message?.role === "assistant");
+    const reported = assistant.map((e) => `${e.message.provider ?? "?"}/${e.message.model ?? "?"}`).filter((v, i, a) => a.indexOf(v) === i);
+    const tools = assistant.flatMap((e) => (e.message.content ?? []).filter((c) => c.type === "toolCall").map((c) => c.name));
+    const usage = assistant.at(-1)?.message?.usage ?? null;
+    Object.assign(evidence, { ok: true, kind: "success", detail: `${ms}ms`, reportedModel: reported, toolCalls: tools, usage });
+    if (reported.length && reported.some((r) => !r.endsWith(unit.model.replace(/^.*\//, "")))) {
+      transition(unit, "failed", `model mismatch: reported ${reported.join(", ")}`);
+      return "mismatch";
+    }
+  }
+
+  // Ownership is checked from git, after the fact. It detects an out-of-bounds write; it does not prevent one.
+  const changed = changedFilesIn(worktree, unit.startPoint);
+  const owned = new Set(unit.files);
+  const outside = changed.filter((f) => !owned.has(f) && !f.startsWith(".prosci") && !f.startsWith("request-budget"));
+  if (outside.length) {
+    Object.assign(evidence, { kind: "ownership", detail: outside.join(", ") });
+    transition(unit, "failed", `changed files outside ownership: ${outside.join(", ")}`);
+    return "ownership";
+  }
+  unit.changedFiles = changed;
+
+  const checks = (unit.checks ?? []).map((check) => {
+    const r = spawnSync("sh", ["-c", check], { cwd: worktree, encoding: "utf8", timeout: 120000 });
+    return { check, ok: r.status === 0, detail: (r.stderr || r.stdout || "").slice(0, 200) };
+  });
+  unit.checksRun = checks;
+  const failed = checks.filter((c) => !c.ok);
+  if (failed.length) {
+    Object.assign(evidence, { kind: "acceptance", detail: failed.map((c) => c.check).join("; ") });
+    return "acceptance";
+  }
+  spawnSync("sh", ["-c", `git add -A && git -c user.name=prosci -c user.email=prosci@local commit -qm "unit ${unit.id}: ${unit.goal.replace(/"/g, "'").slice(0, 60)}"`], { cwd: worktree });
+  return "success";
+}
+
+// Bounded concurrency: independent units run at the same time; dependent units wait for a succeeded
+// predecessor. Their intervals overlap in the ledger, which is what makes the claim checkable.
+persist();
+
+const inFlight = new Map();
+let cancelled = false;
+const startedAt = Date.now();
+
+const cancelAll = (reason) => {
+  cancelled = true;
+  for (const [id, handle] of inFlight) {
+    handle.kill();
+    const unit = byId.get(id);
+    if (unit && !["succeeded", "failed"].includes(unit.status)) transition(unit, "cancelled", reason);
+  }
+  for (const u of units) if (["planned", "ready"].includes(u.status)) transition(u, "cancelled", reason);
+  persist();
+};
+process.on("SIGINT", () => { cancelAll("interrupted by operator"); process.exit(130); });
+process.on("SIGTERM", () => { cancelAll("terminated"); process.exit(143); });
+
+const runOne = async (unit, prepared, retries, onSpawn) => {
+  let outcome = await attemptUnit(unit, prepared, 1, unitDeadlineMs, onSpawn);
+  let attempt = 1;
+  while (["acceptance", "crash", "invalid"].includes(outcome) && attempt <= retries) {
+    attempt += 1;
+    transition(unit, "ready", `${outcome}, retrying`);
+    outcome = await attemptUnit(unit, prepared, attempt, unitDeadlineMs, onSpawn);
+  }
+  if (outcome === "success") transition(unit, "succeeded", `checks passed (${(unit.checksRun ?? []).length})`);
+  else if (!["failed", "blocked", "cancelled"].includes(unit.status)) {
+    const detail = { acceptance: "acceptance failed", timeout: "unit deadline exceeded", crash: "worker crashed", invalid: "invalid worker output", ownership: "wrote outside ownership", mismatch: "model mismatch" }[outcome] ?? outcome;
+    transition(unit, "failed", detail);
+  }
+};
+
+while (!cancelled) {
+  if (deadlineMs && Date.now() - startedAt > deadlineMs) { cancelAll("global deadline exceeded"); break; }
+
+  while (inFlight.size < maxConcurrency) {
+    const next = units.find((u) => u.status === "planned" && (u.dependsOn ?? []).every((d) => byId.get(d)?.status === "succeeded"));
+    if (!next) break;
+    const prepared = prepareUnit(next);
+    if (!prepared) continue;
+    const planRetries = next.budget?.retries ?? 0;
+    const retries = auth ? effectiveRetries(auth, planRetries) : planRetries;
+    if (auth && retries !== planRetries) next.retriesClamped = { plan: planRetries, authorized: retries };
+    const handle = { kill: () => {}, promise: null };
+    handle.promise = runOne(next, prepared, retries, (kill) => { handle.kill = kill; }).finally(() => inFlight.delete(next.id));
+    inFlight.set(next.id, handle);
+  }
+
+  if (!inFlight.size) {
+    for (const u of units) {
+      if (u.status !== "planned") continue;
+      const bad = (u.dependsOn ?? []).filter((d) => ["failed", "blocked", "cancelled"].includes(byId.get(d)?.status));
+      if (bad.length) transition(u, "blocked", `dependency ${bad.join(", ")} did not succeed`);
+    }
     break;
   }
-  const ready = units.filter((u) => u.status === "planned" && (u.dependsOn ?? []).every((d) => byId.get(d)?.status === "succeeded"));
-  const active = units.filter((u) => u.status === "running").length;
-  if (!ready.length && !active) break;
-  // Run synchronously one at a time; concurrency is respected by refusing to start more than the limit.
-  const next = ready.find(() => active < maxConcurrency);
-  if (next) runUnit(next);
-  else if (!active) break;
-  // Blocked units: any dependency failed → block dependents, don't run them.
-  for (const u of units) {
-    if (u.status !== "planned") continue;
-    const bad = (u.dependsOn ?? []).filter((d) => ["failed", "blocked", "cancelled"].includes(byId.get(d)?.status));
-    if (bad.length) transition(u, "blocked", `dependency ${bad.join(", ")} did not succeed`);
-  }
+  // Wait for any unit to finish, or poll again when the limit frees a slot.
+  await Promise.race([...inFlight.values()].map((h) => h.promise));
 }
 
 persist();
+
+// P2: reconcile the proxy's own accounting with the ledger. The reservation count is authoritative; the
+// authorization record is charged with what the run actually consumed.
+const budget = Number.isFinite(requestAllowance) ? usage(budgetPath) : null;
+budgetSnapshot = budget;
+if (auth && budget) {
+  auth.requestsUsed += budget.used;
+  saveRecord(authPath, auth);
+}
+persist();
+
 const summary = {
   planned: units.filter((u) => u.status === "planned").length,
   succeeded: units.filter((u) => u.status === "succeeded").length,
@@ -369,6 +414,7 @@ const summary = {
   cancelled: units.filter((u) => u.status === "cancelled").length,
 };
 console.log(`run complete: ${summary.succeeded} succeeded, ${summary.failed} failed, ${summary.blocked} blocked, ${summary.cancelled} cancelled`);
+if (budget) console.log(`requests: ${budget.used}/${budget.limit} consumed (reserved at the proxy)`);
 console.log(`ledger: ${ledgerPath}`);
 for (const u of units) if (u.status !== "succeeded") console.error(`  ${u.id}: ${u.status} — ${u.transitions.at(-1)?.detail ?? ""}`);
 process.exit(summary.failed || summary.blocked || summary.cancelled ? 1 : 0);
