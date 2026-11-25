@@ -48,6 +48,7 @@ jobs:
           node eval/harness/audit-network.mjs
           node eval/harness/skill-lint.mjs
           node bin/prosci-swarm check eval/scenarios/swarm/plan-discounts.json
+          node --test bin/test/*.test.mjs
           node eval/harness/validate-scenarios.mjs --layer init
           # A directory argument is not supported before Node 24, so name the files.
           node --test eval/harness/test/*.test.mjs

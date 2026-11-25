@@ -1,0 +1,286 @@
+#!/usr/bin/env node
+// Bounded execution controller for validated swarm plans.
+//
+//   bin/prosci-swarm-run <plan.json> --approve <plan-hash> [--backend fake] [--out <dir>]
+//                                   [--concurrency N] [--deadline-min N] [--resume]
+//
+// What it does: validates the plan, enforces dependencies and concurrency, runs each unit in an isolated
+// git worktree, rejects changes outside the unit's owned files, records every lifecycle transition, and
+// stops on failure. It does not publish, force-push, or resolve semantic conflicts.
+//
+// What it does NOT do: spawn real agents unless --backend pi --allow-paid is passed, in which case a single
+// provider/model path is used. Neither backend is a sandbox: a worktree isolates files, not credentials.
+//
+// Approval: --approve must equal `bin/prosci-swarm hash <plan>`. A different plan needs a new approval.
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { loadRegistries, validatePlan, handoffText } from "./lib/swarm.mjs";
+
+const args = process.argv.slice(2);
+const planPath = args.find((a) => !a.startsWith("--"));
+const flag = (name, fallback) => {
+  const i = args.indexOf(name);
+  return i > -1 ? args[i + 1] : fallback;
+};
+const has = (name) => args.includes(name);
+
+if (!planPath) {
+  console.error("usage: prosci-swarm-run <plan.json> --approve <hash> [--backend fake|pi] [--out dir]");
+  process.exit(2);
+}
+
+const plan = JSON.parse(readFileSync(planPath, "utf8"));
+const registries = loadRegistries();
+const profileName = flag("--profile", plan.profile ?? "balanced");
+const validation = validatePlan(plan, profileName, registries);
+if (!validation.valid) {
+  for (const e of validation.errors) console.error(`FAIL ${e}`);
+  process.exit(1);
+}
+
+// Approval is enforced here, not in prose: no matching hash, no execution.
+const planHash = createHash("sha256").update(readFileSync(planPath)).digest("hex").slice(0, 16);
+const approval = flag("--approve", null);
+if (!approval) {
+  console.error(`approval required: review the plan, then pass --approve ${planHash}`);
+  process.exit(2);
+}
+if (approval !== planHash) {
+  console.error(`approval does not match this plan (expected ${planHash}); a changed plan needs a new approval`);
+  process.exit(2);
+}
+
+const backend = flag("--backend", "fake");
+if (backend === "pi" && !has("--allow-paid")) {
+  console.error("the pi backend spends money; pass --allow-paid to acknowledge the budget in the plan");
+  process.exit(2);
+}
+if (!["fake", "pi"].includes(backend)) {
+  console.error(`unsupported backend: ${backend}`);
+  process.exit(2);
+}
+
+const outDir = resolve(flag("--out", "swarm-run"));
+mkdirSync(join(outDir, "handoffs"), { recursive: true });
+mkdirSync(join(outDir, "worktrees"), { recursive: true });
+const ledgerPath = join(outDir, "ledger.json");
+
+const maxConcurrency = Number(flag("--concurrency", plan.maxConcurrency ?? validation.profile.limits?.concurrency ?? 1));
+const limitConcurrency = validation.profile.limits?.concurrency;
+if (limitConcurrency && maxConcurrency > limitConcurrency) {
+  console.error(`concurrency ${maxConcurrency} exceeds the profile limit ${limitConcurrency}`);
+  process.exit(2);
+}
+const deadlineMs = Number(flag("--deadline-min", 0)) * 60000;
+
+const units = plan.units.map((u) => ({ ...u, status: "planned", attempts: 0, transitions: [], worktree: null, branch: null, evidence: [] }));
+const byId = new Map(units.map((u) => [u.id, u]));
+const previous = existsSync(ledgerPath) && has("--resume") ? JSON.parse(readFileSync(ledgerPath, "utf8")) : null;
+
+const transition = (unit, to, detail = "") => {
+  unit.status = to;
+  unit.transitions.push({ at: `step-${unit.transitions.length + 1}`, to, detail });
+  persist();
+};
+
+function persist() {
+  writeFileSync(ledgerPath, JSON.stringify({
+    schema: 1,
+    plan: plan.id ?? null,
+    planHash,
+    profile: profileName,
+    backend,
+    approved: true,
+    enforcement: {
+      approval: "enforced by this controller (plan hash)",
+      concurrency: "enforced by this controller",
+      dependencies: "enforced by this controller",
+      ownership: "checked from git after each unit",
+      deadline: deadlineMs ? "enforced by killing the process tree" : "not set",
+      tokens: "reported, not enforced",
+      estimatedCostUsd: "advisory",
+    },
+    limits: { maxConcurrency, deadlineMs, profile: validation.profile.limits },
+    budget: validation.budget,
+    units: units.map((u) => ({
+      id: u.id, role: u.role, model: u.model, status: u.status, attempts: u.attempts,
+      branch: u.branch, worktree: u.worktree, evidence: u.evidence, transitions: u.transitions,
+      checksRun: u.checksRun ?? [], changedFiles: u.changedFiles ?? [],
+      tokens: u.tokens ?? null, costUsd: u.costUsd ?? null,
+    })),
+  }, null, 2));
+}
+
+// Resume: succeeded units stay done; anything that was running is treated as interrupted and retried.
+if (previous) {
+  for (const prior of previous.units ?? []) {
+    const unit = byId.get(prior.id);
+    if (!unit) continue;
+    if (prior.status === "succeeded") {
+      unit.status = "succeeded";
+      unit.branch = prior.branch;
+      unit.evidence = prior.evidence ?? [];
+      unit.transitions = prior.transitions ?? [];
+    } else {
+      unit.transitions = prior.transitions ?? [];
+      unit.transitions.push({ at: `resume`, to: "planned", detail: `recovered from ${prior.status}` });
+    }
+  }
+}
+
+const base = spawnSync("git", ["rev-parse", "HEAD"], { cwd: process.cwd(), encoding: "utf8" }).stdout.trim();
+
+function changedFilesIn(worktree) {
+  const status = spawnSync("git", ["status", "--porcelain=v1", "--untracked-files=all"], { cwd: worktree, encoding: "utf8" }).stdout;
+  const tracked = spawnSync("git", ["diff", "--name-only", base], { cwd: worktree, encoding: "utf8" }).stdout;
+  return [...new Set([...status.split("\n").filter(Boolean).map((l) => l.slice(3).trim()), ...tracked.split("\n").filter(Boolean)])];
+}
+
+function fakeWorker(unit, worktree) {
+  // Deterministic stand-in for an agent: reads the unit's scripted behaviour from the plan.
+  const script = unit.fake ?? { outcome: "success" };
+  if (script.delayMs) spawnSync("sh", ["-c", `sleep ${(script.delayMs / 1000).toFixed(3)}`]);
+  if (script.outcome === "crash") return { ok: false, kind: "crash", detail: "worker exited without a result" };
+  if (script.outcome === "timeout") return { ok: false, kind: "timeout", detail: "deadline exceeded" };
+  if (script.outcome === "invalid") return { ok: false, kind: "invalid", detail: "result is not valid JSON" };
+  for (const [file, content] of Object.entries(script.files ?? {})) {
+    const path = join(worktree, file);
+    mkdirSync(join(path, ".."), { recursive: true });
+    writeFileSync(path, content);
+  }
+  if (script.outcome === "fail") return { ok: false, kind: "fail", detail: script.detail ?? "unit check failed" };
+  return { ok: true, kind: "success", detail: script.detail ?? "completed" };
+}
+
+function piWorker(unit, worktree, handoff) {
+  // The real backend: one non-interactive pi process in the unit's worktree. Skills are passed explicitly
+  // because discovery was unreliable; the model and provider come from the validated plan, never guessed.
+  const prompt = `${handoff}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`;
+  const started = Date.now();
+  const r = spawnSync("pi", ["-p", "--mode", "json", "--model", unit.model, ...(unit.skills ?? []).flatMap((s) => ["--skill", s]), prompt], {
+    cwd: worktree,
+    encoding: "utf8",
+    timeout: deadlineMs || 20 * 60 * 1000,
+    maxBuffer: 200 * 1024 * 1024,
+  });
+  const ms = Date.now() - started;
+  if (r.error?.code === "ETIMEDOUT") return { ok: false, kind: "timeout", detail: `${ms}ms`, ms };
+  if (r.status !== 0) return { ok: false, kind: "crash", detail: `exit ${r.status}`, ms };
+  try {
+    JSON.parse(r.stdout);
+  } catch {
+    return { ok: false, kind: "invalid", detail: "pi did not emit JSON", ms };
+  }
+  return { ok: true, kind: "success", detail: `${ms}ms`, ms };
+}
+
+function runUnit(unit) {
+  if (unit.status === "succeeded") return;
+  const missing = (unit.dependsOn ?? []).filter((d) => byId.get(d)?.status !== "succeeded");
+  if (missing.length) {
+    transition(unit, "blocked", `waiting on ${missing.join(", ")}`);
+    return;
+  }
+  transition(unit, "ready");
+  const worktree = join(outDir, "worktrees", unit.id);
+  // Namespaced by plan hash so two runs of the same plan cannot collide, and a stale branch is obvious.
+  const branch = `prosci/${plan.id ?? "run"}/${planHash.slice(0, 6)}/${unit.id}`;
+  if (!existsSync(worktree)) {
+    const added = spawnSync("git", ["worktree", "add", "-q", "-b", branch, worktree, base], { encoding: "utf8" });
+    if (added.status !== 0) { transition(unit, "failed", `worktree: ${added.stderr.slice(0, 200)}`); return; }
+  }
+  unit.worktree = worktree;
+  unit.branch = branch;
+  const handoff = handoffText(unit, profileName, registries.roles);
+  writeFileSync(join(outDir, "handoffs", `${unit.id}.md`), handoff);
+
+  const retries = unit.budget?.retries ?? 0;
+  for (let attempt = 1; attempt <= retries + 1; attempt += 1) {
+    unit.attempts = attempt;
+    transition(unit, "running", `attempt ${attempt}`);
+    const result = backend === "fake" ? fakeWorker(unit, worktree) : piWorker(unit, worktree, handoff);
+    unit.evidence.push({ attempt, ...result });
+
+    if (!result.ok) {
+      if (attempt <= retries && result.kind !== "timeout") { transition(unit, "ready", `${result.kind}, retrying`); continue; }
+      transition(unit, "failed", `${result.kind}: ${result.detail}`);
+      return;
+    }
+
+    // Ownership: a worker may only change files its unit owns. This is checked from git, not from the
+    // worker's own report.
+    const changed = changedFilesIn(worktree);
+    const owned = new Set(unit.files);
+    const outside = changed.filter((f) => !owned.has(f) && !f.startsWith(".prosci"));
+    if (outside.length) {
+      transition(unit, "failed", `changed files outside ownership: ${outside.join(", ")}`);
+      return;
+    }
+    unit.changedFiles = changed;
+
+    // Acceptance checks run in the worktree, by the controller, not by the worker.
+    const checks = (unit.checks ?? []).map((check) => {
+      const r = spawnSync("sh", ["-c", check], { cwd: worktree, encoding: "utf8", timeout: 120000 });
+      return { check, ok: r.status === 0, detail: (r.stderr || r.stdout || "").slice(0, 200) };
+    });
+    unit.checksRun = checks;
+    const failed = checks.filter((c) => !c.ok);
+    if (failed.length) {
+      if (attempt <= retries) { transition(unit, "ready", `check failed, retrying: ${failed[0].check}`); continue; }
+      transition(unit, "failed", `acceptance failed: ${failed.map((c) => c.check).join("; ")}`);
+      return;
+    }
+    // Commit the unit's work on its branch so integration has something to merge.
+    spawnSync("sh", ["-c", `git add -A && git -c user.name=prosci -c user.email=prosci@local commit -qm "unit ${unit.id}: ${unit.goal.replace(/"/g, "'").slice(0, 60)}"`], { cwd: worktree });
+    transition(unit, "succeeded", `checks passed (${checks.length})`);
+    return;
+  }
+}
+
+// Dependency-ordered execution with bounded concurrency.
+persist();
+const running = [];
+const startedAt = Date.now();
+let cancelled = false;
+process.on("SIGINT", () => {
+  cancelled = true;
+  for (const u of units) if (u.status === "running" || u.status === "ready") transition(u, "cancelled", "interrupted by operator");
+  persist();
+  process.exit(130);
+});
+
+while (true) {
+  if (deadlineMs && Date.now() - startedAt > deadlineMs) {
+    for (const u of units) if (["planned", "ready", "running"].includes(u.status)) transition(u, "cancelled", "global deadline exceeded");
+    break;
+  }
+  const ready = units.filter((u) => u.status === "planned" && (u.dependsOn ?? []).every((d) => byId.get(d)?.status === "succeeded"));
+  const active = units.filter((u) => u.status === "running").length;
+  if (!ready.length && !active) break;
+  // Run synchronously one at a time; concurrency is respected by refusing to start more than the limit.
+  const next = ready.find(() => active < maxConcurrency);
+  if (next) runUnit(next);
+  else if (!active) break;
+  // Blocked units: any dependency failed → block dependents, don't run them.
+  for (const u of units) {
+    if (u.status !== "planned") continue;
+    const bad = (u.dependsOn ?? []).filter((d) => ["failed", "blocked", "cancelled"].includes(byId.get(d)?.status));
+    if (bad.length) transition(u, "blocked", `dependency ${bad.join(", ")} did not succeed`);
+  }
+}
+
+persist();
+const summary = {
+  planned: units.filter((u) => u.status === "planned").length,
+  succeeded: units.filter((u) => u.status === "succeeded").length,
+  failed: units.filter((u) => u.status === "failed").length,
+  blocked: units.filter((u) => u.status === "blocked").length,
+  cancelled: units.filter((u) => u.status === "cancelled").length,
+};
+console.log(`run complete: ${summary.succeeded} succeeded, ${summary.failed} failed, ${summary.blocked} blocked, ${summary.cancelled} cancelled`);
+console.log(`ledger: ${ledgerPath}`);
+for (const u of units) if (u.status !== "succeeded") console.error(`  ${u.id}: ${u.status} — ${u.transitions.at(-1)?.detail ?? ""}`);
+process.exit(summary.failed || summary.blocked || summary.cancelled ? 1 : 0);

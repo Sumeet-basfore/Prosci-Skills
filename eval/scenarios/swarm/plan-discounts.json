@@ -84,5 +84,5 @@
     }
   ],
   "parallel": [],
-  "notes": "Realistic three-unit plan: architecture decision, implementation with a failing-first test, independent verification. Validated deterministically; no agents are spawned."
+  "notes": "Realistic three-unit plan: architecture decision, implementation with a failing-first test, independent verification. Validated deterministically; no agents are spawned. Simulated with bin/prosci-swarm-run --backend fake: all three units succeeded, transitions ready -> running -> succeeded, ledger records checks and changed files."
 }
