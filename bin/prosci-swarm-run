@@ -18,6 +18,7 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { inspectArm, restoreBase, verifyProxyIdentity } from "./lib/exec-guard.mjs";
 import { loadRegistries, validatePlan, handoffText } from "./lib/swarm.mjs";
 import { spawnGroup, killGroup, groupAlive } from "./lib/proc.mjs";
 import { openBudget, usage } from "./lib/request-budget.mjs";
@@ -65,6 +66,41 @@ if (backend === "pi" && !has("--allow-paid")) {
 if (!["fake", "pi"].includes(backend)) {
   console.error(`unsupported backend: ${backend}`);
   process.exit(2);
+}
+
+// D-005/D-006: an arm is a snapshot, a proxy and an authorization, and all three must name the same run.
+// Checked before the authorization is claimed, so a mismatch costs nothing.
+const proxyUrl = flag("--proxy", null);
+const executionId = flag("--execution-id", null);
+if (backend === "pi" && (!plan.baseCommit || !plan.fixtureHash)) {
+  console.error("a paid run must bind baseCommit and fixtureHash in the plan");
+  process.exit(2);
+}
+if (proxyUrl && !executionId) {
+  console.error("--proxy requires --execution-id so the arm cannot join a different proxy");
+  process.exit(2);
+}
+{
+  // Without a bound base the current HEAD is the base, but the tree must still be clean. A bound arm also
+  // rejects leftover branches from an earlier run in the same repository.
+  const boundBase = plan.baseCommit ?? spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim();
+  const arm = inspectArm({
+    cwd: process.cwd(),
+    baseCommit: boundBase,
+    fixtureHash: plan.fixtureHash,
+    planId: plan.baseCommit && !has("--resume") ? plan.id : null,
+  });
+  if (!arm.ok) {
+    console.error(`arm refused: ${arm.problems.join(" | ")}`);
+    process.exit(3);
+  }
+}
+if (proxyUrl) {
+  const proxy = await verifyProxyIdentity(proxyUrl, { executionId, planHash });
+  if (!proxy.ok) {
+    console.error(`proxy refused: ${proxy.problems.join(" | ")}`);
+    process.exit(3);
+  }
 }
 
 // Authorization: an explicit file that caps executions, retries and requests. The plan hash alone is not an
@@ -429,5 +465,9 @@ const summary = {
 console.log(`run complete: ${summary.succeeded} succeeded, ${summary.failed} failed, ${summary.blocked} blocked, ${summary.cancelled} cancelled`);
 if (budget) console.log(`requests: ${budget.used}/${budget.limit} consumed (reserved at the proxy)`);
 console.log(`ledger: ${ledgerPath}`);
+if (plan.baseCommit) {
+  const restored = restoreBase(process.cwd(), plan.baseCommit);
+  console.log(`base restored: ${restored.ok ? restored.head : `FAILED at ${restored.head}`}`);
+}
 for (const u of units) if (u.status !== "succeeded") console.error(`  ${u.id}: ${u.status} — ${u.transitions.at(-1)?.detail ?? ""}`);
 process.exit(summary.failed || summary.blocked || summary.cancelled ? 1 : 0);

@@ -24,12 +24,22 @@ const PORT = Number(process.env.PROXY_PORT ?? 0);
 const MAX_REQUESTS = Number(process.env.PROXY_MAX_REQUESTS ?? 200);
 const BUDGET_FILE = process.env.PROXY_BUDGET_FILE ?? null;
 const ACCESS_LOG = process.env.PROXY_ACCESS_LOG ?? null;
+// Which arm this proxy may serve. A second arm starting on this port must fail rather than join it.
+const EXECUTION_ID = process.env.PROXY_EXECUTION_ID ?? `adhoc-${process.pid}`;
+const PLAN_HASH = process.env.PROXY_PLAN_HASH ?? null;
 let reserved = 0;
 const MAX_BODY = 2 * 1024 * 1024;
 // A series may only ask for the models its plan names. Adding a model is a deliberate change to the
 // allowlist, not a side effect of a plan file.
 const MODELS = new Set(String(process.env.PROXY_MODELS ?? "claude-haiku-5-5").split(",").map((m) => m.trim()).filter(Boolean));
 let requests = 0;
+
+// One line per request that mattered: who it was for, what it asked, what the budget said. Headers are
+// never logged; the credential exists only in this process.
+function log(entry) {
+  if (!ACCESS_LOG) return;
+  appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), executionId: EXECUTION_ID, planHash: PLAN_HASH, ...entry }) + "\n");
+}
 
 function realKey() {
   const dir = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
@@ -46,6 +56,11 @@ let idle = setTimeout(() => process.exit(0), IDLE_MS);
 
 const server = createServer((req, res) => {
   idle.refresh();
+  if (req.method === "GET" && req.url === "/__identity") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ executionId: EXECUTION_ID, planHash: PLAN_HASH, budgetFile: BUDGET_FILE, models: [...MODELS], pid: process.pid }));
+    return;
+  }
   if (req.method !== "POST") {
     res.writeHead(405, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "only POST is forwarded" }));
@@ -72,6 +87,7 @@ const server = createServer((req, res) => {
       requested = null;
     }
     if (requested && !MODELS.has(String(requested))) {
+      log({ model: requested, endpoint: req.url, reserved: false, status: 403 });
       res.writeHead(403, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: `model not allowed for evaluation: ${requested}` }));
       return;
@@ -88,7 +104,7 @@ const server = createServer((req, res) => {
         return;
       }
       if (!reservation.ok) {
-        if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 429, reserved: false }) + "\n");
+        log({ model: requested, endpoint: req.url, reserved: false, status: 429, budgetUsed: reservation.used });
         res.writeHead(429, { "content-type": "application/json" });
         res.end(JSON.stringify({ error: "request budget exhausted", used: reservation.used, limit: reservation.limit }));
         return;
@@ -109,7 +125,7 @@ const server = createServer((req, res) => {
       localKey = key();
     } catch (error) {
       // No credential is a configuration failure, not a provider failure; say so instead of resetting.
-      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 503, reserved: Boolean(reservation), error: String(error) }) + "\n");
+      log({ model: requested, endpoint: req.url, reserved: Boolean(reservation), status: 503, error: String(error) });
       res.writeHead(503, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: `no upstream credential: ${String(error)}` }));
       return;
@@ -125,17 +141,23 @@ const server = createServer((req, res) => {
         headers,
         body: req.method === "GET" || req.method === "HEAD" ? undefined : Buffer.concat(chunks),
       });
-      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: upstream.status, reserved: Boolean(reservation), budgetUsed: reservation?.used ?? null }) + "\n");
+      log({ model: requested, endpoint: req.url, reserved: Boolean(reservation), status: upstream.status, budgetUsed: reservation?.used ?? null });
       res.writeHead(upstream.status, Object.fromEntries(upstream.headers));
       const body = Buffer.from(await upstream.arrayBuffer());
       res.end(body);
     } catch (error) {
       // A failed forward still consumed its reservation, so it must appear in the access log.
-      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 502, reserved: Boolean(reservation), budgetUsed: reservation?.used ?? null, error: String(error) }) + "\n");
+      log({ model: requested, endpoint: req.url, reserved: Boolean(reservation), status: 502, budgetUsed: reservation?.used ?? null, error: String(error) });
       res.writeHead(502, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: String(error) }));
     }
   });
+});
+
+server.on("error", (error) => {
+  // Refusing to share a port is the point: a second arm must not inherit the first arm's budget.
+  console.error(`prosci-proxy could not bind 127.0.0.1:${PORT}: ${error.code ?? error.message}`);
+  process.exit(2);
 });
 
 server.listen(PORT, "127.0.0.1", () => {

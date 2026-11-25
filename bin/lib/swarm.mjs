@@ -27,6 +27,15 @@ export function validatePlan(plan, profileName, registries) {
     errors.push("custom profile has no limits; fill them before planning");
   }
 
+  // An experimental arm names the exact snapshot it may run on. Optional for ordinary plans, required by
+  // the controller when the plan is paid.
+  if (plan.baseCommit !== undefined && !/^[0-9a-f]{7,40}$/.test(String(plan.baseCommit))) {
+    errors.push("baseCommit must be a hex git commit id");
+  }
+  if (plan.fixtureHash !== undefined && !/^[0-9a-f]{16}$/.test(String(plan.fixtureHash))) {
+    errors.push("fixtureHash must be the 16-character tree fingerprint");
+  }
+
   const modelById = new Map(models.models.map((m) => [m.id, m]));
   const unitIds = new Set((plan.units ?? []).map((u) => u.id));
   const ids = (plan.units ?? []).map((u) => u.id);

@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
+import { createServer } from "node:http";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const RUN = join(ROOT, "bin", "prosci-swarm-run");
@@ -397,4 +398,50 @@ test("SIGINT kills the whole worker process group and records cancelled", async 
   assert.ok(pgid, "the ledger should record the process group");
   assert.throws(() => process.kill(-pgid, 0), /ESRCH/, "worker group must be dead after cancellation");
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("refuses an arm whose HEAD is not the authorized base", () => {
+  const { dir, repo } = workspace();
+  try {
+    const plan = writePlan(dir, { baseCommit: "0".repeat(40), units: [unit()] });
+    const r = run(plan, { repo, out: join(dir, "out") });
+    assert.equal(r.status, 3, r.stderr);
+    assert.match(r.stderr, /HEAD is .*plan authorizes 0{40}/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("refuses an arm with a dirty tree before it claims an authorization", () => {
+  const { dir, repo } = workspace();
+  try {
+    writeFileSync(join(repo, "README.md"), "# changed\n");
+    const plan = writePlan(dir, { units: [unit()] });
+    const r = run(plan, { repo, out: join(dir, "out") });
+    assert.equal(r.status, 3, r.stderr);
+    assert.match(r.stderr, /not clean/);
+    assert.equal(existsSync(join(dir, "out")), false, "no run directory is created for a refused arm");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("refuses to spend against a proxy that belongs to another execution", async () => {
+  const { dir, repo } = workspace();
+  const server = createServer((req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ executionId: "someone-else", planHash: "other", budgetFile: "/tmp/x", models: [], pid: 1 }));
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  try {
+    const plan = writePlan(dir, { units: [unit()] });
+    const r = await new Promise((done) => {
+      const child = spawn(process.execPath, [RUN, plan, "--approve", approve(plan), "--out", join(dir, "out"),
+        "--proxy", `http://127.0.0.1:${server.address().port}`, "--execution-id", "mine"], { cwd: repo });
+      let stderr = "";
+      child.stderr.on("data", (d) => { stderr += d; });
+      child.on("close", (status) => done({ status, stderr }));
+    });
+    assert.equal(r.status, 3, r.stderr);
+    assert.match(r.stderr, /belongs to execution someone-else/);
+  } finally {
+    await new Promise((r) => server.close(r));
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
