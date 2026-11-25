@@ -63,3 +63,16 @@ test("reports an integration's files when measured against the pre-merge base", 
   assert.deepEqual(changedFiles(dir, base), ["added.mjs"]);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("reports files an agent committed during the run", () => {
+  const { dir, git } = repo();
+  const base = spawnSync("git", ["rev-parse", "HEAD"], { cwd: dir, encoding: "utf8" }).stdout.trim();
+  writeFileSync(join(dir, "committed-doc.md"), "documented\n");
+  git("add", "-A");
+  git("commit", "-qm", "agent work");
+
+  // Against HEAD the tree is clean; against the run's base the committed file is visible.
+  assert.deepEqual(changedFiles(dir), []);
+  assert.deepEqual(changedFiles(dir, base), ["committed-doc.md"]);
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -1,0 +1,28 @@
+{
+ "id": "trial-alpha-doc",
+ "layer": "trial",
+ "fixture_from": "repo",
+ "request": "Issue #32: write the alpha page for a cautious first user: what works, what does not, how to install and remove, and what data leaves the machine.",
+ "expect_route": "prosci-docs",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test bin/test/*.test.mjs",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'test -f docs/alpha.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'for s in install remove limitation privacy; do grep -qi \"$s\" docs/alpha.md || exit 1; done'",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 3
+  }
+ }
+}

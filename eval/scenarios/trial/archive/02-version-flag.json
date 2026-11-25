@@ -1,0 +1,24 @@
+{
+ "id": "trial-version-flag",
+ "layer": "trial",
+ "fixture_from": "repo",
+ "request": "Issue #31: bin/install-skills has no --version, so an operator cannot tell which copy runs. Add it, printing the version from package.json, with a test.",
+ "expect_route": "prosci-ship",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test bin/test/*.test.mjs",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'node bin/install-skills --version | grep -qE \"^[0-9]+[.][0-9]+[.][0-9]+$\"'",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 4
+  }
+ }
+}

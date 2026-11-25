@@ -153,7 +153,16 @@ function prepare(scenario, config) {
     };
     writeFileSync(join(home, ".pi", "agent", "models.json"), JSON.stringify(models, null, 1));
   }
-  cpSync(join(EVAL_DIR, "fixtures", scenario.fixture), workspace, { recursive: true });
+  // A trial runs against a real repository rather than a fixture. Copying this repo avoids committing a
+  // second copy of it; the exclusions are the parts that must not be duplicated (history, run output).
+  if (scenario.fixture_from === "repo") {
+    cpSync(REPO_ROOT, workspace, {
+      recursive: true,
+      filter: (src) => !/[\\/]\.git([\\/]|$)/.test(src) && !/[\\/]eval[\\/]runs([\\/]|$)/.test(src) && !/[\\/]node_modules([\\/]|$)/.test(src),
+    });
+  } else {
+    cpSync(join(EVAL_DIR, "fixtures", scenario.fixture), workspace, { recursive: true });
+  }
 
   // A protected resource that lives outside the workspace: the agent cannot delete what it cannot see.
   for (const file of scenario.protected_outside_workspace ?? []) {
@@ -359,9 +368,9 @@ for (const scenario of scenarios) {
       }
       const invalid = (parsed.errors ?? []).some((e) => /overloaded|rate.?limit|api_error|ECONN/i.test(String(e)));
       const acceptance = runAcceptance(scenario, workspace);
-      // "fixture" means: measure against the commit the agent started from, which is the only base
-      // that reports an integration's files.
-      const since = scenario.changes_since === "fixture" ? baseSha : (scenario.changes_since ?? "HEAD");
+      // Default to the commit the run started from. Comparing with HEAD reported nothing when the agent
+      // committed its own work or merged a branch, so the scope metric was silently zero in those cases.
+      const since = scenario.changes_since === "HEAD" ? "HEAD" : baseSha;
       const changed = changedFiles(workspace, since);
       const reads = prosciReads(parsed);
       const skills = systemSkills(agentRun.path);

@@ -179,3 +179,23 @@ export function replyMatches(text, patterns) {
     return { pattern: String(pattern), ok: re.test(text ?? "") };
   });
 }
+
+// A reply assertion must test a property, not the wording of one reference answer. Every paraphrase of
+// the correct answer must match; a bland approval and a substantively wrong answer must each miss at
+// least one pattern. Three phases produced assertions that failed this, at the cost of a paid run each.
+export function lintReplyAssertion(scenario) {
+  const patterns = scenario.reply_contains ?? [];
+  const problems = [];
+  if (!patterns.length) return { ok: false, problems: ["no reply_contains patterns"] };
+  const paraphrases = scenario.paraphrases ?? [];
+  if (paraphrases.length < 2) problems.push(`needs at least two paraphrases, has ${paraphrases.length}`);
+  for (const [i, text] of paraphrases.entries()) {
+    const missed = replyMatches(text, patterns).filter((r) => !r.ok);
+    if (missed.length) problems.push(`paraphrase ${i + 1} misses ${missed.map((m) => m.pattern).join(", ")}`);
+  }
+  for (const [label, text] of [["bland", scenario.bland_reply], ["wrong", scenario.wrong_reply]]) {
+    if (text === undefined) { problems.push(`no ${label} reply`); continue; }
+    if (replyMatches(text, patterns).every((r) => r.ok)) problems.push(`the ${label} reply passes, so the assertion cannot detect it`);
+  }
+  return { ok: problems.length === 0, problems };
+}

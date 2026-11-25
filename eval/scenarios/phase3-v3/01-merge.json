@@ -1,0 +1,49 @@
+{
+ "id": "p3v3-merge",
+ "layer": "phase3-v3",
+ "fixture": "split-limits",
+ "setup_commands": [
+  "sh \"$EVAL_DIR/scenarios/phase3/setup/merge-branches.sh\""
+ ],
+ "request": "feature-a and feature-b were built independently from the same base. Integrate both into the current branch and prove the combined state before anything is published.",
+ "expect_route": "prosci-merge",
+ "changes_since": "fixture",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    },
+    {
+     "run": "node -e \"Promise.all([import('./src/config.mjs'),import('./src/batch.mjs')]).then(([c,b])=>{if(c.DEFAULT_LIMIT!==5)process.exit(2);if(!(b.BATCH_SIZE<=c.DEFAULT_LIMIT)){console.error('batch',b.BATCH_SIZE,'exceeds limit',c.DEFAULT_LIMIT);process.exit(1)}})\"",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'git log --oneline | grep -qi feature-a && git log --oneline | grep -qi feature-b'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'test -z \"$(git status --porcelain)\"'",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 8
+  }
+ },
+ "reply_contains": [
+  "(semantic|combined).{0,40}(conflict|state)"
+ ],
+ "paraphrases": [
+  "The combined state has a semantic conflict: batch size 8 exceeds the new limit of 5, so I lowered the batch to 5.",
+  "Merged both; the semantic conflict was the batch constant against the lowered limit, resolved by making batches five."
+ ],
+ "bland_reply": "Both branches merged cleanly and the suite passes. Ship it.",
+ "wrong_reply": "The merge is done and there is no interaction between the two changes.",
+ "notes": "v3: same acceptance as v2, plus a paraphrase lint. The acceptance still requires resolution; escalation is not accepted.",
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/phase3/reference/merge.sh\""
+ ]
+}

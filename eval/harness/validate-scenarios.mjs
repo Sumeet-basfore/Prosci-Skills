@@ -10,7 +10,7 @@ import { mkdtempSync, cpSync, rmSync, readFileSync, readdirSync, existsSync } fr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { EVAL_DIR, loadScenarios, scenarioDir, replyMatches } from "./lib.mjs";
+import { EVAL_DIR, loadScenarios, scenarioDir, replyMatches, lintReplyAssertion } from "./lib.mjs";
 
 const layer = process.argv.includes("--layer") ? process.argv[process.argv.indexOf("--layer") + 1] : "hard";
 // Synthetic fixtures must not name the project at all. Calibrated fixtures are copies of real work
@@ -50,7 +50,7 @@ function runAcceptance(scenario, workspace) {
 
 let failures = 0;
 for (const scenario of loadScenarios(scenarioDir(layer))) {
-  const fixture = join(EVAL_DIR, "fixtures", scenario.fixture);
+  const fixture = scenario.fixture_from === "repo" ? join(EVAL_DIR, "..") : join(EVAL_DIR, "fixtures", scenario.fixture);
 
   // 3. no answer leakage in the fixture files, walked recursively
   const leaks = [];
@@ -63,7 +63,8 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
       }
     }
   };
-  walk(fixture);
+  // A trial runs against this repository, which legitimately contains the answers' vocabulary.
+  if (scenario.fixture_from !== "repo") walk(fixture);
 
   // Acceptance can inspect git history, so each copy is committed like a real run's workspace.
   const commitCopy = (dir) => {
@@ -85,6 +86,15 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   commitCopy(before);
   runSetup(before);
   const untouched = runAcceptance(scenario, before);
+  // A reply assertion has no fixture to fail on, so the assertion itself is what gets validated:
+  // two paraphrases must pass, a bland approval and a wrong answer must fail.
+  // Historical layers (phase2, phase3-v2) predate the lint and are preserved exactly as run. New
+  // layers opt in by declaring paraphrases.
+  if (scenario.reply_contains?.length && (scenario.paraphrases || scenario.lint_replies)) {
+    const lint = lintReplyAssertion(scenario);
+    for (const problem of lint.problems) leaks.push(`reply assertion: ${problem}`);
+  }
+
   // A reply-based assertion cannot fail "on the fixture": nothing is written. Validate the assertion
   // itself instead — it must match a reference reply and must not match a bland approval.
   let replyValid = null;
@@ -112,7 +122,10 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
     if (r.status !== 0) leaks.push(`reference_fix command failed: ${cmd.slice(0, 40)}`);
   }
   const fixed = runAcceptance(scenario, after);
-  const passesFixed = fixed.every((r) => r.ok);
+  // A trial scoped to a real repository has no reference fix to apply; only the untouched-failure
+  // direction applies.
+  const passesFixed = scenario.reference_fix?.length ? fixed.every((r) => r.ok) : true;
+  if (!scenario.reference_fix?.length) console.log("       no reference fix: the pass direction is not validated");
   rmSync(after, { recursive: true, force: true });
 
   const ok = failsUntouched && passesFixed && leaks.length === 0;
