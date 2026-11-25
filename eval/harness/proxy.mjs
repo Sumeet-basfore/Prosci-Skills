@@ -9,17 +9,22 @@
 // timeout.
 
 import { createServer } from "node:http";
+import { appendFileSync } from "node:fs";
+import { reserve } from "../../bin/lib/request-budget.mjs";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const UPSTREAM = "https://opencode.ai";
+const UPSTREAM = process.env.PROXY_UPSTREAM ?? "https://opencode.ai";
 const ALLOWED_PREFIX = "/inference/go/";
 const IDLE_MS = 10 * 60 * 1000;
 const PORT = Number(process.env.PROXY_PORT ?? 0);
 // Bounded spending and endpoint restriction. A run cannot ask for another model, another route, or
 // more requests than its series is allowed.
 const MAX_REQUESTS = Number(process.env.PROXY_MAX_REQUESTS ?? 200);
+const BUDGET_FILE = process.env.PROXY_BUDGET_FILE ?? null;
+const ACCESS_LOG = process.env.PROXY_ACCESS_LOG ?? null;
+let reserved = 0;
 const MAX_BODY = 2 * 1024 * 1024;
 const MODELS = new Set(["claude-haiku-5-5"]);
 let requests = 0;
@@ -32,17 +37,13 @@ function realKey() {
   return key;
 }
 
-const key = realKey();
+let cachedKey = null;
+// Read lazily: the budget and denial paths must work without credentials (CI, negative tests).
+const key = () => (cachedKey ??= realKey());
 let idle = setTimeout(() => process.exit(0), IDLE_MS);
 
 const server = createServer((req, res) => {
   idle.refresh();
-  requests += 1;
-  if (requests > MAX_REQUESTS) {
-    res.writeHead(429, { "content-type": "application/json" });
-    res.end(JSON.stringify({ error: "request budget for this series is exhausted" }));
-    return;
-  }
   if (req.method !== "POST") {
     res.writeHead(405, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "only POST is forwarded" }));
@@ -73,12 +74,46 @@ const server = createServer((req, res) => {
       res.end(JSON.stringify({ error: `model not allowed for evaluation: ${requested}` }));
       return;
     }
+    // Reserve last, immediately before forwarding: a request rejected for its method, path or model must
+    // not burn budget. With concurrency, counting afterwards lets workers exceed the approved limit.
+    let reservation = null;
+    if (BUDGET_FILE) {
+      try {
+        reservation = reserve(BUDGET_FILE);
+      } catch (error) {
+        res.writeHead(503, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: `budget unavailable: ${String(error)}` }));
+        return;
+      }
+      if (!reservation.ok) {
+        if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 429, reserved: false }) + "\n");
+        res.writeHead(429, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "request budget exhausted", used: reservation.used, limit: reservation.limit }));
+        return;
+      }
+    }
+    requests += 1;
+    if (requests > MAX_REQUESTS) {
+      res.writeHead(429, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "request budget for this series is exhausted" }));
+      return;
+    }
     const headers = { ...req.headers };
     delete headers.host;
     delete headers.authorization;
     delete headers["x-api-key"];
-    headers["x-api-key"] = key;
-    headers.authorization = `Bearer ${key}`;
+    let localKey;
+    try {
+      localKey = key();
+    } catch (error) {
+      // No credential is a configuration failure, not a provider failure; say so instead of resetting.
+      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 503, reserved: Boolean(reservation), error: String(error) }) + "\n");
+      res.writeHead(503, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: `no upstream credential: ${String(error)}` }));
+      return;
+    }
+    headers["x-api-key"] = localKey;
+    headers.authorization = `Bearer ${key()}`;
     // The gateway routes on a session header. One per series is honest: these runs are sessions.
     headers["x-opencode-session"] ??= `prosci-eval-${process.pid}`;
 
@@ -88,10 +123,13 @@ const server = createServer((req, res) => {
         headers,
         body: req.method === "GET" || req.method === "HEAD" ? undefined : Buffer.concat(chunks),
       });
+      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: upstream.status, reserved: Boolean(reservation), budgetUsed: reservation?.used ?? null }) + "\n");
       res.writeHead(upstream.status, Object.fromEntries(upstream.headers));
       const body = Buffer.from(await upstream.arrayBuffer());
       res.end(body);
     } catch (error) {
+      // A failed forward still consumed its reservation, so it must appear in the access log.
+      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 502, reserved: Boolean(reservation), budgetUsed: reservation?.used ?? null, error: String(error) }) + "\n");
       res.writeHead(502, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: String(error) }));
     }

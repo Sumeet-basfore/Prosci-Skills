@@ -8,7 +8,7 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync, existsSync
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const RUN = join(ROOT, "bin", "prosci-swarm-run");
@@ -177,11 +177,27 @@ test("enforces the concurrency limit", () => {
 
 test("cancels everything when the global deadline passes", () => {
   const { dir, repo } = workspace();
-  const plan = writePlan(dir, { units: [unit({ fake: { outcome: "success", delayMs: 400, files: { "out/u1.txt": "x\n" } } })] });
+  const plan = writePlan(dir, { units: [unit({ fake: { outcome: "success", delayMs: 800, files: { "out/u1.txt": "x\n" } } })] });
   const out = join(dir, "out");
-  const r = spawnSync(process.execPath, [RUN, plan, "--approve", approve(plan), "--out", out, "--deadline-min", "0.001"], { cwd: repo, encoding: "utf8" });
+  spawnSync(process.execPath, [RUN, plan, "--approve", approve(plan), "--out", out, "--deadline-min", "0.001", "--unit-deadline-min", "5"], { cwd: repo, encoding: "utf8" });
   const ledger = JSON.parse(readFileSync(join(out, "ledger.json"), "utf8"));
   assert.ok(ledger.units.every((u) => ["cancelled", "succeeded"].includes(u.status)), JSON.stringify(ledger.units.map((u) => u.status)));
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("a unit that exceeds its own deadline fails and its process group is killed", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [unit({ fake: { outcome: "hang" } })] });
+  const out = join(dir, "out");
+  const started = Date.now();
+  const r = run(plan, { repo, out, extra: ["--unit-deadline-min", "0.02"] });
+  const elapsed = Date.now() - started;
+  assert.equal(r.status, 1);
+  assert.equal(r.byId.get("u1").status, "failed");
+  assert.match(r.byId.get("u1").transitions.at(-1).detail, /deadline exceeded/);
+  assert.ok(elapsed < 20000, `should not wait for the 120s hang: ${elapsed}ms`);
+  const pgid = r.byId.get("u1").evidence.at(-1).pgid;
+  assert.throws(() => process.kill(-pgid, 0), /ESRCH/, "process group must be gone");
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -250,6 +266,69 @@ test("records the authorization and request usage in the ledger", () => {
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.ledger.authorization.executions, 1);
   assert.equal(r.ledger.authorization.maxRetriesPerUnit, 1);
-  assert.ok(r.ledger.authorization.requestsUsed >= 1);
+  // Requests come from the proxy, not from attempts: a fake run makes none, so nothing is charged.
+  assert.equal(r.ledger.authorization.requestsUsed, 0);
+  assert.deepEqual(r.ledger.requests, { reserved: 0, limit: 10, logged: 0 });
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("independent units actually overlap when concurrency allows it", () => {
+  const { dir, repo } = workspace();
+  const units = Array.from({ length: 4 }, (_, i) => unit({
+    id: `p${i}`, files: [`out/p${i}.txt`], checks: [`test -f out/p${i}.txt`],
+    fake: { outcome: "success", delayMs: 400, files: { [`out/p${i}.txt`]: "x\n" } },
+  }));
+  const plan = writePlan(dir, { units });
+  const out = join(dir, "out");
+  const r = run(plan, { repo, out, extra: ["--concurrency", "2", "--unit-deadline-min", "1"] });
+  assert.equal(r.status, 0, r.stderr);
+  const windows = r.ledger.units.map((u) => ({ id: u.id, start: u.transitions.find((t) => t.to === "running").seq, end: u.transitions.at(-1).seq }));
+  const overlapping = windows.filter((w, i) => windows.some((o, j) => i !== j && w.start < o.end && o.start < w.end));
+  assert.ok(overlapping.length >= 2, `expected overlap, got ${JSON.stringify(windows)}`);
+  // Serial execution would give four non-overlapping windows; concurrency 2 must interleave.
+  const serial = windows.every((w, i) => windows.every((o, j) => i === j || w.end <= o.start || o.end <= w.start));
+  assert.equal(serial, false, "windows did not overlap, so execution was sequential");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("dependent units never start before a predecessor succeeds", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [
+    unit({ id: "a", files: ["out/a.txt"], checks: ["test -f out/a.txt"], fake: { outcome: "success", delayMs: 300, files: { "out/a.txt": "a\n" } } }),
+    unit({ id: "b", role: "verifier", files: ["out/b.txt"], dependsOn: ["a"], checks: ["test -f out/b.txt"], fake: { outcome: "success", files: { "out/b.txt": "b\n" } } }),
+  ] });
+  const out = join(dir, "out");
+  const r = run(plan, { repo, out, extra: ["--concurrency", "3"] });
+  assert.equal(r.status, 0, r.stderr);
+  const a = r.byId.get("a");
+  const b = r.byId.get("b");
+  const aDone = a.transitions.find((t) => t.to === "succeeded").seq;
+  const bStart = b.transitions.find((t) => t.to === "running").seq;
+  assert.ok(bStart > aDone, `b started at ${bStart}, a succeeded at ${aDone}`);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("SIGINT kills the whole worker process group and records cancelled", async () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [unit({ fake: { outcome: "hang" } })] });
+  const out = join(dir, "out");
+  const child = spawn(process.execPath, [RUN, plan, "--approve", approve(plan), "--out", out, "--unit-deadline-min", "5"], { cwd: repo, stdio: ["ignore", "pipe", "pipe"] });
+  // Wait until the unit is running, then interrupt the controller.
+  const waitFor = Date.now() + 5000;
+  while (Date.now() < waitFor) {
+    if (existsSync(join(out, "ledger.json"))) {
+      const l = JSON.parse(readFileSync(join(out, "ledger.json"), "utf8"));
+      if (l.units?.[0]?.status === "running") break;
+    }
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  child.kill("SIGINT");
+  const code = await new Promise((resolve) => child.on("close", resolve));
+  assert.equal(code, 130);
+  const ledger = JSON.parse(readFileSync(join(out, "ledger.json"), "utf8"));
+  assert.equal(ledger.units[0].status, "cancelled");
+  const pgid = ledger.units[0].evidence.at(-1)?.pgid;
+  assert.ok(pgid, "the ledger should record the process group");
+  assert.throws(() => process.kill(-pgid, 0), /ESRCH/, "worker group must be dead after cancellation");
   rmSync(dir, { recursive: true, force: true });
 });
