@@ -15,6 +15,8 @@ finds them.
 | `prosci-refactor` | improving structure while proving the behaviour did not change |
 | `prosci-challenge` | attacking a proposal before it becomes code |
 | `prosci-verify` | producing evidence from the real surface |
+| `prosci-merge` | integrating branches, worktrees or stacked pull requests and verifying the combined state |
+| `prosci-design` | user flow, states, accessibility, responsive behaviour and product copy |
 | `prosci-ship` | building a feature or changing behaviour |
 | `prosci-fix` | fixing a bug or a failing test |
 | `prosci-review` | reviewing your own work or someone else's before merge |
@@ -28,7 +30,7 @@ the activation.
 
 ## Install
 
-The fifteen skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
+The seventeen skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
 keeping them together so the relative `../prosci-x/SKILL.md` references resolve.
 
 ```sh

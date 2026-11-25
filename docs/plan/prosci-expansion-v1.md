@@ -336,3 +336,15 @@ evidence, the bar judges it.
 Two Phase 1 corrections landed first and are versioned as `eval/scenarios/artifacts-v2/`: architect
 artifacts must name an executable verification command, and a plan may live in the reply or a file. The
 original `eval/scenarios/artifacts/` and its failed results are unchanged.
+
+## Phase 3, implemented
+
+`prosci-merge` and `prosci-design`, bringing the set to seventeen. Two fixtures, both validated to fail
+untouched and pass with a reference fix: a semantic-merge conflict that Git cannot see (a lowered limit
+against a batch size), and a product surface whose acceptance is states, accessibility, breakpoints,
+copy and an explicit "nothing was rendered" disclosure.
+
+Both smoke arms failed their frozen acceptance for criterion reasons, not capability reasons, and the
+results are kept. Detection in merge was 3/3; reconciliation 0/3 because the skill says to escalate.
+Design produced its requirements in the reply while the criterion demanded a file. Proposed corrections
+are in `eval/reports/phase-3.md` §7 and are not applied.
