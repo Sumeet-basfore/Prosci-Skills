@@ -1,0 +1,31 @@
+{
+  "name": "prosci-design",
+  "triggers": [
+    "new screen or flow",
+    "empty, loading, error or success state",
+    "accessibility, responsive behaviour, product copy",
+    "a surface called generic, unfinished or confusing"
+  ],
+  "non_triggers": [
+    "api contracts, schemas, module boundaries → prosci-architect",
+    "implementing the component → prosci-ship",
+    "reviewing a finished diff → prosci-review",
+    "proving the surface runs → prosci-verify"
+  ],
+  "references": [
+    { "path": "references/research-and-critique.md", "load_when": "writing the brief or critiquing a draft" },
+    { "path": "references/visual-identity.md", "load_when": "choosing carriers: type, density, colour role, shape, imagery, voice" },
+    { "path": "references/interaction-states.md", "load_when": "defining states, copy, focus movement or error handling" },
+    { "path": "references/composition.md", "load_when": "choosing layout, density, spacing or hierarchy" },
+    { "path": "references/typography.md", "load_when": "choosing a type family, scale, measure or numerals" },
+    { "path": "references/color.md", "load_when": "choosing palette, contrast targets or semantic colour roles" },
+    { "path": "references/motion.md", "load_when": "motion carries meaning: transitions, spatial continuity, reduced motion" },
+    { "path": "references/accessibility.md", "load_when": "specifying keyboard, focus, names, live regions or target size" }
+  ],
+  "acceptance": [
+    "brief names goal, user, constraint, reuse, states, success check",
+    "state table has copy for every applicable state",
+    "accessibility stated as checks",
+    "unverified visual claims disclosed"
+  ]
+}

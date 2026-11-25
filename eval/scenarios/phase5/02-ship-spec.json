@@ -1,0 +1,40 @@
+{
+ "id": "p5-ship",
+ "layer": "phase5",
+ "fixture": "shape",
+ "request": "Add a discounts() helper that applies a percentage to a list of line items and returns the discounted cents per line. Write the spec first, then implement it with tests and record the spec in SPEC-CHANGE.md.",
+ "expect_route": "prosci-ship",
+ "requires_read": [
+  "references/spec.md",
+  "references/tests.md"
+ ],
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'test -f SPEC-CHANGE.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qi \"non-goal\" SPEC-CHANGE.md && grep -qiE \"rollback|undo\" SPEC-CHANGE.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'node -e \"import(\\\"./src/pricing.mjs\\\").then(m=>{if(typeof m.discounts!==\\\"function\\\")process.exit(1);const r=m.discounts([{cents:1000}],10);if(JSON.stringify(r)!==JSON.stringify([900])){console.error(r);process.exit(1)}})\"'",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 5
+  }
+ },
+ "notes": "spec artefact + working implementation + suite green; the read assertion measures loading only.",
+ "reference_fix": [
+  "sh \"$EVAL_DIR/scenarios/phase5/reference/ship.sh\""
+ ]
+}

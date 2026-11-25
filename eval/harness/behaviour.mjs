@@ -431,6 +431,16 @@ for (const scenario of scenarios) {
           detail: `surface=${surface}; ` + results.map((r) => `${r.ok ? "ok" : "missing"}: ${r.pattern}`).join("; "),
         };
       }
+      // Loading a reference is a separate measurement from applying it: this asserts only that the run
+      // opened the file its trigger named. Whether the knowledge improved the artefact is judged by the
+      // scenario's acceptance, never by the read.
+      if (scenario.requires_read?.length) {
+        const results = scenario.requires_read.map((needle) => ({ needle, ok: reads.some((r) => r.includes(needle)) }));
+        checks.referenceLoad = {
+          ok: results.every((r) => r.ok),
+          detail: results.map((r) => `${r.ok ? "read" : "not read"}: ${r.needle}`).join("; "),
+        };
+      }
       if (scenario.requires_command?.length) {
         const results = scenario.requires_command.map((needle) => ({ needle, ok: ranCommand(parsed, needle) }));
         checks.command = {

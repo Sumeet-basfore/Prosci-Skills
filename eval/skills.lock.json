@@ -6,103 +6,273 @@
       "name": "prosci",
       "declared": "prosci",
       "sha256": "7ae30ddf35532a089fb448d2d6fa80c5177c92d13e5238a4c455133c8cb26de6",
-      "bytes": 6496
+      "bytes": 6496,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "7ae30ddf35532a089fb448d2d6fa80c5177c92d13e5238a4c455133c8cb26de6"
+        }
+      ]
     },
     {
       "name": "prosci-architect",
       "declared": "prosci-architect",
       "sha256": "df0b3f547d06bbc003aa5031fa416c850ee03f9f64b94930e19e782fa46ec840",
-      "bytes": 4938
+      "bytes": 4938,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "df0b3f547d06bbc003aa5031fa416c850ee03f9f64b94930e19e782fa46ec840"
+        }
+      ]
     },
     {
       "name": "prosci-bar",
       "declared": "prosci-bar",
       "sha256": "57c5b930f7b6c7da1633d2a08bb550e19804e557ce274beb4df8818f27ccd13e",
-      "bytes": 4047
+      "bytes": 4047,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "57c5b930f7b6c7da1633d2a08bb550e19804e557ce274beb4df8818f27ccd13e"
+        }
+      ]
     },
     {
       "name": "prosci-challenge",
       "declared": "prosci-challenge",
       "sha256": "8fc37b80385f606bb4597ec4de83a5d12dcf8821ce52a0b4eaf0751f07a127e0",
-      "bytes": 4734
+      "bytes": 4734,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "8fc37b80385f606bb4597ec4de83a5d12dcf8821ce52a0b4eaf0751f07a127e0"
+        }
+      ]
     },
     {
       "name": "prosci-design",
       "declared": "prosci-design",
-      "sha256": "8cf222dae9b69ac5695a4dc0f141861c1a83aa2797571fc7490a43122e5a3512",
-      "bytes": 5902
+      "sha256": "6a184fdaf3ee30e9f5a633ce681f3f9d6e5afbee129c685e1fb5e908d8662b51",
+      "bytes": 7911,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "6a184fdaf3ee30e9f5a633ce681f3f9d6e5afbee129c685e1fb5e908d8662b51"
+        },
+        {
+          "path": "references/accessibility.md",
+          "sha256": "48194f50238d509aff36fb71721ff07b4dd4a490bac2c7f01f8f392f772c89e2"
+        },
+        {
+          "path": "references/color.md",
+          "sha256": "5a368e68e7846c1c69a23f260dea3efb42feff6be6188ed6703722c779782dfc"
+        },
+        {
+          "path": "references/composition.md",
+          "sha256": "0e330f0e082841428ebd4e548c773f2eb594a3f6a3381499f1e0dec8240af498"
+        },
+        {
+          "path": "references/interaction-states.md",
+          "sha256": "6355f73d90c36a0c0d604330336cc8c03df1f8ea934c679a0567e0e497855b7e"
+        },
+        {
+          "path": "references/motion.md",
+          "sha256": "da36dab25afc1aff3dc5f061f82d41a85cf43be8b7f9b8fdc9d8fe7665618441"
+        },
+        {
+          "path": "references/research-and-critique.md",
+          "sha256": "df19ff9a7a670f1c87ef217f3c6b7ab2c3c03cb48baed3661c4c19d52c3f7cc3"
+        },
+        {
+          "path": "references/typography.md",
+          "sha256": "d765cc021b3aefd3e1f4c2c6c62145e057ce57496f233861311e9e1b37e111f1"
+        },
+        {
+          "path": "references/visual-identity.md",
+          "sha256": "eb47a3a36132b36ac9bc50f2a4e32f57b3efffb22edf566b95751cdeda793fb3"
+        },
+        {
+          "path": "skill.json",
+          "sha256": "cafd58983145eb6b67c708ba092d24cb98727d8319eaffb3dabd77b6a615029d"
+        }
+      ]
     },
     {
       "name": "prosci-docs",
       "declared": "prosci-docs",
       "sha256": "e7d9773655867be8512399ae87855def7ef2470335cdbd715ea9bcae0758af19",
-      "bytes": 4328
+      "bytes": 4328,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "e7d9773655867be8512399ae87855def7ef2470335cdbd715ea9bcae0758af19"
+        }
+      ]
     },
     {
       "name": "prosci-fix",
       "declared": "prosci-fix",
       "sha256": "d54e7cca957fd189208b994bfd4d2938c3cdb3dbe580af2244c68e0754ccbd27",
-      "bytes": 3929
+      "bytes": 3929,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "d54e7cca957fd189208b994bfd4d2938c3cdb3dbe580af2244c68e0754ccbd27"
+        }
+      ]
     },
     {
       "name": "prosci-init",
       "declared": "prosci-init",
       "sha256": "6bd76b2768cc8f55077b13c50224530303f5d755761a3045b11b56db7df5a646",
-      "bytes": 3477
+      "bytes": 3477,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "6bd76b2768cc8f55077b13c50224530303f5d755761a3045b11b56db7df5a646"
+        }
+      ]
     },
     {
       "name": "prosci-investigate",
       "declared": "prosci-investigate",
       "sha256": "05c62ab3159760da74a1df015d83f388ebaedf014cb29fafb15f9b61557e75c3",
-      "bytes": 3909
+      "bytes": 3909,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "05c62ab3159760da74a1df015d83f388ebaedf014cb29fafb15f9b61557e75c3"
+        }
+      ]
     },
     {
       "name": "prosci-merge",
       "declared": "prosci-merge",
       "sha256": "13bb9341733ef374775eb5b4ae8f911c87b5544158bb01385a9cdb0848651900",
-      "bytes": 6286
+      "bytes": 6286,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "13bb9341733ef374775eb5b4ae8f911c87b5544158bb01385a9cdb0848651900"
+        }
+      ]
     },
     {
       "name": "prosci-plan",
       "declared": "prosci-plan",
       "sha256": "44b7cd7c7e71de78a3a8ee795083d3b9be3107e2a5a925af5da83c176ef10ce9",
-      "bytes": 4352
+      "bytes": 4352,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "44b7cd7c7e71de78a3a8ee795083d3b9be3107e2a5a925af5da83c176ef10ce9"
+        }
+      ]
     },
     {
       "name": "prosci-refactor",
       "declared": "prosci-refactor",
       "sha256": "cd30873323e46050d8458b7d96f92e3db6c67e15050153832802c73a0b988f5d",
-      "bytes": 4652
+      "bytes": 4652,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "cd30873323e46050d8458b7d96f92e3db6c67e15050153832802c73a0b988f5d"
+        }
+      ]
     },
     {
       "name": "prosci-release",
       "declared": "prosci-release",
       "sha256": "8564ee3d31382d37cab09275208c387081d4358f765896741af1cdb5aa4086b2",
-      "bytes": 4290
+      "bytes": 4290,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "8564ee3d31382d37cab09275208c387081d4358f765896741af1cdb5aa4086b2"
+        }
+      ]
     },
     {
       "name": "prosci-review",
       "declared": "prosci-review",
       "sha256": "46f728a86a0f8f1090db7c76b89dac3dba5deb32bffb8c957a11218156d14da5",
-      "bytes": 5051
+      "bytes": 5051,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "46f728a86a0f8f1090db7c76b89dac3dba5deb32bffb8c957a11218156d14da5"
+        }
+      ]
     },
     {
       "name": "prosci-ship",
       "declared": "prosci-ship",
-      "sha256": "cbbc22104a564131f046991dfbcefcc3203db0c11c3b3ec6cadc3bf024ff7719",
-      "bytes": 6758
+      "sha256": "7bb3fe5d313bbcaf65e86453d00ead52eb027bc4afc3535ed9c8c9f39be0415c",
+      "bytes": 7159,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "7bb3fe5d313bbcaf65e86453d00ead52eb027bc4afc3535ed9c8c9f39be0415c"
+        },
+        {
+          "path": "references/production.md",
+          "sha256": "29f47bffdf4bc02361850f0dad93bffe80487a0f5a3ba9ef05f6f280e47a88fc"
+        },
+        {
+          "path": "references/spec.md",
+          "sha256": "e8c4e9ce0552cb2591c378f3f43f1d09c2fb0d264516ea651f09ef23c0359dd9"
+        },
+        {
+          "path": "references/tests.md",
+          "sha256": "19007c3300fe2246408100d2f0251cd9aff74e3e350850bdfe1f23aae9a0856a"
+        },
+        {
+          "path": "skill.json",
+          "sha256": "5b5edf1a083b5cddf0b137d2e512557904b0ea85832a65ded6be6c621437d6c6"
+        }
+      ]
     },
     {
       "name": "prosci-understand",
       "declared": "prosci-understand",
       "sha256": "905c502ac712c5c85e1de031cf33991a30212e14be0b8236f157d5203a53b40f",
-      "bytes": 4555
+      "bytes": 4555,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "905c502ac712c5c85e1de031cf33991a30212e14be0b8236f157d5203a53b40f"
+        }
+      ]
     },
     {
       "name": "prosci-verify",
       "declared": "prosci-verify",
-      "sha256": "b5eddb78a2c3de238e506c6a59468204ac259488931cd5fa1816dff91c96047b",
-      "bytes": 4604
+      "sha256": "7f9898e488bec3e93ca3fab71962f5711847ff30238da01f96ff45faf2fab14f",
+      "bytes": 4814,
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "7f9898e488bec3e93ca3fab71962f5711847ff30238da01f96ff45faf2fab14f"
+        },
+        {
+          "path": "references/browser.md",
+          "sha256": "a6208a5a28882082149e5d6890d3103cb38f5d550c7086e54a3b1063732d43b9"
+        },
+        {
+          "path": "references/cli.md",
+          "sha256": "09d3e364b61d653e910354e5630f05d63c3b64ed75e6a77d6636fe8f984975e4"
+        },
+        {
+          "path": "references/http.md",
+          "sha256": "c2a9187306a9dbeeccf6552fdd32d19683f69e7fc0ad07bb18c1a9c82661faf4"
+        },
+        {
+          "path": "skill.json",
+          "sha256": "5d890f01bc0070a4e834ec2406d9524d162b8ae9acfb88290e2f280f04d43e70"
+        }
+      ]
     }
   ]
 }

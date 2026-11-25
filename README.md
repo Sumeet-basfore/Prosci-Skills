@@ -111,6 +111,13 @@ The coding harness and model provider you use see the conversation and the files
 flow, not this project's. The one outbound path in this repo is `eval/harness/proxy.mjs`, used only by
 evaluation runs to keep the provider key outside the sandbox; no skill calls it.
 
+## Skill packages
+
+Each skill is a folder: `SKILL.md` holds the procedure, decision rules and mandatory requirements;
+optional `references/` files hold domain knowledge at the point of need; `skill.json` declares the triggers
+and which reference to load when. Only three skills use references today (`design`, `ship`, `verify`) — the
+rest are single files, and that is fine. `eval/harness/skill-lint.mjs` checks the format in CI.
+
 ## What is measured
 
 Activation is not solved. A one-line instruction in the repo's `AGENTS.md` loaded the right skill in 11
