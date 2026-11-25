@@ -1,0 +1,13 @@
+{
+  "id": "route-understand",
+  "layer": "routing",
+  "request": "I joined this project today. Before changing anything, build a working model of its structure, its conventions, and the commands it uses to test and build.",
+  "expect": [
+    "prosci-understand"
+  ],
+  "forbid": [
+    "prosci-investigate",
+    "prosci-init"
+  ],
+  "why": "a whole-repo working model, not one question and not a greenfield setup"
+}

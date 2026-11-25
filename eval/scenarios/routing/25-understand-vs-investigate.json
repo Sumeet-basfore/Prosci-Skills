@@ -1,0 +1,12 @@
+{
+  "id": "route-understand-vs-investigate",
+  "layer": "routing",
+  "request": "explain why the retry loop backs off twice as long as configured",
+  "expect": [
+    "prosci-investigate"
+  ],
+  "forbid": [
+    "prosci-understand"
+  ],
+  "why": "one question about behaviour stays with investigate; understand is for the repo, not a symptom"
+}

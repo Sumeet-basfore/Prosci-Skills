@@ -9,7 +9,10 @@
 
 import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const EVAL_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 import { spawnSync } from "node:child_process";
 import { REPO_ROOT } from "./lib.mjs";
 
@@ -52,7 +55,9 @@ for (const harness of only ? [only] : HARNESSES) {
 
   const ok =
     install.status === 0 &&
-    names.length === 9 &&
+    // The count is the installed set, read from the lockfile rather than hard-coded, so adding a
+    // skill cannot silently leave this check asserting the old number.
+    names.length === JSON.parse(readFileSync(join(EVAL_DIR, "skills.lock.json"), "utf8")).count &&
     check.status === 0 &&
     again.status === 0 &&
     removal.status === 0 &&

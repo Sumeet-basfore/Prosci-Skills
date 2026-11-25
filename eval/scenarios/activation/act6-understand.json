@@ -1,0 +1,8 @@
+{
+  "id": "act-understand",
+  "layer": "activation",
+  "fixture": "unfamiliar",
+  "request": "I have never seen this repository before. Before I change anything, build a working model of its structure, conventions and commands.",
+  "expect_route": "prosci-understand",
+  "checks": { "acceptance": { "commands": [ { "run": "node --test", "exit": 0 } ] } }
+}

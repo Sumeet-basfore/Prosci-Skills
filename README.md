@@ -8,18 +8,24 @@ finds them.
 
 | skill | when |
 | --- | --- |
-| `prosci` | the entry point. Routes the request and holds the non-negotiables |
+| `prosci` | the routing index. Optional entry point, holds the non-negotiables |
+| `prosci-understand` | building a working model of a repo you have not worked in |
+| `prosci-architect` | choosing a shape: boundaries, interfaces, two options, one decision |
+| `prosci-plan` | splitting work into ordered, verifiable units and the parallel set |
 | `prosci-ship` | building a feature or changing behaviour |
 | `prosci-fix` | fixing a bug or a failing test |
 | `prosci-review` | reviewing your own work or someone else's before merge |
 | `prosci-bar` | the definition of done every route ends at |
 
-Say "use the factory" and the agent starts at `prosci`. Say `/skill:prosci-ship` to jump
-straight to a route.
+Say `/skill:prosci` to see the routes, or name the skill you want. The measured entry point is a
+one-line instruction in the repo's `AGENTS.md` pointing at the matching skill: in the frozen
+evaluation that loaded the right route in **11 of 15** runs, which is useful but not reliable. See
+`eval/reports/phase-0.2.md`. Loading a skill is not the same as following it, so verify the work, not
+the activation.
 
 ## Install
 
-The nine skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
+The twelve skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
 keeping them together so the relative `../prosci-x/SKILL.md` references resolve.
 
 ```sh

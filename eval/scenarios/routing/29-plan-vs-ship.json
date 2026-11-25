@@ -1,0 +1,12 @@
+{
+  "id": "route-plan-small-fix",
+  "layer": "routing",
+  "request": "the setup guide still documents the old --out flag; correct it",
+  "expect": [
+    "prosci-docs"
+  ],
+  "forbid": [
+    "prosci-plan"
+  ],
+  "why": "a one-line docs change is not planning work"
+}

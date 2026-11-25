@@ -1,0 +1,12 @@
+{
+  "id": "route-architect-vs-plan",
+  "layer": "routing",
+  "request": "compare these two database schemas for events and pick one, with the trade-offs",
+  "expect": [
+    "prosci-architect"
+  ],
+  "forbid": [
+    "prosci-plan"
+  ],
+  "why": "a shape decision between options, not the order of work"
+}

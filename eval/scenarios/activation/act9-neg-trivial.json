@@ -1,0 +1,22 @@
+{
+  "id": "act-neg-trivial",
+  "layer": "activation",
+  "fixture": "shape",
+  "request": "The comment above applyDiscount has a typo: fix it.",
+  "checks": {
+    "acceptance": {
+      "commands": [
+        {
+          "run": "node --test",
+          "exit": 0
+        }
+      ]
+    }
+  },
+  "forbid_routes": [
+    "prosci-understand",
+    "prosci-architect",
+    "prosci-plan"
+  ],
+  "notes": "a comment typo may use the docs route; it must not summon the planning or architecture routes"
+}

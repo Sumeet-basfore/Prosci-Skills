@@ -1,0 +1,12 @@
+{
+  "id": "route-architect-small-change",
+  "layer": "routing",
+  "request": "add a --verbose flag to the export command; it is one file and one caller",
+  "expect": [
+    "prosci-ship"
+  ],
+  "forbid": [
+    "prosci-architect"
+  ],
+  "why": "obvious shape, one file: architect must not fire, it would produce an artifact for nothing"
+}

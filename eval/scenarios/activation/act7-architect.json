@@ -1,0 +1,8 @@
+{
+  "id": "act-architect",
+  "layer": "activation",
+  "fixture": "shape",
+  "request": "Decide whether the discount calculation belongs in pricing.mjs or in the module that owns orders, sketch the interfaces for both shapes and pick one.",
+  "expect_route": "prosci-architect",
+  "checks": { "acceptance": { "commands": [ { "run": "node --test", "exit": 0 } ] } }
+}
