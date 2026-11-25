@@ -44,31 +44,6 @@ let idle = setTimeout(() => process.exit(0), IDLE_MS);
 
 const server = createServer((req, res) => {
   idle.refresh();
-  // Reserve before anything is forwarded. With concurrency, counting afterwards lets workers collectively
-  // exceed the approved limit; the reservation is atomic and is the gate.
-  let reservation = null;
-  if (BUDGET_FILE) {
-    try {
-      reservation = reserve(BUDGET_FILE);
-    } catch (error) {
-      res.writeHead(503, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: `budget unavailable: ${String(error)}` }));
-      return;
-    }
-    if (!reservation.ok) {
-      if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 429, reserved: false }) + "\n");
-      res.writeHead(429, { "content-type": "application/json" });
-      res.end(JSON.stringify({ error: "request budget exhausted", used: reservation.used, limit: reservation.limit }));
-      return;
-    }
-    reserved += 1;
-  }
-  requests += 1;
-  if (requests > MAX_REQUESTS) {
-    res.writeHead(429, { "content-type": "application/json" });
-    res.end(JSON.stringify({ error: "request budget for this series is exhausted" }));
-    return;
-  }
   if (req.method !== "POST") {
     res.writeHead(405, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "only POST is forwarded" }));
@@ -99,11 +74,35 @@ const server = createServer((req, res) => {
       res.end(JSON.stringify({ error: `model not allowed for evaluation: ${requested}` }));
       return;
     }
+    // Reserve last, immediately before forwarding: a request rejected for its method, path or model must
+    // not burn budget. With concurrency, counting afterwards lets workers exceed the approved limit.
+    let reservation = null;
+    if (BUDGET_FILE) {
+      try {
+        reservation = reserve(BUDGET_FILE);
+      } catch (error) {
+        res.writeHead(503, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: `budget unavailable: ${String(error)}` }));
+        return;
+      }
+      if (!reservation.ok) {
+        if (ACCESS_LOG) appendFileSync(ACCESS_LOG, JSON.stringify({ at: Date.now(), status: 429, reserved: false }) + "\n");
+        res.writeHead(429, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "request budget exhausted", used: reservation.used, limit: reservation.limit }));
+        return;
+      }
+    }
+    requests += 1;
+    if (requests > MAX_REQUESTS) {
+      res.writeHead(429, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "request budget for this series is exhausted" }));
+      return;
+    }
     const headers = { ...req.headers };
     delete headers.host;
     delete headers.authorization;
     delete headers["x-api-key"];
-    headers["x-api-key"] = key;
+    headers["x-api-key"] = key();
     headers.authorization = `Bearer ${key()}`;
     // The gateway routes on a session header. One per series is honest: these runs are sessions.
     headers["x-opencode-session"] ??= `prosci-eval-${process.pid}`;

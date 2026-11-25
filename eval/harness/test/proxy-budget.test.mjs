@@ -13,15 +13,29 @@ const start = async (budget) => {
   const budgetFile = join(dir, "budget.json");
   const accessLog = join(dir, "access.jsonl");
   writeFileSync(budgetFile, JSON.stringify({ limit: budget, used: 0 }));
+  let stderr = "";
   const child = spawn(process.execPath, [PROXY], {
     env: { ...process.env, PROXY_PORT: "0", PROXY_UPSTREAM: "http://127.0.0.1:1", PROXY_BUDGET_FILE: budgetFile, PROXY_ACCESS_LOG: accessLog },
     stdio: ["ignore", "pipe", "pipe"],
   });
+  child.stderr.on("data", (b) => { stderr += String(b); });
   const port = await new Promise((resolve, reject) => {
     child.stdout.on("data", (b) => { const m = /listening (\d+)/.exec(String(b)); if (m) resolve(Number(m[1])); });
-    child.on("exit", () => reject(new Error("proxy exited")));
+    child.on("exit", () => reject(new Error(`proxy exited: ${stderr}`)));
   });
   return { child, port, budgetFile, accessLog, dir };
+};
+
+// Warm-up uses a rejected path: the proxy checks method/path before reserving, so this spends nothing.
+const warm = async (port) => {
+  for (let i = 0; i < 60; i += 1) {
+    try {
+      const r = await fetch(`http://127.0.0.1:${port}/warmup`, { method: "POST", body: "{}" });
+      if (r.status === 404) return true;
+    } catch { /* not accepting yet */ }
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return false;
 };
 
 const ask = (port) => fetch(`http://127.0.0.1:${port}/inference/go/v1/messages`, {
@@ -31,6 +45,7 @@ const ask = (port) => fetch(`http://127.0.0.1:${port}/inference/go/v1/messages`,
 test("reserves before forwarding, so failed attempts still spend the budget", async () => {
   const p = await start(2);
   try {
+    assert.ok(await warm(p.port), "proxy accepts requests");
     // Upstream is a closed port: each request fails after the reservation is taken.
     const codes = [await ask(p.port), await ask(p.port), await ask(p.port)];
     assert.deepEqual(codes, [502, 502, 429]);
@@ -45,6 +60,7 @@ test("reserves before forwarding, so failed attempts still spend the budget", as
 test("a zero budget refuses every request without forwarding", async () => {
   const p = await start(0);
   try {
+    assert.ok(await warm(p.port), "proxy accepts requests");
     assert.equal(await ask(p.port), 429);
     assert.equal(JSON.parse(readFileSync(p.budgetFile, "utf8")).used, 0);
   } finally { p.child.kill("SIGKILL"); rmSync(p.dir, { recursive: true, force: true }); }
