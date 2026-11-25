@@ -215,3 +215,41 @@ test("the approval hash changes when the plan changes", () => {
   assert.notEqual(approve(a), approve(b));
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("refuses a second execution under the same authorization", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [unit()] });
+  const out = join(dir, "out");
+  const auth = join(dir, "auth.json");
+  const first = run(plan, { repo, out, extra: ["--authorization", auth, "--max-executions", "1"] });
+  assert.equal(first.status, 0, first.stderr);
+  const second = run(plan, { repo, out: join(dir, "out2"), extra: ["--authorization", auth, "--max-executions", "1"] });
+  assert.equal(second.status, 2);
+  assert.match(second.stderr, /already used/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("clamps retries to the authorization, not the plan", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [unit({ budget: { tokens: 10, estimatedCostUsd: 0, retries: 5 }, fake: { outcome: "fail", detail: "always" } })] });
+  const out = join(dir, "out");
+  const auth = join(dir, "auth.json");
+  const r = run(plan, { repo, out, extra: ["--authorization", auth, "--max-retries", "1"] });
+  assert.equal(r.status, 1);
+  assert.equal(r.byId.get("u1").attempts, 2, "one attempt plus one authorized retry");
+  assert.deepEqual(r.byId.get("u1").retriesClamped, { plan: 5, authorized: 1 });
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("records the authorization and request usage in the ledger", () => {
+  const { dir, repo } = workspace();
+  const plan = writePlan(dir, { units: [unit()] });
+  const out = join(dir, "out");
+  const auth = join(dir, "auth.json");
+  const r = run(plan, { repo, out, extra: ["--authorization", auth, "--max-executions", "1", "--max-requests", "10"] });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.ledger.authorization.executions, 1);
+  assert.equal(r.ledger.authorization.maxRetriesPerUnit, 1);
+  assert.ok(r.ledger.authorization.requestsUsed >= 1);
+  rmSync(dir, { recursive: true, force: true });
+});
