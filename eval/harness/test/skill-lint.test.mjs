@@ -72,3 +72,33 @@ test("accepts a skill with no manifest and no companions", () => {
   assert.equal(r.status, 0, r.stderr);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("rejects a reference named only at the end of the procedure", () => {
+  const dir = mkdtempSync(join(tmpdir(), "lint-"));
+  const skill = join(dir, "prosci-late");
+  mkdirSync(join(skill, "references"), { recursive: true });
+  writeFileSync(join(skill, "references/guide.md"), "# guide\n");
+  writeFileSync(join(skill, "skill.json"), JSON.stringify({
+    name: "prosci-late", triggers: ["t"], non_triggers: ["n"],
+    references: [{ path: "references/guide.md", load_when: "when things happen" }],
+  }));
+  writeFileSync(join(skill, "SKILL.md"), `---\nname: prosci-late\n---\n\n## Procedure\n\n${Array(60).fill("A line of body text that carries a rule.").join("\n")}\n\nAt the end, read \`references/guide.md\`.\n`);
+  const r = run(dir);
+  assert.match(r.stderr, /not named in the first 45 lines/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("rejects a hard-coded machine path", () => {
+  const dir = mkdtempSync(join(tmpdir(), "lint-"));
+  const skill = join(dir, "prosci-abs");
+  mkdirSync(join(skill, "references"), { recursive: true });
+  writeFileSync(join(skill, "references/guide.md"), "# g\n");
+  writeFileSync(join(skill, "skill.json"), JSON.stringify({
+    name: "prosci-abs", triggers: ["t"], non_triggers: ["n"],
+    references: [{ path: "references/guide.md", load_when: "when needing it" }],
+  }));
+  writeFileSync(join(skill, "SKILL.md"), `---\nname: prosci-abs\n---\n\n## Procedure\n\nRead \`references/guide.md\` under /home/sumeet/skills.\n\n${"pad ".repeat(400)}\n`);
+  const r = run(dir);
+  assert.match(r.stderr, /hard-coded absolute path/);
+  rmSync(dir, { recursive: true, force: true });
+});

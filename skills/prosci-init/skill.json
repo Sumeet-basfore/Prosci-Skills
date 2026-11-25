@@ -1,0 +1,8 @@
+{
+  "name": "prosci-init",
+  "triggers": ["new project with no instructions", "adopt a repo whose commands do not run", "repo has no test command"],
+  "non_triggers": ["understand unfamiliar code → prosci-understand", "one change in a working repo → prosci-ship", "design or architecture decision → prosci-design / prosci-architect"],
+  "references": [],
+  "scripts": ["bin/prosci-survey"],
+  "approval": "writing any file requires explicit user approval; the survey itself is read-only"
+}

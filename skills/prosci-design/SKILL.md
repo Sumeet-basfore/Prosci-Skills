@@ -11,6 +11,54 @@ surface.
 
 Design owns the surface and hands over requirements a developer can build without guessing.
 
+## Read before you start
+
+This skill ships knowledge files next to it. Before step 3, open the ones this request needs with the `read`
+tool. Resolve every path against **this skill's directory** — the folder containing this `SKILL.md`; when the
+harness loaded the skill it told you that absolute location, and if you opened this file by path, use that
+file's folder. Never assume the repo you are working in contains them.
+
+| when the request involves | read |
+| --- | --- |
+| states, copy, errors, focus movement | `references/interaction-states.md` |
+| keyboard, focus, names, live regions, targets | `references/accessibility.md` |
+| type, scale, measure, numerals | `references/typography.md` |
+| palette, contrast, semantic colour roles | `references/color.md` |
+| layout, density, spacing, hierarchy | `references/composition.md` |
+| identity, carriers, generic-looking output | `references/visual-identity.md` |
+| motion, transitions, reduced motion | `references/motion.md` |
+| the brief, research, critique order | `references/research-and-critique.md` |
+
+Read at least the two that cover the states and accessibility of this surface. If a file cannot be opened,
+say so and continue; do not invent its contents.
+
+## Essential knowledge (do not depend on a reference)
+
+These rules apply even if no reference file is opened.
+
+**Brief, six lines, before layout:** goal · user and context · the one constraint that decides the shape ·
+what is reused · applicable states · the observable success check.
+
+**States, all that apply, each with copy:**
+empty (what this is for + the action that starts it) · loading (delayed >300ms, shaped like the content) ·
+partial (what exists, what is still loading) · error (what happened, whether data was saved, what to do) ·
+success (what happened, what next) · disabled (why, not just greyed).
+
+**Accessibility, minimum:** every control has an accessible name; keyboard reaches everything in reading
+order; focus is visible at 3:1 and moves to the logical target (first invalid field on error, opener on
+modal close); errors are announced once via `role="alert"`; text meets 4.5:1; targets ≥44px on touch;
+`prefers-reduced-motion` respected.
+
+**Hierarchy order:** space → size → weight → colour → decoration. One primary action per view.
+
+**Density follows the task:** console 28–32px rows, admin 36–44px, consumer 48–56px, marketing 64px+.
+
+**Disclosure:** without a rendered surface, say what is unverified. Static checks and declared-token
+contrast are not rendered checks.
+
+References add depth — typography scales, colour derivation, critique order, motion timing — read them when
+the task goes beyond the rules above.
+
 ## When this runs
 
 - A new screen, flow, or user-visible state has to be defined.

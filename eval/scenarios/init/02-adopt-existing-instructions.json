@@ -1,0 +1,25 @@
+{
+ "id": "init-repair",
+ "layer": "init",
+ "fixture": "survey/node-test",
+ "request": "Check whether this repo is set up correctly and tell me what the survey found. Do not modify anything.",
+ "expect_route": "prosci-init",
+ "requires_command": ["prosci-survey"],
+ "reply_contains": ["(node --test)", "(AGENTS\\.md|instructions)"],
+ "paraphrases": [
+   "The survey reports node, test command `node --test` sourced from the AGENTS.md factory block, one test file, no CI. Risks: no-lockfile, no-ci. Nothing was modified.",
+   "Facts: stack node; commands.test = node --test from AGENTS.md; tests 1 file; no CI configured. I did not change anything."
+ ],
+ "bland_reply": "Looks fine to me, everything is set up.",
+ "wrong_reply": "The survey could not detect a stack or a test command in this repository.",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "sh -c 'test -z \"$(git status --porcelain)\"'", "exit": 0 },
+    { "run": "sh -c 'grep -q \"test: node --test\" AGENTS.md'", "exit": 0 }
+   ]
+  },
+  "scope": { "max_files_changed": 0 }
+ },
+ "reference_reply": "Survey: stack node; test command node --test from the AGENTS.md factory block; 1 test file; no CI. Risks: no-lockfile, no-ci. Nothing modified."
+}

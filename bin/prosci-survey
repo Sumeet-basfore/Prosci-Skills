@@ -1,0 +1,202 @@
+#!/usr/bin/env node
+// Read-only project survey for prosci-init. Deterministic: same repo in, same JSON out.
+//
+// Rules this file is built to keep:
+//   - it never writes, installs, or configures anything;
+//   - every field carries a `source` (a path, a command, or "heuristic");
+//   - values it could not determine are null with a reason, never a guess dressed as fact;
+//   - it never opens an auth store: model metadata comes from provider names and model ids only.
+//
+//   bin/prosci-survey [repo] [--verify] [--json]
+//
+// --verify additionally runs the detected test command and records its exit code. Even then it writes
+// nothing; a test that writes is the test's behaviour, not the survey's.
+
+import { readFileSync, existsSync, statSync, readdirSync } from "node:fs";
+import { join, resolve, relative } from "node:path";
+import { spawnSync } from "node:child_process";
+import { homedir } from "node:os";
+
+const args = process.argv.slice(2);
+const flags = args.filter((a) => a.startsWith("--"));
+const root = resolve(args.find((a) => !a.startsWith("--")) ?? ".");
+const verify = flags.includes("--verify");
+const out = { schema: 1, root, facts: {}, unknowns: [], risks: [] };
+
+const read = (p) => readFileSync(join(root, p), "utf8");
+const has = (p) => existsSync(join(root, p));
+const list = (p) => (has(p) ? readdirSync(join(root, p)) : []);
+const fact = (value, source) => ({ value, source });
+
+// 1. VCS
+{
+  const inside = spawnSync("git", ["-C", root, "rev-parse", "--is-inside-work-tree"], { encoding: "utf8" });
+  if (inside.status === 0) {
+    const branch = spawnSync("git", ["-C", root, "rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" }).stdout.trim();
+    const porcelain = spawnSync("git", ["-C", root, "status", "--porcelain"], { encoding: "utf8" }).stdout.trim();
+    const remote = spawnSync("git", ["-C", root, "remote"], { encoding: "utf8" }).stdout.trim();
+    out.facts.vcs = {
+      git: fact(true, "git rev-parse"),
+      branch: fact(branch || null, "git rev-parse HEAD"),
+      dirty: fact(Boolean(porcelain), "git status --porcelain"),
+      remotes: fact(remote ? remote.split("\n") : [], "git remote"),
+    };
+    if (porcelain) out.risks.push({ code: "dirty-tree", severity: "low", detail: "uncommitted changes; a survey of a moving tree is a snapshot" });
+  } else {
+    out.facts.vcs = { git: fact(false, "git rev-parse") };
+    out.unknowns.push({ field: "vcs", reason: "not a git repository" });
+  }
+}
+
+// 2. Stacks and manifests
+{
+  const manifests = [
+    ["package.json", "node"], ["pnpm-workspace.yaml", "node"], ["pyproject.toml", "python"],
+    ["requirements.txt", "python"], ["Cargo.toml", "rust"], ["go.mod", "go"],
+    ["pom.xml", "java"], ["build.gradle", "java"], ["Gemfile", "ruby"], ["composer.json", "php"],
+  ];
+  const present = manifests.filter(([file]) => has(file));
+  out.facts.manifests = fact(present.map(([file]) => file), "file existence");
+  out.facts.stacks = fact([...new Set(present.map(([, stack]) => stack))], "manifests");
+  if (!present.length) out.unknowns.push({ field: "stacks", reason: "no recognised manifest at the root" });
+  if (present.some(([f]) => f === "package.json")) {
+    const lock = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"].find(has);
+    out.facts.lockfile = lock ? fact(lock, "file existence") : fact(null, "none of npm/pnpm/yarn lockfiles present");
+    if (!lock) out.risks.push({ code: "no-lockfile", severity: "medium", detail: "package.json without a lockfile" });
+  }
+  if (present.some(([f]) => f === "pnpm-workspace.yaml") || (has("package.json") && /"workspaces"/.test(read("package.json")))) {
+    out.facts.monorepo = fact(true, "workspaces declared");
+  }
+}
+
+// 3. Instructions and their factory block
+{
+  const files = ["AGENTS.md", "CLAUDE.md", ".cursorrules", "CONTRIBUTING.md"].filter(has);
+  out.facts.instructions = fact(files, "file existence");
+  let block = null;
+  if (files.includes("AGENTS.md")) {
+    const text = read("AGENTS.md");
+    const match = /```factory\n([\s\S]*?)```/.exec(text);
+    if (match) block = Object.fromEntries(match[1].split("\n").map((l) => l.split(/:\s*/, 2)).filter((p) => p[0] && p[1]).map(([k, v]) => [k.trim(), v.trim()]));
+    out.facts.factoryBlock = block ? fact(block, "AGENTS.md code fence") : fact(null, "no factory block in AGENTS.md");
+  }
+  if (!files.length) out.risks.push({ code: "no-instructions", severity: "high", detail: "no AGENTS.md, CLAUDE.md or equivalent" });
+}
+
+// 4. Commands, with provenance. A command is a claim until --verify runs it.
+{
+  const commands = {};
+  const fromBlock = out.facts.factoryBlock?.value ?? {};
+  for (const [kind, command] of Object.entries(fromBlock)) commands[kind] = { command, source: "AGENTS.md factory block", verified: null };
+  if (!commands.test) {
+    const candidates = [
+      ["package.json", /"test"\s*:\s*"([^"]+)"/, "package.json scripts.test"],
+      ["pyproject.toml", /\[tool\.pytest[^\]]*\][\s\S]*?/m, "pyproject [tool.pytest]"],
+      ["Cargo.toml", null, "Cargo.toml implies cargo test"],
+      ["go.mod", null, "go.mod implies go test ./..."],
+    ];
+    for (const [file, pattern, source] of candidates) {
+      if (!has(file) || commands.test) continue;
+      if (pattern) {
+        const m = pattern.exec(read(file));
+        if (m) {
+          // A pytest config declares intent, not a command; name the conventional invocation.
+          const command = file === "pyproject.toml" ? "python -m pytest" : m[1];
+          commands.test = { command, source, verified: null };
+        }
+      } else {
+        commands.test = { command: file === "Cargo.toml" ? "cargo test" : "go test ./...", source, verified: null };
+      }
+    }
+  }
+  out.facts.commands = fact(commands, "detected; unverified unless --verify");
+  if (!commands.test) out.risks.push({ code: "no-test-command", severity: "high", detail: "no test command in instructions, manifest or CI" });
+}
+
+// 5. Tests and CI
+{
+  const testDirs = ["test", "tests", "__tests__", "spec"].filter(has);
+  const files = testDirs.flatMap((d) => list(d).filter((f) => /\.(mjs|js|ts|py|rs|go)$/.test(f)));
+  const frameworks = [];
+  const jsTests = testDirs.flatMap((d) => list(d).filter((f) => /\.(mjs|js|ts)$/.test(f)).map((f) => join(d, f)));
+  if (jsTests.some((f) => /node:test|from ['"]node:test['"]|require\(['"]node:test/.test(read(f)))) frameworks.push("node:test");
+  if (files.some((f) => f.endsWith(".py"))) frameworks.push("pytest?");
+  out.facts.tests = fact({ dirs: testDirs, files: files.length, frameworks }, "directory listing");
+  if (testDirs.length && files.length === 0) out.risks.push({ code: "empty-test-dir", severity: "medium", detail: "test directory exists with no test files" });
+
+  const ciFiles = [".github/workflows", ".gitlab-ci.yml", "Jenkinsfile", ".circleci/config.yml"]
+    .filter(has)
+    .flatMap((p) => (statSync(join(root, p)).isDirectory() ? list(p).map((f) => `${p}/${f}`) : [p]));
+  out.facts.ci = fact(ciFiles, "file existence");
+  if (!ciFiles.length) out.risks.push({ code: "no-ci", severity: "low", detail: "no CI configuration found" });
+}
+
+// 6. Harnesses and model metadata — names only, never credentials.
+{
+  const harnesses = {
+    pi: "~/.agents/skills", claude: "~/.claude/skills", codex: "~/.codex/skills",
+    cursor: "~/.cursor/skills", opencode: "~/.config/opencode/skills",
+  };
+  const detected = {};
+  for (const [name, dir] of Object.entries(harnesses)) {
+    detected[name] = { skillsDir: dir, present: existsSync(join(homedir(), dir.slice(2))) };
+  }
+  out.facts.harnesses = fact(detected, "directory existence under $HOME");
+
+  const modelsPath = join(homedir(), ".pi", "agent", "models.json");
+  if (existsSync(modelsPath)) {
+    try {
+      const config = JSON.parse(readFileSync(modelsPath, "utf8"));
+      const providers = Object.entries(config.providers ?? {});
+      out.facts.models = fact({
+        providers: providers.map(([name, p]) => ({ name, models: (p.models ?? []).map((m) => m.id).filter(Boolean) })),
+        reportsCost: providers.some(([, p]) => JSON.stringify(p).includes("cost")),
+      }, "models.json provider and model ids only (auth store never read)");
+    } catch {
+      out.unknowns.push({ field: "models", reason: "models.json present but unreadable" });
+    }
+  } else {
+    out.unknowns.push({ field: "models", reason: "no models.json at ~/.pi/agent" });
+  }
+}
+
+// 7. Secrets: names and ignore status only. Contents are never read.
+{
+  const envFiles = list(".").filter((f) => /^\.env/.test(f));
+  out.facts.secrets = fact({ envFiles, gitignored: has(".gitignore") && read(".gitignore").split("\n").some((l) => /^\.env/.test(l.trim())) }, "file names; contents never read");
+  if (envFiles.some((f) => f === ".env") && !out.facts.secrets.value.gitignored) {
+    out.risks.push({ code: "env-not-ignored", severity: "high", detail: ".env present and not in .gitignore" });
+  }
+}
+
+// 8. Recommendations: a fixed rule table, not a model's opinion.
+{
+  const codes = new Set(out.risks.map((r) => r.code));
+  const recommended = ["prosci", "prosci-ship", "prosci-fix", "prosci-review", "prosci-bar"];
+  if (codes.has("no-instructions")) recommended.push("prosci-init", "prosci-understand");
+  if (codes.has("no-test-command")) recommended.push("prosci-verify");
+  if ((out.facts.instructions?.value ?? []).length) recommended.push("prosci-understand");
+  out.facts.recommendedSkills = fact([...new Set(recommended)], "rule table keyed on risk codes");
+  out.facts.recommendedRoles = fact(
+    codes.has("no-test-command") ? ["implementer", "verifier"] : ["implementer", "reviewer", "verifier"],
+    "rule table keyed on risk codes",
+  );
+}
+
+// 9. Optional verification of the detected test command.
+if (verify) {
+  const command = out.facts.commands?.value?.test?.command;
+  if (!command) {
+    out.unknowns.push({ field: "commands.test.verified", reason: "no test command to verify" });
+  } else {
+    const run = spawnSync("sh", ["-c", command], { cwd: root, encoding: "utf8", timeout: 120000 });
+    out.facts.commands.value.test.verified = { exit: run.status, ranBy: "prosci-survey --verify" };
+  }
+}
+
+const sortValue = (v) => {
+  if (Array.isArray(v)) return v.map(sortValue);
+  if (v && typeof v === "object") return Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortValue(v[k])]));
+  return v;
+};
+console.log(JSON.stringify(sortValue(out), null, 2));

@@ -1,83 +1,139 @@
 ---
 name: prosci-init
-description: "Start or adopt a repo the factory way: inspect what exists, add only the instructions and baseline commands a change needs, and prove the baseline runs. Use when creating a project, or onboarding a repo that has no usable conventions."
+description: "Set up a repo for agent work from evidence: run the read-only survey, interpret it, recommend a configuration, get explicit approval, write the minimum, and validate it. Use when starting a project, or adopting a repo whose instructions or commands are missing or wrong."
 ---
 
 # Init
 
-The failure this route prevents has two shapes. Starting work in an empty repo that has no way to
-verify anything, so the first change is unverifiable. Or scaffolding a repo that already has
-conventions, and overwriting them.
+The failure this route prevents: an agent "sets up" a repo by writing a plausible `AGENTS.md` with
+commands nobody ran, adding a lint config nobody asked for, and calling it ready.
 
-Both are avoided the same way. Find out what exists before adding anything.
+Init starts from facts. `bin/prosci-survey` reports what the repo actually is; init interprets that report,
+recommends a configuration, and writes only what a human approves.
 
-## 1. Inspect before you create
+## When this runs
 
-```sh
-ls -a
-git log --oneline -5
-git status
-```
+- A new project has no instructions and no way to verify changes.
+- An adopted repo's `AGENTS.md` names commands that do not run.
+- A repo is missing a test command, CI, or a `.gitignore` that keeps secrets out.
+- Someone asks what a repo is and what it would take to work in it.
 
-Then read, if they exist: `README.md`, `AGENTS.md`, `CLAUDE.md`, the manifest
-(`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`), the lockfile, and the CI config.
+## When it does not
 
-Decide which of the two shapes you are in.
+- **The repo is already set up and the commands run.** Nothing to do; say so and stop.
+- **You need to understand unfamiliar code.** `prosci-understand` builds the model. Init consumes facts; it
+  does not read the codebase for meaning.
+- **One change in a working repo.** `prosci-ship` / `prosci-fix`.
+- **A design or architecture decision.** `prosci-design` / `prosci-architect`.
 
-- **Empty or near empty.** Create the minimum below.
-- **Has conventions.** Do not create anything that already exists, and do not restructure. Your
-  job is to record what is already true, then prove it runs.
+## Inputs
 
-Never overwrite a file, a lockfile, or a config that already exists. If the repo has a formatter
-config, that config decides the formatting, not your preference.
+- The repository path.
+- `bin/prosci-survey <repo>` output — the facts. If the tool is unavailable, say so and stop rather than
+  guessing the stack from file names.
+- The user's intent: new project, adoption, or repair.
 
-## 2. Add only what a change needs
+## Procedure
 
-The minimum a repo needs to be workable by an agent:
+### 1. Survey, then read the facts back
 
-1. An instructions file, `AGENTS.md` (with `CLAUDE.md` as a symlink to it if the tooling wants
-   that name), naming the real commands for test, typecheck, and build.
-2. A way to run those commands from a clean checkout. If the toolchain needs an environment, the
-   command bootstraps it, or the instructions say how.
-3. A test harness with at least one passing test, even a trivial one, so the command exists and is
-   green from the first commit. A repo with no test command cannot be verified, by an agent or by
-   a person.
-4. A `.gitignore` covering build output, dependencies, and secrets.
+Run `bin/prosci-survey <repo>`. Then state, in the reply, the parts that decide the setup:
 
-Nothing else. No framework, no CI pipeline, no lint config with rules nobody will obey, no
-directory tree for code that does not exist yet. Add each when the first change needs it.
+- stacks and manifests, and any `null` lockfile;
+- each detected command **with its source** (`AGENTS.md` block, manifest script, CI) and whether it is
+  verified;
+- test dirs and frameworks, CI files, existing instruction files;
+- risks by code (`no-test-command`, `no-instructions`, `no-ci`, `dirty-tree`, `env-not-ignored`);
+- `unknowns` — say them out loud, do not fill them in.
 
-If the repo has a remote on GitHub, a check that runs the same commands is worth adding. That is
-`bin/install-gate` in this factory's repo, or one workflow file by hand.
+If `commands.test` exists but is unverified, run it once before recommending anything. A command that does
+not run is the finding, not a detail.
 
-## 3. Record the commands, then run them
+### 2. Recommend, from the rule table — not from taste
 
-Write the commands into the instructions file, then run each one in an empty environment.
+Recommendations are mechanical, keyed on risk codes and stacks:
 
-```sh
-<install>     # from clean, if the toolchain needs it
-<test>
-<typecheck>   # if the repo has one
-<build>       # if it produces an artifact
-```
+| finding | recommend |
+| --- | --- |
+| `no-instructions` | add an `AGENTS.md` with the verified commands; route a `prosci-understand` pass for conventions |
+| `no-test-command` | add the smallest test harness the stack supports, then a test that passes |
+| `no-ci` | one workflow that runs the verified commands (only if the repo has a remote) |
+| `env-not-ignored` | `.gitignore` entry; stop and flag if a secret is already committed |
+| `no-lockfile` | install and commit the lockfile before any dependency work |
+| `empty-test-dir` | write one real test; an empty directory is not a harness |
 
-Paste the output. If a command fails from clean but works on your machine, the repo is not
-initialised yet regardless of what the file says.
+Recommended skills and roles come from the survey (`recommendedSkills`, `recommendedRoles`). Do not invent
+a longer list; a repo with a working test command does not need `prosci-init` at all.
 
-## 4. Prove the baseline with a first change
+Model budget profile: only if the user asks, and only from an explicit tiers file. Never infer a model from
+its name, and never read a credential store.
 
-Make one real, small change through `../prosci-ship/SKILL.md` before declaring the repo ready. The
-scaffold is a claim until a change travels through it: edit, test, verify, pull request, merge.
+### 3. Show the exact change, then ask
 
-If that first pass reveals a missing step, add it to the instructions file then, not later.
+Present the diff you intend to write:
 
-## 5. Say what you did not set up
+- the file, the section, and the exact lines;
+- what you will not touch;
+- what remains unknown and who can resolve it.
 
-Name what you deliberately left out and when it should arrive, for example a CI pipeline, a release
-route, a lint config, a second package. An unstated omission becomes an invented convention two
-weeks later.
+Then **stop and ask for approval.** Do not write before an explicit yes. Recommendations are not changes:
+`prosci-init` never modifies project configuration on its own, and a repo with no approval gets a report,
+not a patch.
 
-## Reply
+### 4. Write the minimum
 
-Which shape the repo was in, what you added and why, the commands and their output from clean, the
-first change and its pull request, and what is still unset.
+Only after approval:
+
+- `AGENTS.md` with the verified commands in the factory block, and nothing else;
+- never overwrite an existing file — propose a patch to the section that needs it;
+- never add a dependency, a framework, a CI pipeline or a config file nobody asked for.
+
+Copy the commands exactly as they were verified, including the working directory if it matters.
+
+### 5. Validate
+
+Run each command the new instructions claim. Paste the output. Then run
+`bin/prosci-survey <repo>` again and confirm the risk codes that motivated the change are gone. A command
+that passes only because of a local file is not verified.
+
+### 6. Make it reversible
+
+State how to undo the setup: the files added, and the one-line command or instruction to remove them. A
+setup a person cannot reverse is a setup they will not approve.
+
+## Output
+
+- the survey facts that decided the setup, with sources and unknowns;
+- the recommendation, mapped to risk codes;
+- the approval request and its answer;
+- the files written, or "no change, awaiting approval";
+- verification output for every command claimed;
+- the reversal instruction;
+- what remains unverified.
+
+## Failure handling
+
+- **Survey unavailable.** Stop. Do not reconstruct its output by hand.
+- **No test command and no tests.** Say the repo cannot be verified yet; propose the smallest harness as its
+  own change and wait for approval. Do not write code to make a test pass.
+- **The existing instructions are wrong.** Propose a diff to them; do not silently replace the file.
+- **Approval is not given.** Report what you would have changed and stop. No partial writes.
+- **A secret is committed.** Stop immediately, name the file (not the value), and hand off to the owner. Do
+  not add it to `.gitignore` and call it fixed.
+
+## Approval guarantees, stated honestly
+
+The approval gate is **instruction-level**: the agent asks and waits. Nothing in the tooling forces it —
+`bin/prosci-survey` is read-only and cannot write, but the write itself is the agent's action. Treat the
+gate as a workflow rule backed by review, not as a sandbox. If executable enforcement is needed, it belongs
+in a tool that performs the write itself, which does not exist yet.
+
+## Acceptance criteria
+
+1. The survey was run, and its facts (with sources) are quoted in the report.
+2. Unknowns are listed, not filled in.
+3. Every recommended change maps to a risk code or a stated user intent.
+4. No file was written before an explicit approval.
+5. Every command claimed in the instructions was executed, and its output pasted.
+6. The survey was re-run and the motivating risk codes are gone.
+7. The change is reversible, with the reversal written down.

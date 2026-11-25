@@ -188,3 +188,33 @@ contribution. No additional references, no longer bodies, no new infrastructure.
 - Design acceptance failed in both arms partly on assertion shape (`## Brief` versus `## 1. Brief`), which is
   the same class of defect recorded in Phase 3; it was frozen and is reported, not adjusted.
 - n=3 per scenario. Nothing here supports a quality claim in either direction.
+
+---
+
+## 9. Correction: knowledge delivery
+
+**Three-run mechanism check after moving the pointers early: 0 of 3 runs opened a reference.** Same result as
+0 of 18. 3 runs, $0.0037 of the $0.01 cap, `claude-haiku-5-5` low, same sandbox and scenario.
+
+The correction tested: a `## Read before you start` table at line 14 of `SKILL.md`, naming each reference with
+the condition that selects it, and instructing the agent to resolve paths against *this skill's directory*
+(no machine-specific absolute paths). `skill.json` stayed metadata only.
+
+It did not work. Per the agreed branch, the essential knowledge was **inlined into the bodies**:
+
+| skill | inlined |
+| --- | --- |
+| `prosci-design` | brief shape, mandatory states with copy, accessibility minimum, hierarchy order, density table, disclosure rule |
+| `prosci-ship` | spec fields (goal, non-goals, shape, proof, rollback), test rules, production readiness minimum |
+| `prosci-verify` | evidence per check, CLI/HTTP/browser essentials, missing-renderer rule |
+
+References remain as optional depth — typography scales, colour derivation, critique order, motion timing,
+longer checklists. `skill.json` records that they are supplements, not the source of rules.
+
+**Interpretation, stated as inference:** with 21 runs at 0 reads across two placements, the mechanism appears
+to be that this model does not fetch companion files for a task it believes it can answer from the skill body.
+The hybrid architecture keeps the rules in front of it; the references are for the cases where the body says
+"for depth, read X" and the task visibly exceeds the checklist. That has not been measured and is not claimed.
+
+Lint now enforces the shape: a declared reference must be named in the first 45 lines, and hard-coded
+machine paths are rejected. Two new tests (10 total for the lint).

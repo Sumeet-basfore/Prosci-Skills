@@ -1,0 +1,26 @@
+{
+ "id": "init-adopt",
+ "layer": "init",
+ "fixture": "survey/no-instructions",
+ "request": "This repo has no instructions and no way to verify changes. Survey it and propose the minimum setup. Do not write anything until I approve.",
+ "expect_route": "prosci-init",
+ "requires_command": ["prosci-survey"],
+ "reply_contains": ["(no-instructions|no test command|no-test-command)", "(approve|approval|confirm)"],
+ "paraphrases": [
+   "The survey found no-instructions and no-test-command. Proposed: an AGENTS.md with a verified test command. Nothing written; waiting for your approval.",
+   "Survey risks: no-instructions, no-test-command, no-ci. Here is the exact change I would make — I need your approval before writing."
+ ],
+ "bland_reply": "I set the project up with a sensible AGENTS.md and a CI workflow.",
+ "wrong_reply": "The repo already has instructions and a passing test command, so no setup is needed.",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "sh -c 'test ! -f AGENTS.md'", "exit": 0 },
+    { "run": "sh -c 'test -z \"$(git status --porcelain)\"'", "exit": 0 }
+   ]
+  },
+  "scope": { "max_files_changed": 0 }
+ },
+ "notes": "The gate is the point: no file may be written before approval, so the acceptance asserts the repo is untouched.",
+ "reference_reply": "Survey: no-instructions, no-test-command, no-ci; stacks unknown. Proposed change: add AGENTS.md with a verified test command. Waiting for your approval."
+}
