@@ -163,9 +163,11 @@ export function humanPath(p) {
 
 // Which files a run touched. git status prints a two-character status prefix, and three separate
 // bugs came from slicing it (D-003), so this asks git for bare paths only.
-export function changedFiles(workspace) {
+export function changedFiles(workspace, base = "HEAD") {
+  // A merge changes history, not the tree, so "diff against HEAD" reports nothing. Callers that need
+  // the integrated changes pass the pre-integration base instead.
   const run = (args) => git(args, workspace).out.split("\n").map((line) => line.trim());
-  const paths = [...run(["ls-files", "--modified", "--others", "--exclude-standard"]), ...run(["diff", "--name-only", "HEAD"])];
+  const paths = [...run(["ls-files", "--modified", "--others", "--exclude-standard"]), ...run(["diff", "--name-only", base])];
   return paths.filter((v, i, all) => v && all.indexOf(v) === i).sort();
 }
 

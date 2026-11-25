@@ -46,3 +46,20 @@ test("reports nothing on a clean tree", () => {
   assert.deepEqual(changedFiles(dir), []);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("reports an integration's files when measured against the pre-merge base", () => {
+  const { dir, git } = repo();
+  const base = spawnSync("git", ["rev-parse", "HEAD"], { cwd: dir, encoding: "utf8" }).stdout.trim();
+  git("checkout", "-qb", "feature");
+  writeFileSync(join(dir, "added.mjs"), "export const BATCH = 8;\n");
+  git("add", "-A");
+  git("commit", "-qm", "feature");
+  git("checkout", "-q", "master");
+  git("-c", "user.name=t", "-c", "user.email=t@t", "merge", "--no-ff", "-q", "feature");
+
+  // The tree matches HEAD after a merge, so the default view reports nothing.
+  assert.deepEqual(changedFiles(dir), []);
+  // The pre-merge base is the only view that shows what the integration brought in.
+  assert.deepEqual(changedFiles(dir, base), ["added.mjs"]);
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -89,3 +89,19 @@ Node only for the optional tools. No dependencies, no build step.
 ```factory
 test: node --test bin/test/*.test.mjs
 ```
+
+## Privacy
+
+Prosci is local. It sends nothing: no analytics, no identifiers, no accounts, no update checks, and no
+network request from anything it installs. That is verified by `eval/harness/audit-network.mjs`, which
+runs in CI, and inventoried in `docs/network-inventory.md`.
+
+The coding harness and model provider you use see the conversation and the files — that is their data
+flow, not this project's. The one outbound path in this repo is `eval/harness/proxy.mjs`, used only by
+evaluation runs to keep the provider key outside the sandbox; no skill calls it.
+
+## What is measured
+
+Activation is not solved. A one-line instruction in the repo's `AGENTS.md` loaded the right skill in 11
+of 15 runs in the frozen evaluation; passive discovery alone was 0 of 15. See `eval/reports/phase-0.2.md`
+and `phase-3.md` for what is measured, what failed, and what is still unproven.

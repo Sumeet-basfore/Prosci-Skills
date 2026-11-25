@@ -108,3 +108,51 @@ No new tooling: the sandbox, proxy restrictions and `docs/security.md` limits ar
 skill needs a browser; `design` explicitly reports when nothing was rendered rather than implying a
 visual check. Merge runs perform local Git operations only inside the fixture; nothing is pushed, and
 the sandbox has no remote.
+
+---
+
+## 9. Corrective evaluation, after the accepted corrections
+
+**This is a corrective evaluation, not an independent replication.** Same fixture, same model, same
+sandbox; the skill wording and the criteria changed. 6 runs, $0.0191 of the $0.03 cap.
+
+| what changed | where |
+| --- | --- |
+| resolve a violated constraint instead of escalating it | `skills/prosci-merge/SKILL.md` |
+| reply or file accepted for design | `eval/scenarios/phase3-v2/02-design.json` |
+| scope measured against the pre-integration base | `changedFiles(workspace, base)`, `changes_since: "fixture"` |
+| criteria versioned | `eval/scenarios/phase3-v2/`; Phase 3 v1 untouched |
+
+### Results
+
+| scenario | route | acceptance | reply assertion | scope |
+| --- | --- | --- | --- | --- |
+| `p3v2-merge` | 3/3 | **0/3** | 3/3 | 5 files changed, measured correctly |
+| `p3v2-design` | 3/3 | 3/3 | **0/3** | 0 files, source untouched |
+
+**Merge: still escalated, 0/3.** The wording now separates a genuine intent conflict from a violated
+constraint, and every run still reported "one interaction … needs a decision before anything is
+published" instead of applying batch 5. The scope fix works: the same runs now report five changed
+files, where the old call reported none.
+
+**Design: the disclosure is there; the assertion is too narrow.** Every run wrote "Nothing was rendered,
+so every visual and focus claim below is unverified", plus all four states, copy, keyboard and
+screen-reader requirements, focus visibility and the 320px breakpoint. Eight of nine patterns matched.
+The ninth required the literal wording "not visually inspected" or "visual inspection", and the run used
+"nothing was rendered … unverified". The property is present; the grep is shaped to the reference
+wording.
+
+Both are recorded, not tuned. This is the third assertion in three phases that tested a phrasing instead
+of a property (`art-plan` v1, `p3-design` v1, now `p3v2-design`), which is a pattern worth naming: an
+assertion copied from a reference solution measures the reference, not the skill.
+
+### Proposed v3 criteria — not applied
+
+1. **design disclosure**: accept any phrasing that states the absence, e.g.
+   `/(nothing was rendered|not rendered|no rendered surface|visual(ly)? .{0,20}not (verified|inspected)|unverified)/i`,
+   validated against three paraphrases of the reference, not one.
+2. **merge resolution**: keep the semantic check, and add a second, weaker assertion that separates
+   detection from resolution, so a run that escalates scores detection rather than failing both.
+3. **assertion lint**: for every reply assertion, validate against at least two paraphrases and one
+   bland approval, and fail the scenario if a paraphrase of its own reference does not match. That rule
+   would have caught all three cases before any paid run.

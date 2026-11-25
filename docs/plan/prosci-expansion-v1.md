@@ -348,3 +348,11 @@ Both smoke arms failed their frozen acceptance for criterion reasons, not capabi
 results are kept. Detection in merge was 3/3; reconciliation 0/3 because the skill says to escalate.
 Design produced its requirements in the reply while the criterion demanded a file. Proposed corrections
 are in `eval/reports/phase-3.md` §7 and are not applied.
+
+## Phase 4 and release readiness
+
+Proposed at `docs/plan/phase-4-proposal.md`: three real repositories instead of more fixtures, a
+nine-versus-seventeen comparison on real issues, onboarding and invocation measured, router ambiguity on
+real titles, and outcome metrics (throughput, post-merge defects, diff reviewability). Privacy policy and
+its automated check are already in place: `docs/network-inventory.md` plus
+`eval/harness/audit-network.mjs` in CI.
