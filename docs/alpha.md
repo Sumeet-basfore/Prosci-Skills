@@ -52,6 +52,19 @@ Alpha means: watch it. Keep the branch protected, read the diff before merging, 
 production data. The skills assume a test command exists; a repo without one should start with
 `prosci-init`.
 
+## Private preview and outstanding conditions
+
+Prosci is feature-frozen at seventeen skills while a seven-day private preview runs on real work. The
+protocol and the record template are in `docs/preview/README.md` and `docs/preview/trial-record.md`.
+
+Public alpha is deferred until at least one human-reviewed, successfully merged result exists, the install
+path is confirmed by someone other than the author, and each observed failure is fixed with a regression
+test or written down as a known limitation.
+
+Known limitation carried into the preview: `prosci-merge` may escalate a constraint violation instead of
+resolving it. An unresolved semantic conflict requires explicit human approval before a merge or any
+publication.
+
 ## Privacy
 
 No telemetry, no analytics, no identifiers, no accounts, no update checks. Nothing Prosci installs makes

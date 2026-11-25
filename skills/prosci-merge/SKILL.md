@@ -84,6 +84,9 @@ other raised — ships silently.
   result nobody can attribute.
 - **Two approved intentions genuinely conflict.** Two products want opposite behaviour: that is a
   decision, not a merge. Stop, name both intentions, and escalate.
+- **An unresolved semantic conflict.** When you cannot show that the combined state is consistent, do not
+  merge and do not publish. Present the state and require an explicit human approval before proceeding;
+  silence is not approval.
 - **A constraint meets a value.** One change sets the policy, the other sets a number that now violates
   it. That is not a decision for a human: the constraint stays and the value conforms. Resolve it in a
   small commit with a test, and say which side you treated as the constraint. Escalating this is
@@ -102,3 +105,5 @@ other raised — ships silently.
 4. A combined-state check exists that exercises both changes together, with its output.
 5. The recovery command is written down and is safe for the branch's publication state.
 6. No unrelated branch, stash, or file was modified; no force-push or reset without authorization.
+7. Any unresolved semantic conflict is presented for explicit human approval, with the combined-state
+   evidence, before a merge or publication happens.

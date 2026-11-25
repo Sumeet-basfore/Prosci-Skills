@@ -34,6 +34,11 @@ the activation.
 - `docs/supported-harnesses.md` — the five harness directories and what is actually tested.
 - `docs/network-inventory.md` — every network path, and the limits of the check.
 
+## Private preview
+
+The seventeen skills are feature-frozen while a seven-day preview runs on real work. Protocol and record
+template: `docs/preview/README.md`. Public alpha is deferred until a human-reviewed result has merged.
+
 ## Install
 
 The seventeen skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
