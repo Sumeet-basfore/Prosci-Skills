@@ -1,0 +1,8 @@
+{
+ "id": "route-design-not-architect",
+ "layer": "routing",
+ "request": "decide the request and response schema for the payment endpoint and the module that owns it",
+ "expect": ["prosci-architect"],
+ "forbid": ["prosci-design"],
+ "why": "a data contract and a module boundary are architecture, even when the feature is user-facing"
+}

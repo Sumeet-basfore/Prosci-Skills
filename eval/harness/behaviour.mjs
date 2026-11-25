@@ -184,9 +184,14 @@ function prepare(scenario, config) {
     extensions.push(file);
   }
 
+  // Some scenarios need history the working tree cannot carry: two branches cut from one base.
   git(["init", "-q"], workspace);
   git(["add", "-A"], workspace);
   git(["-c", "user.name=eval", "-c", "user.email=eval@local", "commit", "-qm", "fixture"], workspace);
+  for (const command of scenario.setup_commands ?? []) {
+    const r = spawnSync("sh", ["-c", command], { cwd: workspace, encoding: "utf8", env: { ...process.env, EVAL_DIR } });
+    if (r.status !== 0) throw new Error(`setup failed: ${command}: ${r.stderr}`);
+  }
 
   // Skills live inside the scoped agent directory and are named explicitly on the command line.
   // Relying on discovery made a scoped run see zero skills while nine were on disk.

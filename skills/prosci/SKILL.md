@@ -46,6 +46,8 @@ that land, not from large changes that stall.
 | improve structure without changing behaviour | `../prosci-refactor/SKILL.md` | pin the behaviour first |
 | attack a proposal before it is built | `../prosci-challenge/SKILL.md` | restate it, then cite evidence |
 | prove the software works on its real surface | `../prosci-verify/SKILL.md` | write the check before running |
+| integrate branches, worktrees or stacked pull requests | `../prosci-merge/SKILL.md` | record the base state first |
+| decide a user flow, screen states, copy or accessibility | `../prosci-design/SKILL.md` | inspect the existing surface first |
 | fix a bug or a failing test | `../prosci-fix/SKILL.md` | reproduce it |
 | review a diff or a pull request | `../prosci-review/SKILL.md` | read the diff, then the surrounding code |
 | explain how something works, or which option to pick | `../prosci-investigate/SKILL.md` | write the question in one sentence |

@@ -1,0 +1,8 @@
+{
+ "id": "route-merge-not-review",
+ "layer": "routing",
+ "request": "review this single branch's diff for bugs before I open the pull request",
+ "expect": ["prosci-review"],
+ "forbid": ["prosci-merge"],
+ "why": "one diff under review is not an integration problem"
+}

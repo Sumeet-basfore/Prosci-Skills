@@ -1,12 +1,12 @@
 {
   "generatedBy": "eval/harness/fingerprint.mjs",
-  "count": 15,
+  "count": 17,
   "skills": [
     {
       "name": "prosci",
       "declared": "prosci",
-      "sha256": "39bd0a8e5cd8517f414160818f77b955ee3737ac23575221bca3b9a9bc6a416c",
-      "bytes": 6250
+      "sha256": "7ae30ddf35532a089fb448d2d6fa80c5177c92d13e5238a4c455133c8cb26de6",
+      "bytes": 6496
     },
     {
       "name": "prosci-architect",
@@ -25,6 +25,12 @@
       "declared": "prosci-challenge",
       "sha256": "8fc37b80385f606bb4597ec4de83a5d12dcf8821ce52a0b4eaf0751f07a127e0",
       "bytes": 4734
+    },
+    {
+      "name": "prosci-design",
+      "declared": "prosci-design",
+      "sha256": "8cf222dae9b69ac5695a4dc0f141861c1a83aa2797571fc7490a43122e5a3512",
+      "bytes": 5902
     },
     {
       "name": "prosci-docs",
@@ -49,6 +55,12 @@
       "declared": "prosci-investigate",
       "sha256": "05c62ab3159760da74a1df015d83f388ebaedf014cb29fafb15f9b61557e75c3",
       "bytes": 3909
+    },
+    {
+      "name": "prosci-merge",
+      "declared": "prosci-merge",
+      "sha256": "ddd1c8adc01ce1702abde2bb812d01ec78d6f98f7bf0ecf85bc4b19d33cd32aa",
+      "bytes": 5444
     },
     {
       "name": "prosci-plan",

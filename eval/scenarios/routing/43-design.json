@@ -1,0 +1,8 @@
+{
+ "id": "route-design",
+ "layer": "routing",
+ "request": "design the checkout error and empty states, the copy, and the keyboard path for the new payment screen",
+ "expect": ["prosci-design"],
+ "forbid": ["prosci-architect", "prosci-verify"],
+ "why": "product surface states, copy and accessibility are design, not contracts or verification"
+}

@@ -1,0 +1,25 @@
+{
+ "id": "p3-design",
+ "layer": "phase3",
+ "fixture": "checkout-surface",
+ "request": "Define the design requirements for the payment screen: the states, the copy, the keyboard and screen-reader behaviour, and the responsive behaviour.",
+ "expect_route": "prosci-design",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "node --test", "exit": 0 },
+    { "run": "sh -c 'grep -rqi empty docs/design && grep -rqi loading docs/design && grep -rqi error docs/design && grep -rqi success docs/design'", "exit": 0 },
+    { "run": "sh -c 'grep -rqiE \"aria|screen reader|accessible name\" docs/design'", "exit": 0 },
+    { "run": "sh -c 'grep -rqiE \"focus\" docs/design'", "exit": 0 },
+    { "run": "sh -c 'grep -rqiE \"320|breakpoint|responsive\" docs/design'", "exit": 0 },
+    { "run": "sh -c 'grep -rq \"Pay invoice\" docs/design'", "exit": 0 },
+    { "run": "sh -c 'grep -rqiE \"not visually (verified|inspected)|visual inspection\" docs/design'", "exit": 0 }
+   ],
+   "files_unchanged": ["src/screen.html", "styles/tokens.css"]
+  },
+  "scope": { "max_files_changed": 2 }
+ },
+ "notes": "requirements only: the screen and tokens stay untouched. The copy comes from SPEC.md; the disclosure is required because no browser is available.",
+ "leak_terms": ["docs/design", "not visually inspected"],
+ "reference_fix": ["sh \"$EVAL_DIR/scenarios/phase3/reference/design.sh\""]
+}
