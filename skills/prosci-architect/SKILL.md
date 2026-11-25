@@ -63,6 +63,81 @@ Architect makes the shape explicit before code exists, and records it where the 
 
 7. **Hand back.** Link the artifact, do not implement. `prosci-ship` continues with the chosen shape.
 
+## Decision rules and worked examples
+
+### Forces that actually decide a shape
+
+| force | how it shows up in the design | how to check it |
+| --- | --- | --- |
+| reversibility | migration cost, deprecation window | "what breaks if we undo this in a month?" |
+| coupling | how many call sites change together | count the callers that would need editing |
+| failure blast radius | what a crash takes down | trace the retry and timeout path |
+| operational familiarity | can the on-call read it at 3am | is the state visible in a log or a table |
+| throughput | rows, requests, bytes per second | the 10× number, not today's |
+| contract lifetime | who consumes the type, for how long | external clients, persisted rows, published events |
+
+Three forces with sources beat eight without. If two options tie on every force, the cheaper one to delete
+wins.
+
+### Interface rules that prevent most review findings
+
+- **Narrow waist.** One function, one job; if the signature needs a boolean to pick behaviour, it is two
+  functions.
+- **Errors are part of the interface.** Say what fails and what the caller can do: throw, return a result
+  union, or return null with a reason. Pick one per module and keep it.
+- **Idempotency where retries exist.** A write that can be retried needs a key or a natural identity; otherwise
+  the design has an unowned duplicate path.
+- **No ambient state.** A function that reads a global, the clock, or the environment is untestable and
+  hides a parameter.
+- **Bounded queues and lists.** Unbounded growth is a design decision, sometimes the right one — say so.
+
+### Worked example: where does the retry live?
+
+Requirement: the invoice sync must survive a flaky vendor API.
+
+Option 1 — retry in the client:
+
+```js
+// src/vendor.mjs
+export async function withRetry(fn, attempts = 3) { /* backoff, jitter */ }
+export async function fetchInvoice(id) { return withRetry(() => http.get(`/invoices/${id}`)); }
+```
+
+Option 2 — retry in the queue consumer:
+
+```js
+// src/consumer.mjs
+export async function handle(message) {
+  try { await fetchInvoice(message.id); }
+  catch (e) { throw e; } // the queue redelivers with backoff and a dead-letter
+}
+```
+
+Option 1 wins **only if** the caller cannot wait for a redelivery and there is no queue. With a queue, option 2
+wins: the retry policy is visible in one place, poison messages reach a dead-letter, and the client stays a thin
+adapter. Recording the loser and why is the point of the artifact — six months later someone will ask.
+
+### Anti-patterns
+
+- **Strawman options.** Two choices where one is obviously broken. If the loser has no defender, the comparison
+  is theatre.
+- **"Flexible for the future".** An abstraction with one caller is a promise you will maintain for a user who
+  has not appeared.
+- **Decision by diagram.** A box diagram with no interface sketch hides the hard part: the types and the error
+  contract.
+- **Rewriting the interface and the implementation together.** Then a regression cannot be attributed.
+
+### Reversibility cost, concretely
+
+| decision | undo cost | when it stops being cheap |
+| --- | --- | --- |
+| rename a private function | minutes | never |
+| split a module | an afternoon | when callers import both |
+| change a function signature | scales with callers | when published to consumers |
+| add a database column | cheap | never (data outlives code) |
+| change a column's meaning | a migration and a backfill | as soon as rows exist |
+| publish an event shape | a version and a dual-write window | when a consumer depends on it |
+
 ## Output
 
 One artifact, at most a page:

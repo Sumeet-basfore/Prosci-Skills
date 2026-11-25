@@ -81,6 +81,52 @@ One paragraph in the pull request: what was broken, why, how it now fails differ
 could recur, say what catches it next time. If the same class of bug exists elsewhere, name the
 places and open separate work for them rather than fixing them here.
 
+## Diagnosis procedure
+
+The order matters: each step removes a class of guesses.
+
+1. **Reproduce.** One command or one click, from a clean state. Record the exact input and the exact wrong
+   output. No reproduction, no fix.
+2. **Minimise.** Remove inputs and code until the failure is one case. A minimal reproduction usually names the
+   cause.
+3. **Instrument, do not guess.** Add a log or a probe at the boundary where the value is wrong, and read it.
+   "Probably a race" is a hypothesis, not a finding.
+4. **Bisect when the cause is temporal.** `git bisect run <test>` over commits; binary-search over inputs or
+   configuration when it is data.
+5. **State the cause as a falsifiable sentence.** "The total is NaN because `reduce` has no initial value and
+   the file is empty." Then predict what the fix changes, and check that prediction.
+6. **Fix the cause once, in the shared code.** Grep every caller of the function you touch before editing it.
+7. **Add the regression test at the level the bug appeared.** CLI bug → CLI test; library bug → unit test.
+8. **Verify the test can fail**: revert the fix, watch it go red, re-apply.
+
+### Symptom versus cause
+
+| symptom | plausible cause | how to tell |
+| --- | --- | --- |
+| works locally, fails in CI | environment, timezone, locale, missing seed | run the failing command with `TZ`, `LANG`, empty env |
+| fails intermittently | race, shared state, retry without idempotency | run N times, add a delay, look at interleaving |
+| fails after a while | leak, unbounded growth, cache expiry | watch memory and row counts over time |
+| fails only for some users | authz, tenancy, data-dependent branch | find the differing field, reproduce with it |
+| fails only on deploy | migration order, config drift, stale cache | compare schema and config, not code |
+
+### Worked example
+
+Bug: "the report command prints nothing for some files."
+
+Poor: wrap the read in `try/catch` and print 0. The empty file still silently lies, and the real defect — a
+missing initial value — stays.
+
+Effective: reproduce with an empty file (`bin/report --total empty.txt` → `TypeError`), minimise to
+`[].reduce(fn)` → throw, state the cause, fix with an initial value, add the empty-file case to the suite and
+confirm it fails without the fix.
+
+### Anti-patterns
+
+- **Shotgun fix.** Three changes at once; the next failure cannot be attributed.
+- **Fixing the test.** If the test encodes the requirement, the code is wrong, not the test.
+- **Catch-all handling.** Swallowing an error converts a crash into silent corruption.
+- **Fixing only the reported path.** Grep the callers: the same defect usually exists twice.
+
 ## Before you report
 
 Run the steps in `../prosci-bar/SKILL.md`. The regression box is the one that matters most here.

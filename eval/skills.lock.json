@@ -17,12 +17,12 @@
     {
       "name": "prosci-architect",
       "declared": "prosci-architect",
-      "sha256": "df0b3f547d06bbc003aa5031fa416c850ee03f9f64b94930e19e782fa46ec840",
-      "bytes": 4938,
+      "sha256": "21589246b6fd50f1aa00f03c9b40a7a453a4472578745632edfa526e5fc64143",
+      "bytes": 8485,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "df0b3f547d06bbc003aa5031fa416c850ee03f9f64b94930e19e782fa46ec840"
+          "sha256": "21589246b6fd50f1aa00f03c9b40a7a453a4472578745632edfa526e5fc64143"
         }
       ]
     },
@@ -113,12 +113,12 @@
     {
       "name": "prosci-fix",
       "declared": "prosci-fix",
-      "sha256": "d54e7cca957fd189208b994bfd4d2938c3cdb3dbe580af2244c68e0754ccbd27",
-      "bytes": 3929,
+      "sha256": "eea18a5a9c938f083e2858da5b8bd0d341c50f1e273bc3f154ec9c88a324dff9",
+      "bytes": 6579,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "d54e7cca957fd189208b994bfd4d2938c3cdb3dbe580af2244c68e0754ccbd27"
+          "sha256": "eea18a5a9c938f083e2858da5b8bd0d341c50f1e273bc3f154ec9c88a324dff9"
         }
       ]
     },
@@ -177,12 +177,12 @@
     {
       "name": "prosci-refactor",
       "declared": "prosci-refactor",
-      "sha256": "cd30873323e46050d8458b7d96f92e3db6c67e15050153832802c73a0b988f5d",
-      "bytes": 4652,
+      "sha256": "85896124497fd8fe79a1c83db48ed5be0bd86d99522ee394615e68b5b5d27e43",
+      "bytes": 7349,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "cd30873323e46050d8458b7d96f92e3db6c67e15050153832802c73a0b988f5d"
+          "sha256": "85896124497fd8fe79a1c83db48ed5be0bd86d99522ee394615e68b5b5d27e43"
         }
       ]
     },
@@ -201,12 +201,12 @@
     {
       "name": "prosci-review",
       "declared": "prosci-review",
-      "sha256": "46f728a86a0f8f1090db7c76b89dac3dba5deb32bffb8c957a11218156d14da5",
-      "bytes": 5051,
+      "sha256": "6f99ed8be8dd844ca2064cc598457ecf376bdecc17fa69d6984ecbf65d8300b7",
+      "bytes": 7721,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "46f728a86a0f8f1090db7c76b89dac3dba5deb32bffb8c957a11218156d14da5"
+          "sha256": "6f99ed8be8dd844ca2064cc598457ecf376bdecc17fa69d6984ecbf65d8300b7"
         }
       ]
     },
