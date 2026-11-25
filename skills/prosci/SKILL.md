@@ -40,6 +40,9 @@ that land, not from large changes that stall.
 | the request | route | first step |
 | --- | --- | --- |
 | build a feature or change behaviour | `../prosci-ship/SKILL.md` | read the repo's instructions |
+| learn a repo you have not worked in | `../prosci-understand/SKILL.md` | run its tests before reading code |
+| choose a shape: boundaries, types, two options | `../prosci-architect/SKILL.md` | name the forces first |
+| split work into ordered, verifiable units | `../prosci-plan/SKILL.md` | write the check for each unit |
 | fix a bug or a failing test | `../prosci-fix/SKILL.md` | reproduce it |
 | review a diff or a pull request | `../prosci-review/SKILL.md` | read the diff, then the surrounding code |
 | explain how something works, or which option to pick | `../prosci-investigate/SKILL.md` | write the question in one sentence |
@@ -47,10 +50,14 @@ that land, not from large changes that stall.
 | a behaviour change that also alters a command, a flag, or a default | `../prosci-ship/SKILL.md` first, then `../prosci-docs/SKILL.md` | finish the behaviour route, then search for the claims it invalidated |
 | ship a version, package, tag, or published artifact | `../prosci-release/SKILL.md` | preflight, then prove the artifact |
 | start a repo, or adopt one with no usable conventions | `../prosci-init/SKILL.md` | inspect before you create |
-| the scope is unclear, or the change is large | `../prosci-ship/SKILL.md` | settle the scope in step 2 before writing code |
+| the scope is unclear, or the work is large | `../prosci-plan/SKILL.md` | settle the scope in step 1 before ordering work |
 
 Every route ends at `../prosci-bar/SKILL.md`. Read the bar once per session. Read the route
 before the first edit, not after.
+
+Understand, architect and plan are not steps every change takes. Understand is for an unfamiliar
+repo, architect for a shape that is not obvious, plan for work larger than one change. A small change
+in a repo you know goes straight to ship.
 
 Two routes stack. When a behaviour change invalidates a documented command, a flag, or a
 default, run the behaviour route to a merged pull request and then the docs route. The docs route

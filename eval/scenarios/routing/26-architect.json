@@ -1,0 +1,13 @@
+{
+  "id": "route-architect",
+  "layer": "routing",
+  "request": "we need to decide whether the price calculation lives in the module that owns orders or in a shared service; sketch both shapes and pick one",
+  "expect": [
+    "prosci-architect"
+  ],
+  "forbid": [
+    "prosci-plan",
+    "prosci-investigate"
+  ],
+  "why": "a boundary and interface decision with two defensible shapes"
+}

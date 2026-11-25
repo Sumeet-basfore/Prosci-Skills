@@ -13,13 +13,14 @@ const binDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const install = (args) => spawnSync(process.execPath, [join(binDir, "install-skills"), ...args], { encoding: "utf8" });
 const target = () => mkdtempSync(join(tmpdir(), "prosci-inst-"));
 const entries = (dir) => readdirSync(dir).filter((n) => n !== ".prosci-install.json").sort();
-const NINE = 9;
+// Counted from the source tree, so adding a skill updates the expectation instead of breaking it.
+const EXPECTED = readdirSync(join(binDir, "..", "skills")).filter((n) => n.startsWith("prosci")).length;
 
-test("installs all nine, resolves every route link, and writes a marker", () => {
+test("installs every skill, resolves every route link, and writes a marker", () => {
   const dir = target();
   const r = install(["--target", dir]);
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(entries(dir).length, NINE);
+  assert.equal(entries(dir).length, EXPECTED);
 
   const ship = readFileSync(join(dir, "prosci-ship", "SKILL.md"), "utf8");
   assert.match(ship, /^name: prosci-ship$/m);
@@ -28,7 +29,7 @@ test("installs all nine, resolves every route link, and writes a marker", () => 
   }
   const marker = JSON.parse(readFileSync(join(dir, ".prosci-install.json"), "utf8"));
   assert.equal(marker.state, "complete");
-  assert.equal(Object.keys(marker.entries).length, NINE);
+  assert.equal(Object.keys(marker.entries).length, EXPECTED);
 });
 
 test("installing twice is idempotent", () => {
@@ -102,7 +103,7 @@ test("an interrupted install is repaired on the next run", () => {
 
   const r = install(["--target", dir]);
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(entries(dir).length, NINE);
+  assert.equal(entries(dir).length, EXPECTED);
   assert.equal(JSON.parse(readFileSync(join(dir, ".prosci-install.json"), "utf8")).state, "complete");
 });
 

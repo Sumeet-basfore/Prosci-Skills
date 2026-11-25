@@ -350,7 +350,14 @@ for (const scenario of scenarios) {
       const leafReads = reads.filter((r) => r !== "prosci");
       const routeSelected = leafReads[0] ?? null;
       const downstreamLoad = leafReads.length > 0;
-      const unnecessary = scenario.should_not_activate ? reads.length > 0 : null;
+      // A negative scenario can forbid every skill, or name the heavy routes that must not fire. A
+      // comment typo may legitimately use the docs route; it must not summon plan or architect.
+      const forbidden = scenario.forbid_routes ?? null;
+      const unnecessary = scenario.should_not_activate
+        ? reads.length > 0
+        : forbidden
+          ? reads.some((r) => forbidden.includes(r))
+          : null;
       const adher = adherence(scenario, parsed, reads, changed);
 
       const checks = {};

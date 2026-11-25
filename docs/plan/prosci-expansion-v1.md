@@ -309,3 +309,20 @@ The finding that decides what happens next: no strategy reached the pre-register
 extension 9 of 15 at router level but only 3 at route level, explicit `/skill:prosci` 1 of 15, passive
 0 of 15. Once the router loads, the second hop is reliable (7 of 7). So activation is the constraint,
 not routing, and Phase 1 as planned is not supported until the entry-point question is settled.
+
+## Phase 1, implemented
+
+`prosci-understand`, `prosci-architect` and `prosci-plan` exist, with boundaries stated in each file's
+non-triggers:
+
+| skill | owns | refuses |
+| --- | --- | --- |
+| `prosci-understand` | a durable model of an unfamiliar repo, persisted in its instruction file | one question (`investigate`), greenfield setup (`init`), a repo already known (`ship`) |
+| `prosci-architect` | shape: two candidate designs, interfaces as code, one decision recorded | one-file changes with an obvious shape (`ship`), work ordering (`plan`), questions (`investigate`) |
+| `prosci-plan` | ordered, independently verifiable units, the parallel set, approval boundaries | one small change (`ship`), choosing the shape (`architect`), finding a cause (`investigate`) |
+
+Deterministic coverage: 30 L1 scenarios including 8 boundary cases (`24`–`31`), 5/5 install harnesses,
+12 skills with 0 fingerprint drift, and `eval/scenarios/activation/act6`–`act9` for behaviour.
+
+No dispatcher, daemon, generator or runtime was added. The router stays as an optional index; the
+measured entry point is the repo instruction line pointing at the matching skill.

@@ -54,7 +54,8 @@
       "documentation",
       "setup guide",
       "guide",
-      "examples"
+      "typo",
+      "changelog"
     ],
     "prosci-release": [
       "release",
@@ -68,8 +69,42 @@
       "start a new",
       "scaffold",
       "adopt",
-      "onboard",
-      "setup"
+      "empty repository",
+      "no test command",
+      "onboard"
+    ],
+    "prosci-understand": [
+      "understand the repo",
+      "unfamiliar",
+      "new to this codebase",
+      "learn the codebase",
+      "working model",
+      "onboarding",
+      "get up to speed",
+      "conventions"
+    ],
+    "prosci-architect": [
+      "architecture",
+      "design the shape",
+      "boundaries",
+      "interfaces",
+      "trade-off",
+      "tradeoff",
+      "module structure",
+      "schema",
+      "two options",
+      "pick one"
+    ],
+    "prosci-plan": [
+      "plan",
+      "break down",
+      "break into",
+      "work units",
+      "parallel",
+      "dependency order",
+      "milestones",
+      "sequence the work",
+      "task list"
     ]
   }
 }

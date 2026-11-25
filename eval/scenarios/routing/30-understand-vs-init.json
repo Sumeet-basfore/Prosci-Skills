@@ -1,0 +1,12 @@
+{
+  "id": "route-understand-vs-init",
+  "layer": "routing",
+  "request": "start a new project here: it is empty, with no test command or instructions, and set the minimum up so changes can be verified",
+  "expect": [
+    "prosci-init"
+  ],
+  "forbid": [
+    "prosci-understand"
+  ],
+  "why": "nothing exists to model yet; init creates the minimum"
+}

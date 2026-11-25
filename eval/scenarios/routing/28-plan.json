@@ -1,0 +1,13 @@
+{
+  "id": "route-plan",
+  "layer": "routing",
+  "request": "break the migration of the reporting module into work units, order them, and mark the units that can run at the same time",
+  "expect": [
+    "prosci-plan"
+  ],
+  "forbid": [
+    "prosci-ship",
+    "prosci-architect"
+  ],
+  "why": "sequencing and the parallel set, not the shape of the module"
+}

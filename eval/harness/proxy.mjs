@@ -17,6 +17,12 @@ const UPSTREAM = "https://opencode.ai";
 const ALLOWED_PREFIX = "/inference/go/";
 const IDLE_MS = 10 * 60 * 1000;
 const PORT = Number(process.env.PROXY_PORT ?? 0);
+// Bounded spending and endpoint restriction. A run cannot ask for another model, another route, or
+// more requests than its series is allowed.
+const MAX_REQUESTS = Number(process.env.PROXY_MAX_REQUESTS ?? 200);
+const MAX_BODY = 2 * 1024 * 1024;
+const MODELS = new Set(["claude-haiku-5-5"]);
+let requests = 0;
 
 function realKey() {
   const dir = process.env.PI_CODING_AGENT_DIR ?? join(homedir(), ".pi", "agent");
@@ -31,6 +37,17 @@ let idle = setTimeout(() => process.exit(0), IDLE_MS);
 
 const server = createServer((req, res) => {
   idle.refresh();
+  requests += 1;
+  if (requests > MAX_REQUESTS) {
+    res.writeHead(429, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "request budget for this series is exhausted" }));
+    return;
+  }
+  if (req.method !== "POST") {
+    res.writeHead(405, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "only POST is forwarded" }));
+    return;
+  }
   if (!req.url?.startsWith(ALLOWED_PREFIX)) {
     res.writeHead(404, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "outside the allowed inference path" }));
@@ -40,6 +57,22 @@ const server = createServer((req, res) => {
   const chunks = [];
   req.on("data", (c) => chunks.push(c));
   req.on("end", async () => {
+    if (chunks.reduce((n, c) => n + c.length, 0) > MAX_BODY) {
+      res.writeHead(413, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "request body too large" }));
+      return;
+    }
+    let requested = null;
+    try {
+      requested = JSON.parse(Buffer.concat(chunks).toString("utf8")).model ?? null;
+    } catch {
+      requested = null;
+    }
+    if (requested && !MODELS.has(String(requested))) {
+      res.writeHead(403, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: `model not allowed for evaluation: ${requested}` }));
+      return;
+    }
     const headers = { ...req.headers };
     delete headers.host;
     delete headers.authorization;
