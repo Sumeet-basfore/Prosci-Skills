@@ -1,0 +1,48 @@
+{
+ "id": "p3v3-design",
+ "layer": "phase3-v3",
+ "fixture": "checkout-surface",
+ "request": "Define the design requirements for the payment screen: the states, the copy, the keyboard and screen-reader behaviour, and the responsive behaviour.",
+ "expect_route": "prosci-design",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test",
+     "exit": 0
+    }
+   ],
+   "files_unchanged": [
+    "src/screen.html",
+    "styles/tokens.css"
+   ]
+  },
+  "scope": {
+   "max_files_changed": 2
+  }
+ },
+ "reply_or_file": {
+  "file_globs": [
+   "docs/design/**/*.md"
+  ]
+ },
+ "reply_contains": [
+  "empty",
+  "loading",
+  "(error|fail)",
+  "(success|confirm|paid)",
+  "(aria|screen reader|accessible name)",
+  "focus",
+  "(320|breakpoint|responsive)",
+  "Pay invoice",
+  "(nothing was rendered|not rendered|no rendered surface|unverified|not visually)"
+ ],
+ "paraphrases": [
+  "States: empty 'no invoices due', loading 'checking the amount', error 'payment failed, try again', success 'paid, receipt emailed'. The button's accessible name is 'Pay invoice', errors are announced with role=alert, focus returns after a retry, and at 320px the action is full width. Nothing was rendered, so visual claims are unverified.",
+  "I defined empty, loading, error and success copy. Accessibility: accessible name 'Pay invoice', aria-live error region, visible focus and focus return. Responsive: full-width action at 320px. No rendered surface existed, so layout is unverified."
+ ],
+ "bland_reply": "The design looks good. I would keep the existing button and add a nicer colour.",
+ "wrong_reply": "I implemented the screen and verified it in the browser at 320px and 1280px; all states render correctly.",
+ "notes": "v3: reply or file, plus the paraphrase lint. The disclosure pattern now accepts any phrasing of the absence, not one sentence.",
+ "reference_reply": "States: empty 'You have no invoices due', loading 'Checking the amount', error 'We could not take the payment. Try again.', success 'Paid. We emailed your receipt.' Accessibility: the button's accessible name is 'Pay invoice', errors are announced with role=alert and aria-live, and focus returns to it after a retry. Responsive at 320px the action is full width. No rendered surface was available, so visual inspection was not performed."
+}

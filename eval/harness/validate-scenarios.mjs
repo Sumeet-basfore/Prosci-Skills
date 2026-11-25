@@ -10,7 +10,7 @@ import { mkdtempSync, cpSync, rmSync, readFileSync, readdirSync, existsSync } fr
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { EVAL_DIR, loadScenarios, scenarioDir, replyMatches } from "./lib.mjs";
+import { EVAL_DIR, loadScenarios, scenarioDir, replyMatches, lintReplyAssertion } from "./lib.mjs";
 
 const layer = process.argv.includes("--layer") ? process.argv[process.argv.indexOf("--layer") + 1] : "hard";
 // Synthetic fixtures must not name the project at all. Calibrated fixtures are copies of real work
@@ -85,6 +85,15 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   commitCopy(before);
   runSetup(before);
   const untouched = runAcceptance(scenario, before);
+  // A reply assertion has no fixture to fail on, so the assertion itself is what gets validated:
+  // two paraphrases must pass, a bland approval and a wrong answer must fail.
+  // Historical layers (phase2, phase3-v2) predate the lint and are preserved exactly as run. New
+  // layers opt in by declaring paraphrases.
+  if (scenario.reply_contains?.length && (scenario.paraphrases || scenario.lint_replies)) {
+    const lint = lintReplyAssertion(scenario);
+    for (const problem of lint.problems) leaks.push(`reply assertion: ${problem}`);
+  }
+
   // A reply-based assertion cannot fail "on the fixture": nothing is written. Validate the assertion
   // itself instead — it must match a reference reply and must not match a bland approval.
   let replyValid = null;
