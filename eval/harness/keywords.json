@@ -141,6 +141,29 @@
       "exercise the cli",
       "check the api",
       "test the real"
+    ],
+    "prosci-merge": [
+      "merge",
+      "integrate",
+      "integration",
+      "worktree",
+      "stacked pull request",
+      "rebase onto",
+      "semantic conflict",
+      "combined state",
+      "both branches"
+    ],
+    "prosci-design": [
+      "design the screen",
+      "user flow",
+      "empty state",
+      "error state",
+      "accessibility",
+      "responsive",
+      "product copy",
+      "ux",
+      "interaction",
+      "visual hierarchy"
     ]
   }
 }

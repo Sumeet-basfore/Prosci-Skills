@@ -72,10 +72,18 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
     }
   };
 
+  const runSetup = (dir) => {
+    for (const command of scenario.setup_commands ?? []) {
+      const r = spawnSync("sh", ["-c", command], { cwd: dir, encoding: "utf8", env: { ...process.env, EVAL_DIR } });
+      if (r.status !== 0) leaks.push(`setup failed: ${r.stderr.slice(0, 120)}`);
+    }
+  };
+
   // 1. untouched must fail
   const before = mkdtempSync(join(tmpdir(), "prosci-validate-"));
   cpSync(fixture, before, { recursive: true });
   commitCopy(before);
+  runSetup(before);
   const untouched = runAcceptance(scenario, before);
   // A reply-based assertion cannot fail "on the fixture": nothing is written. Validate the assertion
   // itself instead — it must match a reference reply and must not match a bland approval.
@@ -98,6 +106,7 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
   const after = mkdtempSync(join(tmpdir(), "prosci-validate-"));
   cpSync(fixture, after, { recursive: true });
   commitCopy(after);
+  runSetup(after);
   for (const cmd of scenario.reference_fix ?? []) {
     const r = spawnSync("sh", ["-c", cmd], { cwd: after, encoding: "utf8", env: { ...process.env, EVAL_DIR } });
     if (r.status !== 0) leaks.push(`reference_fix command failed: ${cmd.slice(0, 40)}`);

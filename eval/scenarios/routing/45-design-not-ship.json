@@ -1,0 +1,8 @@
+{
+ "id": "route-design-not-ship",
+ "layer": "routing",
+ "request": "the save button is wired to the wrong handler; fix it",
+ "expect": ["prosci-fix"],
+ "forbid": ["prosci-design"],
+ "why": "implementing or correcting behaviour is not a design decision"
+}

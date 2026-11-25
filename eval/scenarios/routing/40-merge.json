@@ -1,0 +1,8 @@
+{
+ "id": "route-merge",
+ "layer": "routing",
+ "request": "integrate the two agent branches into main and verify the combined state before it goes anywhere",
+ "expect": ["prosci-merge"],
+ "forbid": ["prosci-ship", "prosci-review"],
+ "why": "two independent changes landing as one result is integration, not authoring or review"
+}
