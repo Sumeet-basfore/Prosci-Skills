@@ -422,26 +422,15 @@ test("refuses an arm with a dirty tree before it claims an authorization", () =>
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test("refuses to spend against a proxy that belongs to another execution", async () => {
+test("refuses to spend against a proxy that belongs to another execution", () => {
   const { dir, repo } = workspace();
-  const server = createServer((req, res) => {
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ executionId: "someone-else", planHash: "other", budgetFile: "/tmp/x", models: [], pid: 1 }));
-  });
-  await new Promise((r) => server.listen(0, "127.0.0.1", r));
   try {
+    const identity = join(dir, "identity.json");
+    writeFileSync(identity, JSON.stringify({ executionId: "someone-else", planHash: "other", budgetFile: "/tmp/x" }));
     const plan = writePlan(dir, { units: [unit()] });
-    const r = await new Promise((done) => {
-      const child = spawn(process.execPath, [RUN, plan, "--approve", approve(plan), "--out", join(dir, "out"),
-        "--proxy", `http://127.0.0.1:${server.address().port}`, "--execution-id", "mine"], { cwd: repo });
-      let stderr = "";
-      child.stderr.on("data", (d) => { stderr += d; });
-      child.on("close", (status) => done({ status, stderr }));
-    });
+    const r = spawnSync(process.execPath, [RUN, plan, "--approve", approve(plan), "--out", join(dir, "out"),
+      "--proxy", "http://127.0.0.1:1", "--proxy-identity", identity, "--execution-id", "mine"], { cwd: repo, encoding: "utf8" });
     assert.equal(r.status, 3, r.stderr);
     assert.match(r.stderr, /belongs to execution someone-else/);
-  } finally {
-    await new Promise((r) => server.close(r));
-    rmSync(dir, { recursive: true, force: true });
-  }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

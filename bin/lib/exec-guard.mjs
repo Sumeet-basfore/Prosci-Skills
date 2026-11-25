@@ -51,21 +51,3 @@ export function restoreBase(cwd, baseCommit) {
   const head = git(cwd, ["rev-parse", "HEAD"]).stdout;
   return { ok: head === baseCommit, head };
 }
-
-// The proxy is the other half of the authorization. Its identity has to name this execution before a
-// worker can spend against it.
-export async function verifyProxyIdentity(baseUrl, { executionId, planHash }) {
-  let identity;
-  try {
-    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/__identity`, { signal: AbortSignal.timeout(2000) });
-    if (!response.ok) return { ok: false, problems: [`identity endpoint answered ${response.status}`], identity: null };
-    identity = await response.json();
-  } catch (error) {
-    return { ok: false, problems: [`proxy unreachable at ${baseUrl}: ${String(error?.message ?? error)}`], identity: null };
-  }
-  const problems = [];
-  if (identity.executionId !== executionId) problems.push(`proxy belongs to execution ${identity.executionId}, not ${executionId}`);
-  if (planHash && identity.planHash !== planHash) problems.push(`proxy is bound to plan ${identity.planHash}, not ${planHash}`);
-  if (identity.budgetFile === null) problems.push("proxy has no budget file; requests would be unmetered");
-  return { ok: problems.length === 0, problems, identity };
-}

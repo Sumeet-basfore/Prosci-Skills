@@ -18,7 +18,7 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { inspectArm, restoreBase, verifyProxyIdentity } from "./lib/exec-guard.mjs";
+import { inspectArm, restoreBase } from "./lib/exec-guard.mjs";
 import { loadRegistries, validatePlan, handoffText } from "./lib/swarm.mjs";
 import { spawnGroup, killGroup, groupAlive } from "./lib/proc.mjs";
 import { openBudget, usage } from "./lib/request-budget.mjs";
@@ -71,6 +71,7 @@ if (!["fake", "pi"].includes(backend)) {
 // D-005/D-006: an arm is a snapshot, a proxy and an authorization, and all three must name the same run.
 // Checked before the authorization is claimed, so a mismatch costs nothing.
 const proxyUrl = flag("--proxy", null);
+const proxyIdentityPath = flag("--proxy-identity", null);
 const executionId = flag("--execution-id", null);
 if (backend === "pi" && (!plan.baseCommit || !plan.fixtureHash)) {
   console.error("a paid run must bind baseCommit and fixtureHash in the plan");
@@ -78,6 +79,10 @@ if (backend === "pi" && (!plan.baseCommit || !plan.fixtureHash)) {
 }
 if (proxyUrl && !executionId) {
   console.error("--proxy requires --execution-id so the arm cannot join a different proxy");
+  process.exit(2);
+}
+if (proxyUrl && !proxyIdentityPath) {
+  console.error("--proxy requires --proxy-identity <file> recorded by the harness before workers start");
   process.exit(2);
 }
 {
@@ -96,9 +101,19 @@ if (proxyUrl && !executionId) {
   }
 }
 if (proxyUrl) {
-  const proxy = await verifyProxyIdentity(proxyUrl, { executionId, planHash });
-  if (!proxy.ok) {
-    console.error(`proxy refused: ${proxy.problems.join(" | ")}`);
+  // The harness writes what the proxy said; the controller refuses a record for another arm. Reading a file
+  // keeps this shipped script free of network access.
+  let identity = null;
+  try { identity = JSON.parse(readFileSync(proxyIdentityPath, "utf8")); } catch (error) {
+    console.error(`proxy refused: cannot read ${proxyIdentityPath}: ${String(error.message ?? error)}`);
+    process.exit(3);
+  }
+  const problems = [];
+  if (identity.executionId !== executionId) problems.push(`proxy belongs to execution ${identity.executionId}, not ${executionId}`);
+  if (identity.planHash !== planHash) problems.push(`proxy is bound to plan ${identity.planHash}, not ${planHash}`);
+  if (!identity.budgetFile) problems.push("proxy has no budget file; requests would be unmetered");
+  if (problems.length) {
+    console.error(`proxy refused: ${problems.join(" | ")}`);
     process.exit(3);
   }
 }

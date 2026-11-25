@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createServer } from "node:http";
-import { verifyProxyIdentity } from "../../../bin/lib/exec-guard.mjs";
+import { verifyProxyIdentity } from "../proxy-identity.mjs";
 
 function freePort() {
   return new Promise((done) => {
@@ -17,14 +17,14 @@ function freePort() {
   });
 }
 
-function ctl(args) {
-  return spawnSync(process.execPath, ["eval/harness/proxyctl.mjs", ...args], { encoding: "utf8", timeout: 15000 });
+function ctl(args, env = {}) {
+  return spawnSync(process.execPath, ["eval/harness/proxyctl.mjs", ...args], { encoding: "utf8", timeout: 15000, env: { ...process.env, ...env } });
 }
 
-function start({ port, pid, execId, budget, log, upstream, models = "claude-haiku-5-5" }) {
+function start({ port, pid, execId, budget, log, upstream, models = "claude-haiku-5-5", authDir = null }) {
   return ctl(["start", "--port", String(port), "--pid-file", pid, "--execution-id", execId,
     "--plan-hash", "plan-" + execId, "--budget-file", budget, "--access-log", log,
-    "--models", models, "--upstream", upstream, "--max-requests", "10"]);
+    "--models", models, "--upstream", upstream, "--max-requests", "10"], authDir ? { PI_CODING_AGENT_DIR: authDir } : {});
 }
 
 async function post(port, model, path = "/inference/go/anthropic/v1/messages") {
@@ -48,9 +48,13 @@ test("one proxy per arm: occupied ports refuse, identities stay separate, budget
     writeFileSync(budget1, '{"schema":1,"limit":5,"used":0}');
     writeFileSync(budget2, '{"schema":1,"limit":5,"used":0}');
     const log1 = join(dir, "a1.jsonl");
-    const a = start({ port: p1, pid: join(dir, "a.pid"), execId: "arm-a", budget: budget1, log: log1, upstream: upstreamUrl });
+    // The proxy reads a provider key lazily. Give it a dummy one so the test does not need a real credential.
+    const authDir = join(dir, "auth");
+    mkdirSync(authDir);
+    writeFileSync(join(authDir, "auth.json"), JSON.stringify({ "opencode-go": { key: "test-key" } }));
+    const a = start({ port: p1, pid: join(dir, "a.pid"), execId: "arm-a", budget: budget1, log: log1, upstream: upstreamUrl, authDir });
     assert.equal(a.status, 0, a.stderr);
-    const c = start({ port: p2, pid: join(dir, "c.pid"), execId: "arm-c", budget: budget2, log: join(dir, "c.jsonl"), upstream: upstreamUrl });
+    const c = start({ port: p2, pid: join(dir, "c.pid"), execId: "arm-c", budget: budget2, log: join(dir, "c.jsonl"), upstream: upstreamUrl, authDir });
     assert.equal(c.status, 0, c.stderr);
 
     const second = start({ port: p1, pid: join(dir, "a2.pid"), execId: "arm-b", budget: join(dir, "b3.json"), log: join(dir, "b3.jsonl"), upstream: upstreamUrl });
