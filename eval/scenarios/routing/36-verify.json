@@ -1,0 +1,8 @@
+{
+ "id": "route-verify",
+ "layer": "routing",
+ "request": "prove the report command works end to end against the real CLI, including the empty file case",
+ "expect": ["prosci-verify"],
+ "forbid": ["prosci-review", "prosci-bar"],
+ "why": "evidence from the real surface is neither a code review nor the definition of done"
+}

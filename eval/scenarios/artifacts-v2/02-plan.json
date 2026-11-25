@@ -1,0 +1,12 @@
+{
+ "id": "art2-plan",
+ "layer": "artifacts-v2",
+ "fixture": "shape",
+ "request": "Break the move of discounting into its own module into ordered work units with a check for each, and mark which units can run at the same time.",
+ "expect_route": "prosci-plan",
+ "checks": { "acceptance": { "commands": [ { "run": "node --test", "exit": 0 } ], "files_unchanged": ["src/pricing.mjs"] } },
+ "reply_or_file": { "file_globs": ["docs/plan/*.md"] },
+ "reply_contains": ["(unit|step).{0,40}(check|verify)", "(rollback|revert)", "(parallel|at the same time)", "(node --test|node -e)"],
+ "notes": "v2: the plan may be in the reply or in docs/plan. The surface actually used is recorded. v1 required a file and is preserved unchanged.",
+ "reference_reply": "Unit 1 adds discounts.mjs. Check: node --test. Rollback: delete the file. Unit 2 repoints imports. Check: node --test. Rollback: revert the imports. Unit 3 deletes pricing.mjs; no unit can run in parallel because each depends on the previous."
+}

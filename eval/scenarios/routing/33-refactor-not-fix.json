@@ -1,0 +1,8 @@
+{
+ "id": "route-refactor-not-fix",
+ "layer": "routing",
+ "request": "the totals are wrong when a refund is present; fix it",
+ "expect": ["prosci-fix"],
+ "forbid": ["prosci-refactor"],
+ "why": "wrong behaviour is a fix; a refactor must not be used to smuggle a behaviour change"
+}

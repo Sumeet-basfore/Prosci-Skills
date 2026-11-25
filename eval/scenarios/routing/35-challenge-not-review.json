@@ -1,0 +1,8 @@
+{
+ "id": "route-challenge-not-review",
+ "layer": "routing",
+ "request": "review this pull request diff for bugs before I merge it",
+ "expect": ["prosci-review"],
+ "forbid": ["prosci-challenge"],
+ "why": "implementation review is diff-based, not proposal-based"
+}

@@ -326,3 +326,13 @@ Deterministic coverage: 30 L1 scenarios including 8 boundary cases (`24`–`31`)
 
 No dispatcher, daemon, generator or runtime was added. The router stays as an optional index; the
 measured entry point is the repo instruction line pointing at the matching skill.
+
+## Phase 2, implemented
+
+`prosci-refactor`, `prosci-challenge`, `prosci-verify`. Boundaries: refactor preserves behaviour, ship
+changes it, fix corrects it; review reads a diff, challenge reads a proposal; verify produces
+evidence, the bar judges it.
+
+Two Phase 1 corrections landed first and are versioned as `eval/scenarios/artifacts-v2/`: architect
+artifacts must name an executable verification command, and a plan may live in the reply or a file. The
+original `eval/scenarios/artifacts/` and its failed results are unchanged.

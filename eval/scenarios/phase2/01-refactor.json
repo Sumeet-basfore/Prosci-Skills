@@ -1,0 +1,20 @@
+{
+ "id": "p2-refactor",
+ "layer": "phase2",
+ "fixture": "dup-money",
+ "request": "Money formatting is duplicated in receipt, invoice and refund. Extract it into one shared helper and keep the output byte-identical.",
+ "expect_route": "prosci-refactor",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    { "run": "node --test", "exit": 0 },
+    { "run": "sh -c 'test \"$(grep -rhc \"toFixed(2)\" src/*.mjs | awk \"{s+=\\$1} END {print s+0}\")\" -eq 1'", "exit": 0 },
+    { "run": "sh -c 'test \"$(grep -rl \"formatCents\\|formatMoney\\|formatAmount\" src/*.mjs | wc -l)\" -ge 4'", "exit": 0 },
+    { "run": "node -e \"Promise.all([import('./src/receipt.mjs'),import('./src/invoice.mjs'),import('./src/refund.mjs')]).then(([r,i,f])=>{const item={name:'tea',cents:250};const want=['receipt: tea = 2.50','invoice: tea = 2.50','refund: tea = 2.50'];const got=[r.receiptLine(item),i.invoiceLine(item),f.refundLine(item)];if(JSON.stringify(got)!==JSON.stringify(want)){console.error(got);process.exit(1)}})\"", "exit": 0 }
+   ]
+  },
+  "scope": { "max_files_changed": 6 }
+ },
+ "notes": "behaviour preservation is the three exact output strings; the structural defect is the duplicated toFixed call",
+ "reference_fix": ["sh \"$EVAL_DIR/scenarios/phase2/reference/refactor.sh\""]
+}

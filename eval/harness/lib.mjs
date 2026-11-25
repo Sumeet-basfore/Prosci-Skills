@@ -168,3 +168,12 @@ export function changedFiles(workspace) {
   const paths = [...run(["ls-files", "--modified", "--others", "--exclude-standard"]), ...run(["diff", "--name-only", "HEAD"])];
   return paths.filter((v, i, all) => v && all.indexOf(v) === i).sort();
 }
+
+// Some skills produce a reply, not a file: a challenge report, a verification result. The assertion is
+// still mechanical — the named defect either appears in the text or it does not.
+export function replyMatches(text, patterns) {
+  return (patterns ?? []).map((pattern) => {
+    const re = pattern instanceof RegExp ? pattern : new RegExp(pattern, "i");
+    return { pattern: String(pattern), ok: re.test(text ?? "") };
+  });
+}
