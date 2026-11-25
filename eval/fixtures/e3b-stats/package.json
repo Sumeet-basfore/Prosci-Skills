@@ -1,0 +1,6 @@
+{
+  "name": "e3b-stats",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

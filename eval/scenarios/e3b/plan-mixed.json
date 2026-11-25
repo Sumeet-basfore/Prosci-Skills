@@ -1,0 +1,87 @@
+{
+  "id": "e3b-stats",
+  "profile": "mixed",
+  "maxConcurrency": 2,
+  "units": [
+    {
+      "id": "u1-architect",
+      "goal": "Choose the median implementation shape: name two options, pick one, state the reversal cost, and write it to docs/adr/0001-median.md. Do not write code or cite implementation line numbers.",
+      "role": "architect",
+      "skills": [
+        "prosci-architect"
+      ],
+      "files": [
+        "docs/adr/0001-median.md"
+      ],
+      "dependsOn": [],
+      "checks": [
+        "test -f docs/adr/0001-median.md",
+        "grep -qi '## Decision' docs/adr/0001-median.md"
+      ],
+      "rollback": "delete the ADR commit",
+      "approval": {
+        "required": false
+      },
+      "budget": {
+        "tokens": 30000,
+        "estimatedCostUsd": 0.006,
+        "retries": 1
+      }
+    },
+    {
+      "id": "u2-implement",
+      "goal": "Implement median(values) in src/stats.mjs so the existing tests pass. The test file is not yours; do not edit it.",
+      "role": "implementer",
+      "skills": [
+        "prosci-ship"
+      ],
+      "files": [
+        "src/stats.mjs"
+      ],
+      "dependsOn": [
+        "u1-architect"
+      ],
+      "checks": [
+        "node --test",
+        "node -e \"import('./src/stats.mjs').then(m => { const a = m.median([5,1,3]); const b = m.median([4,1,3,2]); if (a !== 3 || b !== 2.5) process.exit(1); })\""
+      ],
+      "rollback": "git revert this unit's commit",
+      "approval": {
+        "required": false
+      },
+      "budget": {
+        "tokens": 30000,
+        "estimatedCostUsd": 0.006,
+        "retries": 1
+      }
+    },
+    {
+      "id": "u3-review",
+      "goal": "Review src/stats.mjs against the requirement. Write docs/review.md with a pass or block verdict and at least one src/stats.mjs:<line> citation. Do not copy the ADR.",
+      "role": "reviewer",
+      "skills": [
+        "prosci-review"
+      ],
+      "reviews": "u2-implement",
+      "files": [
+        "docs/review.md"
+      ],
+      "dependsOn": [
+        "u1-architect",
+        "u2-implement"
+      ],
+      "checks": [
+        "node tools/check-review.mjs docs/review.md docs/adr/0001-median.md"
+      ],
+      "rollback": "delete the review commit",
+      "approval": {
+        "required": false
+      },
+      "budget": {
+        "tokens": 30000,
+        "estimatedCostUsd": 0.006,
+        "retries": 1
+      }
+    }
+  ]
+}
