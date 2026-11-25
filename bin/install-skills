@@ -39,7 +39,14 @@ const value = (f, d = null) => {
 };
 
 const asJson = has("--json");
+const wantVersion = has("--version");
 const dryRun = has("--dry-run");
+
+if (wantVersion) {
+  // The repo is skills, not a published package; the alpha version is declared here, once.
+  console.log("0.1.0-alpha.1");
+  process.exit(0);
+}
 const remove = has("--remove");
 const check = has("--check");
 const copy = has("--copy");

@@ -1,0 +1,32 @@
+{
+ "id": "trial-harnesses-doc",
+ "layer": "trial",
+ "fixture_from": "repo",
+ "request": "Issue #30: document which harnesses Prosci supports, where each one reads skills from, and what is actually tested versus unverified.",
+ "expect_route": "prosci-docs",
+ "checks": {
+  "acceptance": {
+   "commands": [
+    {
+     "run": "node --test bin/test/*.test.mjs",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'test -f docs/supported-harnesses.md'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'for h in pi claude codex cursor opencode; do grep -qi \"$h\" docs/supported-harnesses.md || exit 1; done'",
+     "exit": 0
+    },
+    {
+     "run": "sh -c 'grep -qiE \"not tested|unverified|discovery\" docs/supported-harnesses.md'",
+     "exit": 0
+    }
+   ]
+  },
+  "scope": {
+   "max_files_changed": 3
+  }
+ }
+}

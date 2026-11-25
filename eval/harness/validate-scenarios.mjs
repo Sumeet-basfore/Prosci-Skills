@@ -50,7 +50,7 @@ function runAcceptance(scenario, workspace) {
 
 let failures = 0;
 for (const scenario of loadScenarios(scenarioDir(layer))) {
-  const fixture = join(EVAL_DIR, "fixtures", scenario.fixture);
+  const fixture = scenario.fixture_from === "repo" ? join(EVAL_DIR, "..") : join(EVAL_DIR, "fixtures", scenario.fixture);
 
   // 3. no answer leakage in the fixture files, walked recursively
   const leaks = [];
@@ -63,7 +63,8 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
       }
     }
   };
-  walk(fixture);
+  // A trial runs against this repository, which legitimately contains the answers' vocabulary.
+  if (scenario.fixture_from !== "repo") walk(fixture);
 
   // Acceptance can inspect git history, so each copy is committed like a real run's workspace.
   const commitCopy = (dir) => {
@@ -121,7 +122,10 @@ for (const scenario of loadScenarios(scenarioDir(layer))) {
     if (r.status !== 0) leaks.push(`reference_fix command failed: ${cmd.slice(0, 40)}`);
   }
   const fixed = runAcceptance(scenario, after);
-  const passesFixed = fixed.every((r) => r.ok);
+  // A trial scoped to a real repository has no reference fix to apply; only the untouched-failure
+  // direction applies.
+  const passesFixed = scenario.reference_fix?.length ? fixed.every((r) => r.ok) : true;
+  if (!scenario.reference_fix?.length) console.log("       no reference fix: the pass direction is not validated");
   rmSync(after, { recursive: true, force: true });
 
   const ok = failsUntouched && passesFixed && leaks.length === 0;

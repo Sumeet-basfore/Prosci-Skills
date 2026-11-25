@@ -28,6 +28,12 @@ evaluation that loaded the right route in **11 of 15** runs, which is useful but
 `eval/reports/phase-0.2.md`. Loading a skill is not the same as following it, so verify the work, not
 the activation.
 
+## Start here
+
+- `docs/alpha.md` — what works, what does not, install, remove, privacy.
+- `docs/supported-harnesses.md` — the five harness directories and what is actually tested.
+- `docs/network-inventory.md` — every network path, and the limits of the check.
+
 ## Install
 
 The seventeen skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,

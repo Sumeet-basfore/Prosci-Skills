@@ -139,3 +139,9 @@ test("an unknown harness is refused with the known list", () => {
   assert.equal(r.status, 2);
   assert.match(r.stderr, /known: pi, claude, codex, cursor, opencode/);
 });
+
+test("--version prints a semantic version and exits 0", () => {
+  const r = install(["--version"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout.trim(), /^\d+\.\d+\.\d+(-[a-z0-9.]+)?$/);
+});
