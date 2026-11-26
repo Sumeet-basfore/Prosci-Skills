@@ -40,6 +40,9 @@ for (let i = 0; i < argv.length; i += 1) {
   }
 }
 
+const inspect = rest.some((flag) => ["--check", "--remove", "--dry-run"].includes(flag));
+if (wanted.length === 0 && inspect) wanted.push(...HARNESSES);
+
 if (rest.includes("--help") || wanted.length === 0) {
   console.log(`Prosci — a software factory for coding agents
 

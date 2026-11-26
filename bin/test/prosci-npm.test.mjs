@@ -26,6 +26,14 @@ test("prints usage and exits non-zero without arguments", () => {
   rmSync(home, { recursive: true, force: true });
 });
 
+test("checks every harness when --check has no --harness", () => {
+  const home = temp();
+  const checked = run(["--check"], home);
+  assert.equal(checked.status, 0, checked.stderr);
+  assert.match(checked.stdout + checked.stderr, /nothing installed by this script/);
+  rmSync(home, { recursive: true, force: true });
+});
+
 test("installs all skills into one harness and removes them", () => {
   const home = temp();
   const installed = run(["--harness", "pi"], home);
