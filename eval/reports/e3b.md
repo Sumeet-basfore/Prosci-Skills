@@ -115,9 +115,21 @@ Result: **2 succeeded, 1 failed; 24/24 requests reserved; 28 access-log lines (2
 
 What this shows: the mixed profile's model assignments were applied exactly, and the arm executed on the authorized snapshot against its own proxy. It did not complete the plan. The reviewer needs more than the zero requests left after architect + implementer, so the request cap — not model capability — decided the outcome. No quality comparison with the economy arm is made.
 
-## Product limitation: assigned skills are not injected
+## L-001 — assigned skills are now injected (correction, not a new arm)
 
-The controller passes `--skill <path>` to Pi, which registers the skill for discovery but does not put its body in the worker's instructions. Across all four E3b arms, only 3 of 9 unit runs opened their assigned `SKILL.md` (u1 mixed, u3 mixed, u3 economy). A worker can therefore satisfy acceptance while ignoring the procedure the plan assigned it. Proposed, not implemented: `prosci-swarm-run` should read each assigned skill and prepend its body (or a bounded excerpt) to the handoff prompt, so adherence does not depend on the model choosing to open a file it was already told about. This belongs in its own change with an eval that distinguishes injected vs discovered.
+The controller passes `--skill <path>` to Pi, which registers a skill for discovery but does not put its body in the worker's instructions. Across E3b, only 3 of 9 unit runs opened their assigned `SKILL.md`. A worker could therefore pass acceptance while ignoring the procedure the plan assigned it.
+
+Correction, implemented after E3 and not exercised by a paid run:
+
+- `bin/lib/skill-injection.mjs` reads each assigned body from the trusted installed package (default `<package>/skills`, override `PROSCI_SKILLS_ROOT`), rejects names that are not package identifiers, and rejects a missing or empty skill.
+- The controller treats `prosci-bar` as shared mandatory engineering rules and delivers its body once in a shared section. If a unit also lists it, the body is not repeated; the ledger records it under `injection.dropped`.
+- Worker instructions are ordered: authoritative controller instructions → role boundary → shared rules → assigned skills → task brief → untrusted-data boundary. Repository files, commits and other agents' output are declared data, not instructions.
+- Plans may declare `skillsFingerprint` over the shared body and every assigned body. A mismatch refuses the arm (exit 3); a paid run must declare it (exit 2). Per-unit fingerprints, identities, byte size, estimated tokens, context limit and overhead ratio are recorded in `ledger.json`, and the exact text is written to `<out>/instructions/<unit>.md`.
+- Context is validated before the worktree or worker: `estimatedTokens` must fit `contextLimit` minus a reserve (25% of the limit, capped at 8192). An oversized bundle fails the unit; no mandatory text is truncated.
+
+Deterministic coverage: assigned body present, unassigned absent, shared rules once, fingerprint changes when a body changes, oversized bundle refused without truncation, traversal names refused, controller writes the bundle and refuses a stale fingerprint.
+
+The E3b plans gained `skillsFingerprint`, so their file hashes are now `c143bc93c7c3e4b4` (economy) and `2502f74781a2937a` (mixed). The executed mixed run remains bound to the old bytes (`2391b7dc75adc2db`); no run was repeated.
 
 ## Cost and limits
 
