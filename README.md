@@ -4,6 +4,23 @@ A software factory you use by asking for it. Seventeen skills, one workflow, an 
 plan-bound multi-agent runner. The workflow is what makes agents ship more without shipping worse; the
 evidence for that claim is incomplete, and is recorded honestly below.
 
+## Quick start
+
+```sh
+npx prosci --all     # once per machine: copy the 17 skills into every supported harness
+```
+
+Then open the repository you want to work in and run:
+
+```text
+/skill:prosci-init
+```
+
+`prosci-init` surveys the repo and proposes a short `AGENTS.md`; it writes nothing until you approve.
+That file is what makes the other skills fire without being named — copying the files in does not make
+an agent read them. From then on, name the skill for the job (table below), or ask `/skill:prosci` to
+pick one.
+
 Skills live in `skills/` and are linked into `.agents/skills/`, so any agent in any project
 finds them.
 
@@ -97,17 +114,19 @@ been measured, and 11/15 is not reliability. Nothing here claims a harness works
 
 ## Use it
 
-### One-time setup
+### First time in a repository
+
+Install is per machine (`npx prosci --all`, or the clone installer above). This is per repository, once:
 
 ```sh
-bin/install-skills --check                 # see what is already installed; changes nothing
-bin/install-skills --harness pi            # pick one: pi, claude, codex, cursor, opencode
-bin/install-skills --check                 # expect 17 skills and no broken links
+npx prosci survey .          # read-only facts: stacks, the real test command, tests, CI, harnesses
+/skill:prosci-init           # approve a short AGENTS.md built from those facts
 ```
 
-Add `--copy` with `--target <dir>` instead of `--harness` when you want the files inside a project or a
-sandbox. To remove them later, `bin/install-skills --harness <name> --remove` deletes only what the
-installer created.
+`prosci-init` installs nothing. What it does is enable the other skills: it writes an `AGENTS.md` whose
+factory block tells the agent to read the single prosci skill that matches the request, and records the
+repo's real commands. That instruction line is the only activation mechanism with measured evidence
+(11/15 routes vs 0/15 for passive discovery). Without it, the skills exist and the agent ignores them.
 
 ### Everyday use
 
@@ -129,6 +148,27 @@ If you do not know which one, ask for the router and let it choose a route:
 
 The router is an index, not a guarantee. If the route it names looks wrong, name the route yourself.
 
+### The shape of a normal change
+
+Skills hand off to each other; each one ends by naming the next. A change that is more than a one-liner
+usually walks this chain, skipping the steps the task does not need:
+
+```text
+/skill:prosci-understand    unknown repo or unfamiliar area: build a verified model first
+/skill:prosci-architect     the shape is unclear: two options, one decision, interfaces as code
+/skill:prosci-plan          more than one step: ordered units, the parallel set, approval boundaries
+/skill:prosci-ship          build the feature  (or /skill:prosci-fix for a bug or failing test)
+/skill:prosci-verify        prove it on the real surface, not just the unit test
+/skill:prosci-review        read the diff before merge
+/skill:prosci-merge         combine branches or worktrees and verify the combined state
+/skill:prosci-docs          update what the change made wrong
+/skill:prosci-release       prepare the release and its conditions
+```
+
+`prosci-bar` is the definition of done every route ends at, not a step you invoke. `prosci-challenge` is
+an optional detour before code: it attacks the proposal. `prosci-refactor` replaces ship when the
+behaviour must not change. `prosci-investigate` replaces ship when the answer is evidence, not an edit.
+
 ### Make it fire without being named
 
 Agents often ignore installed skills. The best measured fix is one line in the repository's own
@@ -144,13 +184,14 @@ where the work happens, not in your global config.
 ### Start in an unfamiliar repo
 
 ```sh
-bin/prosci-survey .            # read-only facts: stacks, commands with sources, tests, CI
-bin/prosci-survey . --verify   # also run the detected test command
+npx prosci survey .            # read-only facts: stacks, commands with sources, tests, CI
+npx prosci survey . --verify   # also run the detected test command
 /skill:prosci-init             # turn the facts into a short, approved AGENTS.md
 ```
 
-`prosci-survey` never opens a credential store and prints `null` with a reason when it cannot determine
-something. `prosci-init` writes nothing until you approve the diff.
+From a clone, use `bin/prosci-survey .` instead. `prosci-survey` never opens a credential store and
+prints `null` with a reason when it cannot determine something. `prosci-init` writes nothing until you
+approve the diff.
 
 ### Plan-bound multi-agent work (advanced, opt-in)
 

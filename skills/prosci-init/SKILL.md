@@ -29,15 +29,15 @@ recommends a configuration, and writes only what a human approves.
 ## Inputs
 
 - The repository path.
-- `bin/prosci-survey <repo>` output — the facts. If the tool is unavailable, say so and stop rather than
-  guessing the stack from file names.
+- `bin/prosci-survey <repo>` output — the facts (from npm: `npx prosci survey <repo>`). If neither works,
+  say so and stop rather than guessing the stack from file names.
 - The user's intent: new project, adoption, or repair.
 
 ## Procedure
 
 ### 1. Survey, then read the facts back
 
-Run `bin/prosci-survey <repo>`. Then state, in the reply, the parts that decide the setup:
+Run `bin/prosci-survey <repo>` (or `npx prosci survey <repo>`). Then state, in the reply, the parts that decide the setup:
 
 - stacks and manifests, and any `null` lockfile;
 - each detected command **with its source** (`AGENTS.md` block, manifest script, CI) and whether it is
