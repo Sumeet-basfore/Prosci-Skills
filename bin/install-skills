@@ -38,6 +38,15 @@ const value = (f, d = null) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d;
 };
 
+// Colour only on a real terminal, and never when NO_COLOR is set. Piped output stays plain.
+const color = process.stdout.isTTY && !process.env.NO_COLOR;
+const paint = (code, text) => (color ? `\x1b[${code}m${text}\x1b[0m` : text);
+const ok = (text) => paint("32", text);
+const warn = (text) => paint("33", text);
+const bad = (text) => paint("31", text);
+const dim = (text) => paint("2", text);
+const mark = color ? "\u2713" : "ok";
+
 const asJson = has("--json");
 const wantVersion = has("--version");
 const dryRun = has("--dry-run");
@@ -149,10 +158,16 @@ if (check) {
   report.problems = verify(dir, report.entries.filter((e) => e.state !== "missing").map((e) => e.name));
   if (asJson) console.log(JSON.stringify(report, null, 2));
   else {
-    console.log(`target ${dir}`);
-    console.log(marker ? `marker: ${marker.state} (${marker.mode}) from ${marker.installedAt}` : "marker: none, nothing installed by this script");
-    for (const e of report.entries) console.log(`  ${e.name.padEnd(20)} ${e.state}`);
-    for (const p of report.problems) console.log(`  BROKEN ${p}`);
+    const count = (state) => report.entries.filter((e) => e.state === state).length;
+    const ours = count("ours");
+    const odd = report.entries.filter((e) => e.state !== "ours" && e.state !== "missing");
+    if (!marker && ours === 0) console.log(`${dim("\u2013")} ${dim(dir)}  nothing installed by this script`);
+    else {
+      const mode = marker ? ` (${marker.mode})` : "";
+      console.log(`${ok(mark)} ${dim(dir)}  ${ours}/${names.length} installed${mode}${marker ? `, ${marker.state}` : ""}`);
+    }
+    for (const e of odd) console.log(`  ${warn(e.state)} ${e.name}`);
+    for (const p of report.problems) console.log(`  ${bad("BROKEN")} ${p}`);
   }
   process.exit(report.problems.length ? 1 : 0);
 }
@@ -195,8 +210,8 @@ if (remove) {
   }
   if (asJson) console.log(JSON.stringify({ removed, refused, remaining }, null, 2));
   else {
-    console.log(`removed ${removed.length}${removed.length ? `: ${removed.join(", ")}` : ""}`);
-    for (const r of refused) console.log(`  KEPT ${r}`);
+    console.log(`${ok(mark)} removed ${removed.length} skill${removed.length === 1 ? "" : "s"} from ${dim(dir)}`);
+    for (const r of refused) console.log(`  ${warn("KEPT")} ${r}`);
   }
   process.exit(refused.length ? 1 : 0);
 }
@@ -259,8 +274,9 @@ writeMarker(dir, { state: problems.length ? "broken" : "complete", mode: copy ? 
 if (asJson) {
   console.log(JSON.stringify({ target: dir, mode: copy ? "copy" : "link", created, conflicts, problems, dryRun }, null, 2));
 } else {
-  console.log(`${dryRun ? "would install" : "installed"} ${created.length} skills into ${dir} (${copy ? "copy" : "link"})`);
-  for (const c of conflicts) console.log(`  CONFLICT ${c}`);
-  for (const p of problems) console.log(`  BROKEN ${p}`);
+  const verb = dryRun ? "would install" : "installed";
+  console.log(`${dryRun ? warn("\u2022") : ok(mark)} ${verb} ${created.length} skill${created.length === 1 ? "" : "s"} ${dim("\u2192")} ${dim(dir)} (${copy ? "copy" : "link"})`);
+  for (const c of conflicts) console.log(`  ${warn("CONFLICT")} ${c}`);
+  for (const p of problems) console.log(`  ${bad("BROKEN")} ${p}`);
 }
 process.exit(problems.length || conflicts.length ? 1 : 0);

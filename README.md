@@ -7,7 +7,7 @@ evidence for that claim is incomplete, and is recorded honestly below.
 ## Quick start
 
 ```sh
-npx prosci --all     # once per machine: copy the 17 skills into every supported harness
+npx skills add Sumeet-basfore/prosci --all     # install into every supported agent
 ```
 
 Then open the repository you want to work in and run:
@@ -20,6 +20,9 @@ Then open the repository you want to work in and run:
 That file is what makes the other skills fire without being named — copying the files in does not make
 an agent read them. From then on, name the skill for the job (table below), or ask `/skill:prosci` to
 pick one.
+
+Prefer the bundled installer? `npx prosci --all` copies into the five harnesses it knows by name
+(pi, claude, codex, cursor, opencode) and can check or remove them again.
 
 Skills live in `skills/` and are linked into `.agents/skills/`, so any agent in any project
 finds them.
@@ -63,10 +66,18 @@ the activation.
 The seventeen skills are feature-frozen while a seven-day preview runs on real work. Protocol and record
 template: `docs/preview/README.md`. Public alpha is deferred until a human-reviewed result has merged.
 
-## Install with npx
+## Install
+
+The ecosystem CLI knows the most agents:
 
 ```sh
-npx prosci --all                 # copy the skills into every supported harness directory
+npx skills add Sumeet-basfore/prosci --all
+```
+
+Or use the bundled installer, which knows the five harnesses Prosci tests by name:
+
+```sh
+npx prosci --all                 # copy into every supported harness directory
 npx prosci --harness pi          # or one of pi, claude, codex, cursor, opencode
 npx prosci --check               # show what is installed; changes nothing
 npx prosci --remove --all        # remove only what the installer created
@@ -75,12 +86,6 @@ npx prosci --remove --all        # remove only what the installer created
 The npm package bundles the same seventeen skills and the same installer. It **copies** rather than
 links, because npx runs from a cache that npm may later delete. There is no `postinstall` step: nothing
 is written until you run the command. Node 20 or newer.
-
-The same skills can also be installed through the ecosystem CLI, which supports more agents:
-
-```sh
-npx skills add Sumeet-basfore/prosci --all
-```
 
 ## Install from a clone
 
@@ -116,7 +121,8 @@ been measured, and 11/15 is not reliability. Nothing here claims a harness works
 
 ### First time in a repository
 
-Install is per machine (`npx prosci --all`, or the clone installer above). This is per repository, once:
+Install is per machine (`npx skills add Sumeet-basfore/prosci --all`, `npx prosci --all`, or the clone
+installer above). This is per repository, once:
 
 ```sh
 npx prosci survey .          # read-only facts: stacks, the real test command, tests, CI, harnesses
