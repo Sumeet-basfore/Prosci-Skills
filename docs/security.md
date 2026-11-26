@@ -27,7 +27,7 @@ forwards only:
 
 - `POST` requests,
 - under `/inference/go/`,
-- for the model `claude-haiku-5-5`,
+- for the models named in `PROXY_MODELS` (default: `claude-haiku-5-5`),
 - up to `PROXY_MAX_REQUESTS` requests per series (default 200),
 - with bodies under 2 MB.
 

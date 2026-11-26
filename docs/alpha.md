@@ -14,6 +14,9 @@ recovering from an agent doing the wrong thing.
   verified only on pi (`docs/supported-harnesses.md`).
 - Boundary checks: 44 routing scenarios, 17 rows, 8 negative, no failures. That tests the table, not a
   model.
+- Plan-bound execution works end to end: E2 completed 3/3 units on real models (11 requests, ~$0.00136),
+  and the E3b economy arm completed 3/3 (17/24 requests, ~$0.00119). Authorization, request accounting and
+  per-unit timestamps are recorded, not inferred.
 
 ## What does not work, or is unverified
 
@@ -22,6 +25,9 @@ recovering from an agent doing the wrong thing.
   rather than substance; the failures are in the reports, not hidden.
 - **Merge escalates a constraint violation** instead of resolving it. Known limitation, three runs,
   documented in `eval/reports/phase-3.md`.
+- **Injection and model mixing are unproven.** Direct skill injection stays opt-in: L-001 completed 9 of
+  12 runs and was confounded. Mixed-model role assignment (E3b) never produced a valid comparison — one
+  arm was invalid, the corrected one stopped at its request cap (`eval/reports/l001.md`, `e3b.md`).
 - No real-repository trial has been completed with a human reviewer. Until one is, treat the workflow as
   promising rather than proven.
 
