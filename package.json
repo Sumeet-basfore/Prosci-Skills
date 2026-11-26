@@ -1,0 +1,36 @@
+{
+  "name": "prosci",
+  "version": "0.1.0",
+  "description": "A software factory for coding agents: seventeen skills, an optional survey, and a plan-bound multi-agent runner.",
+  "type": "module",
+  "bin": {
+    "prosci": "./bin/prosci.mjs"
+  },
+  "files": [
+    "bin/prosci.mjs",
+    "bin/install-skills",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test bin/test/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sumeet-basfore/prosci.git"
+  },
+  "keywords": [
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "cursor",
+    "opencode",
+    "pi",
+    "coding-agents"
+  ],
+  "license": "MIT"
+}

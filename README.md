@@ -46,7 +46,26 @@ the activation.
 The seventeen skills are feature-frozen while a seven-day preview runs on real work. Protocol and record
 template: `docs/preview/README.md`. Public alpha is deferred until a human-reviewed result has merged.
 
-## Install
+## Install with npx
+
+```sh
+npx prosci --all                 # copy the skills into every supported harness directory
+npx prosci --harness pi          # or one of pi, claude, codex, cursor, opencode
+npx prosci --check               # show what is installed; changes nothing
+npx prosci --remove --all        # remove only what the installer created
+```
+
+The npm package bundles the same seventeen skills and the same installer. It **copies** rather than
+links, because npx runs from a cache that npm may later delete. There is no `postinstall` step: nothing
+is written until you run the command. Node 20 or newer.
+
+The same skills can also be installed through the ecosystem CLI, which supports more agents:
+
+```sh
+npx skills add Sumeet-basfore/prosci --all
+```
+
+## Install from a clone
 
 The seventeen skills are one folder. Copy or link `skills/prosci*` into the directory your harness reads,
 keeping them together so the relative `../prosci-x/SKILL.md` references resolve.
