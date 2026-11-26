@@ -20,6 +20,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { inspectArm, restoreBase } from "./lib/exec-guard.mjs";
 import { loadRegistries, validatePlan, handoffText } from "./lib/swarm.mjs";
+import { loadAssignedSkills, resolveSkill, buildWorkerInstructions, skillsFingerprint, checkContext } from "./lib/skill-injection.mjs";
 import { spawnGroup, killGroup, groupAlive } from "./lib/proc.mjs";
 import { openBudget, usage } from "./lib/request-budget.mjs";
 import { createRecord, loadRecord, saveRecord, claimExecution, effectiveRetries } from "./lib/exec-auth.mjs";
@@ -58,6 +59,8 @@ if (approval !== planHash) {
   process.exit(2);
 }
 
+const PACKAGE_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const skillsRoot = process.env.PROSCI_SKILLS_ROOT ?? join(PACKAGE_ROOT, "skills");
 const backend = flag("--backend", "fake");
 if (backend === "pi" && !has("--allow-paid")) {
   console.error("the pi backend spends money; pass --allow-paid to acknowledge the budget in the plan");
@@ -65,6 +68,29 @@ if (backend === "pi" && !has("--allow-paid")) {
 }
 if (!["fake", "pi"].includes(backend)) {
   console.error(`unsupported backend: ${backend}`);
+  process.exit(2);
+}
+
+// L-001: the approved plan binds skill bodies, not just names. Shared mandatory rules are resolved once
+// from the installed package; a changed body invalidates a plan that was approved against the old one.
+let assignedSkills;
+let sharedSkills;
+let planSkillsFingerprint;
+try {
+  sharedSkills = [resolveSkill(skillsRoot, "prosci-bar")];
+  const all = [...new Set((plan.units ?? []).flatMap((u) => u.skills ?? []))].filter((n) => n !== "prosci-bar");
+  assignedSkills = loadAssignedSkills(skillsRoot, all);
+  planSkillsFingerprint = skillsFingerprint([...sharedSkills, ...assignedSkills]);
+} catch (error) {
+  console.error(`skills refused: ${String(error.message ?? error)}`);
+  process.exit(2);
+}
+if (plan.skillsFingerprint && plan.skillsFingerprint !== planSkillsFingerprint) {
+  console.error(`skills refused: installed skill content is ${planSkillsFingerprint}, plan approves ${plan.skillsFingerprint}`);
+  process.exit(3);
+}
+if (backend === "pi" && !plan.skillsFingerprint) {
+  console.error("a paid run must bind skillsFingerprint in the plan");
   process.exit(2);
 }
 
@@ -209,7 +235,7 @@ function persist() {
     limits: { maxConcurrency, deadlineMs, profile: validation.profile.limits },
     budget: validation.budget,
     units: units.map((u) => ({
-      id: u.id, role: u.role, model: u.model, status: u.status, attempts: u.attempts,
+      id: u.id, role: u.role, model: u.model, status: u.status, attempts: u.attempts, injection: u.injection,
       startedAt: u.startedAt, finishedAt: u.finishedAt,
       startedAtEpoch: u.startedAtEpoch, finishedAtEpoch: u.finishedAtEpoch,
       startedAtMono: u.startedAtMono, finishedAtMono: u.finishedAtMono,
@@ -281,6 +307,15 @@ function prepareUnit(unit) {
     startPoint = spawnSync("git", ["rev-parse", integration], { encoding: "utf8" }).stdout.trim();
     unit.predecessorCommits = depBranches.map((b) => ({ branch: b, sha: spawnSync("git", ["rev-parse", b], { encoding: "utf8" }).stdout.trim() }));
   }
+  const handoff = handoffText(unit, profileName, registries.roles);
+  const unitSkills = loadAssignedSkills(skillsRoot, unit.skills ?? []);
+  const bundle = buildWorkerInstructions({ unit, role: registries.roles[unit.role], handoff, shared: sharedSkills, skills: [...sharedSkills, ...unitSkills] });
+  const model = registries.models.models.find((m) => m.id === unit.model);
+  const fits = checkContext({ tokens: bundle.meta.estimatedTokens, contextLimit: model?.contextLimit });
+  if (!fits.ok) {
+    transition(unit, "failed", `context refused: ${fits.reason}`);
+    return null;
+  }
   if (!existsSync(worktree)) {
     const added = spawnSync("git", ["worktree", "add", "-q", "-b", branch, worktree, startPoint], { encoding: "utf8" });
     if (added.status !== 0) { transition(unit, "failed", `worktree: ${added.stderr.slice(0, 200)}`); return null; }
@@ -288,9 +323,16 @@ function prepareUnit(unit) {
   unit.worktree = worktree;
   unit.branch = branch;
   unit.startPoint = startPoint;
-  const handoff = handoffText(unit, profileName, registries.roles);
+  mkdirSync(join(outDir, "instructions"), { recursive: true });
+  writeFileSync(join(outDir, "instructions", `${unit.id}.md`), bundle.text);
+  unit.injection = {
+    ...bundle.meta,
+    contextLimit: model?.contextLimit ?? null,
+    available: fits.available,
+    overhead: Number((bundle.meta.estimatedTokens / fits.available).toFixed(3)),
+  };
   writeFileSync(join(outDir, "handoffs", `${unit.id}.md`), handoff);
-  return { worktree, handoff, startPoint };
+  return { worktree, instructions: bundle.text, startPoint };
 }
 
 function resolveSkills(names) {
@@ -308,7 +350,7 @@ function modelProvider(modelId) {
 
 // One attempt: a child process in the unit's worktree, in its own process group. Concurrency is real, and so
 // is the kill: a deadline or a cancellation signals the group, not just the child.
-async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onSpawn = () => {}) {
+async function attemptUnit(unit, { worktree, instructions }, attempt, deadlineMs, onSpawn = () => {}) {
   unit.attempts = attempt;
   transition(unit, "running", `attempt ${attempt}`);
 
@@ -326,7 +368,7 @@ async function attemptUnit(unit, { worktree, handoff }, attempt, deadlineMs, onS
   const spec = unit.fake ?? { outcome: "success" };
   const spawned = backend === "fake"
     ? spawnGroup(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "lib", "fake-worker.mjs"), JSON.stringify(spec)], { cwd: worktree, env: process.env })
-    : spawnGroup("pi", ["-p", "--mode", "json", "--model", unit.model, ...resolveSkills(unit.skills), `${handoff}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`], { cwd: worktree, env: process.env });
+    : spawnGroup("pi", ["-p", "--mode", "json", "--model", unit.model, ...resolveSkills(unit.skills), `${instructions}\n\nDo only this unit. Run the acceptance checks and report what you ran.\n`], { cwd: worktree, env: process.env });
 
   // Recorded before the worker finishes, so a cancellation can still find and kill the group.
   const evidence = { attempt, ok: false, kind: "running", pgid: spawned.pgid, ms: null, startedAtEpoch: start.wall, startedAtMono: start.mono, finishedAtEpoch: null, finishedAtMono: null };

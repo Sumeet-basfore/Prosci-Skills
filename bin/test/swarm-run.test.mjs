@@ -434,3 +434,30 @@ test("refuses to spend against a proxy that belongs to another execution", () =>
     assert.match(r.stderr, /belongs to execution someone-else/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("writes the assigned skill bodies into the worker instructions", () => {
+  const { dir, repo } = workspace();
+  try {
+    const plan = writePlan(dir, { units: [unit()] });
+    const r = run(plan, { repo, out: join(dir, "out") });
+    assert.equal(r.status, 0, r.stderr);
+    const instructions = readFileSync(join(dir, "out", "instructions", "u1.md"), "utf8");
+    const ship = readFileSync(join(ROOT, "skills", "prosci-ship", "SKILL.md"), "utf8");
+    assert.ok(instructions.includes(ship.split("\n").find((l) => l.trim() && !l.startsWith("#")).trim()));
+    assert.doesNotMatch(instructions, /## Assigned skill: prosci-review/);
+    const ledger = JSON.parse(readFileSync(join(dir, "out", "ledger.json"), "utf8"));
+    assert.equal(ledger.units[0].injection.assigned[0].name, "prosci-ship");
+    assert.match(ledger.units[0].injection.fingerprint, /^[0-9a-f]{16}$/);
+    assert.ok(ledger.units[0].injection.estimatedTokens > 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("refuses a plan whose approved skill fingerprint no longer matches the package", () => {
+  const { dir, repo } = workspace();
+  try {
+    const plan = writePlan(dir, { skillsFingerprint: "0".repeat(16), units: [unit()] });
+    const r = run(plan, { repo, out: join(dir, "out") });
+    assert.equal(r.status, 3, r.stderr);
+    assert.match(r.stderr, /installed skill content is .*plan approves/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

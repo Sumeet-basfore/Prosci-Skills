@@ -35,6 +35,9 @@ export function validatePlan(plan, profileName, registries) {
   if (plan.fixtureHash !== undefined && !/^[0-9a-f]{16}$/.test(String(plan.fixtureHash))) {
     errors.push("fixtureHash must be the 16-character tree fingerprint");
   }
+  if (plan.skillsFingerprint !== undefined && !/^[0-9a-f]{16}$/.test(String(plan.skillsFingerprint))) {
+    errors.push("skillsFingerprint must be the 16-character content fingerprint");
+  }
 
   const modelById = new Map(models.models.map((m) => [m.id, m]));
   const unitIds = new Set((plan.units ?? []).map((u) => u.id));
