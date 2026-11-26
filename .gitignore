@@ -2,3 +2,6 @@
 node_modules/
 *.log
 eval/runs/
+eval/reports/l001/ws/
+eval/reports/l001/raw/
+eval/reports/l001/summary.json

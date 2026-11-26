@@ -1,0 +1,49 @@
+{
+  "id": "discovered-review-r1",
+  "arm": "discovered",
+  "scenario": "review",
+  "rep": 1,
+  "status": "ok",
+  "delivered": false,
+  "instructionBytes": 211,
+  "instructionTokens": 53,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": false,
+  "changed": [],
+  "adherence": {
+    "ok": false,
+    "rule": "cites the defective source line",
+    "cites": []
+  },
+  "qualityScore": 2,
+  "quality": {
+    "verdict": true,
+    "specific": true
+  },
+  "usage": {
+    "input": 2,
+    "output": 343,
+    "cacheRead": 5908,
+    "cacheWrite": 930,
+    "totalTokens": 7183,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0,
+      "totalFromProvider": false
+    },
+    "cacheWrite1h": 0,
+    "reasoning": 0
+  },
+  "requestsUsed": 4,
+  "requestsAfter": 13,
+  "wallMs": 17444,
+  "monoMs": 17408,
+  "costUsd": 0.00034702999999999996,
+  "artifact": "# Review: src/validate.mjs\n\n## Verdict: Request changes\n\nThe module is two small functions with no tests. `parseLimit` has input-handling defects that can produce wrong limits silently.\n\n## Findings\n\n### 1. `parseLimit` treats `0` as \"use default\" (blocking)\n`src/validate.mjs`, `parseLimit`: `Number(raw) || 10`. `0` is falsy, so `parseLimit(0)` and `parseLimit(\"0\")` return `10`. An explicit zero limit is silently replaced by the default.\n\n### 2. `parseLimit` accepts negative and non-integer values (blocking)\nThe same expression passes through any truthy number. `parseLimit(-5)` returns `-5`, `parseLimit(2.5)` returns `2.5`, and `parseLimit(Infinity)` returns `Infinity`. Nothing enforces that a limit is a positive integer, and the function's name implies it should.\n\n### 3. `parseLimit` coer",
+  "exit": 0
+}

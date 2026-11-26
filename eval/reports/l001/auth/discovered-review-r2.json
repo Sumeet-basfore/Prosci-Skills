@@ -1,0 +1,10 @@
+{
+  "id": "discovered-review-r2",
+  "singleUse": true,
+  "executions": 1,
+  "configHash": "11d55557fc3bceeb",
+  "base": "ca51a89fc9c81c616dc5bbfd21379d6e7b135898",
+  "fixtureHash": "495f534015c96a10",
+  "skillsFingerprint": "56516c7902b258de",
+  "maxRequests": 24
+}

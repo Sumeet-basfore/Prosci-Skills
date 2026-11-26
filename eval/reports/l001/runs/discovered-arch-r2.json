@@ -1,0 +1,52 @@
+{
+  "id": "discovered-arch-r2",
+  "arm": "discovered",
+  "scenario": "arch",
+  "rep": 2,
+  "status": "ok",
+  "delivered": false,
+  "instructionBytes": 251,
+  "instructionTokens": 63,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": true,
+  "changed": [],
+  "adherence": {
+    "ok": false,
+    "rule": "two options and a reversal cost",
+    "options": true,
+    "decision": true,
+    "reversal": false
+  },
+  "qualityScore": 2,
+  "quality": {
+    "options": true,
+    "decision": true,
+    "reversal": false
+  },
+  "usage": {
+    "input": 2,
+    "output": 444,
+    "cacheRead": 8232,
+    "cacheWrite": 466,
+    "totalTokens": 9144,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0,
+      "totalFromProvider": false
+    },
+    "cacheWrite1h": 0,
+    "reasoning": 111
+  },
+  "requestsUsed": 5,
+  "requestsAfter": 22,
+  "wallMs": 62389,
+  "monoMs": 62374,
+  "costUsd": 0.00036277,
+  "artifact": "# ADR 0001: How uploaded files are processed\n\n- Status: Proposed\n- Scope: `src/upload.mjs` and whatever calls `accept()`\n\n## Context\n\n`src/upload.mjs` exports `accept(file)`, which returns `{ name, bytes }` from the input unchanged. It does not:\n\n- check file size, type, or name,\n- process or transform the contents,\n- store anything, or\n- separate the accept step from any later step.\n\nSo today the upload path is a pass-through, and no processing decision has been made in code yet. The repo has no other source files, no tests, and no prior ADRs, so this record sets the first precedent.\n\nAssumptions that have not been verified against any requirement (none is stated in the repo):\n\n- Upload sizes are modest enough to hold in memory, since `accept()` takes and returns whole byte buffers.\n- No ",
+  "exit": 0
+}
