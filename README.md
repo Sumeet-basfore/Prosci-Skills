@@ -1,7 +1,8 @@
 # prosci
 
-A software factory you use by asking for it. Five skills, one workflow, no CLI to learn. The
-workflow is what makes agents ship more without shipping worse.
+A software factory you use by asking for it. Seventeen skills, one workflow, an optional survey and a
+plan-bound multi-agent runner. The workflow is what makes agents ship more without shipping worse; the
+evidence for that claim is incomplete, and is recorded honestly below.
 
 Skills live in `skills/` and are linked into `.agents/skills/`, so any agent in any project
 finds them.
@@ -20,6 +21,10 @@ finds them.
 | `prosci-ship` | building a feature or changing behaviour |
 | `prosci-fix` | fixing a bug or a failing test |
 | `prosci-review` | reviewing your own work or someone else's before merge |
+| `prosci-investigate` | answering a question about behaviour with evidence, without changing code |
+| `prosci-docs` | updating the documents a change made wrong |
+| `prosci-release` | preparing a release and its conditions |
+| `prosci-init` | giving a repo a short, verified instruction file |
 | `prosci-bar` | the definition of done every route ends at |
 
 Say `/skill:prosci` to see the routes, or name the skill you want. The measured entry point is a
@@ -33,6 +38,8 @@ the activation.
 - `docs/alpha.md` — what works, what does not, install, remove, privacy.
 - `docs/supported-harnesses.md` — the five harness directories and what is actually tested.
 - `docs/network-inventory.md` — every network path, and the limits of the check.
+- `docs/plan/v2-complete.md` — the capability inventory, what was demonstrated, what is unproven, and the
+  freeze rule.
 
 ## Private preview
 
@@ -127,10 +134,20 @@ a reason.
 
 ## Multi-agent plans
 
-`bin/prosci-swarm check <plan.json>` validates a structured plan against `agents/` (roles, model capabilities,
-budgets). `bin/prosci-swarm-run` executes one after approval by plan hash, in an isolated worktree per unit.
-The fake backend is the tested one; the real backend has never been run. Worktrees isolate files, not
-credentials — see `docs/security.md`.
+`bin/prosci-swarm check <plan.json>` validates a structured plan against `agents/` (8 roles, model
+capabilities, budget profiles). `bin/prosci-swarm-run` executes one after approval by plan hash: dependency
+order, bounded concurrency, one worktree per unit, ownership checks, controller-run acceptance, per-unit
+deadlines, cancellation and resume.
+
+Real execution has run end to end: a three-unit plan completed 3/3 units on pi/Claude Haiku 5.5 (E2,
+11 requests, ~$0.00136), and the economy arm of E3b completed 3/3 (17/24 requests, ~$0.00119). The
+mixed-model arm did not produce a valid comparison. The controller bounds executions, requests and retries
+through a single-use authorization record and an atomic proxy budget; that is enforcement against a
+cooperative worker, not an OS sandbox. Worktrees isolate files, not credentials — see `docs/security.md`.
+
+Direct skill injection (placing assigned skill bodies in the worker prompt) exists and is **opt-in**. The
+L-001 comparison was inconclusive: 9 of 12 runs completed before the request cap, and its one acceptance
+difference came from a hidden citation convention.
 
 ## Skill packages
 
@@ -142,5 +159,9 @@ rest are single files, and that is fine. `eval/harness/skill-lint.mjs` checks th
 ## What is measured
 
 Activation is not solved. A one-line instruction in the repo's `AGENTS.md` loaded the right skill in 11
-of 15 runs in the frozen evaluation; passive discovery alone was 0 of 15. See `eval/reports/phase-0.2.md`
-and `phase-3.md` for what is measured, what failed, and what is still unproven.
+of 15 runs in the frozen evaluation; passive discovery alone was 0 of 15. Loading is not adherence.
+
+Execution and model-mixing are mechanisms, not proven improvements. The only real-repo pilot passed 1 of
+3 issues in both the 9-skill and 17-skill arms — no measured difference. Direct injection is
+inconclusive (L-001). Mixed-model role assignment is unproven (E3b). See `eval/reports/phase-0.2.md`,
+`phase-4.md`, `l001.md`, `e3b.md`, and the summary in `docs/plan/v2-complete.md`.
