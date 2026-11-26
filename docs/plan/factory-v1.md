@@ -131,7 +131,7 @@ error rather than pretending to pass.
 - [x] this repo gated with its own workflow, `.github/workflows/factory.yml`
 - [x] branch protection on this repo's `main`, applied 2026-11-24. Required check `factory`,
       strict (branch must be up to date), `enforce_admins: true`, force pushes and deletions
-      blocked. Verified with `gh api repos/Sumeet-basfore/prosci/branches/main/protection`,
+      blocked. Verified with `gh api repos/Sumeet-basfore/Prosci-Skills/branches/main/protection`,
       which returned `checks: ["factory"], strict: true, admins: true, forcepush: false`.
 - [ ] install and protect `lore`, then `healthOraa`, `ilvuno-code`, `caver-ci`
 - the change. The workflow checks out this repo beside the target and runs

@@ -52,8 +52,8 @@ const wantVersion = has("--version");
 const dryRun = has("--dry-run");
 
 if (wantVersion) {
-  // The repo is skills, not a published package; the alpha version is declared here, once.
-  console.log("0.1.0-alpha.1");
+  const pkg = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8"));
+  console.log(pkg.version);
   process.exit(0);
 }
 const remove = has("--remove");

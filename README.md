@@ -7,7 +7,7 @@ evidence for that claim is incomplete, and is recorded honestly below.
 ## Quick start
 
 ```sh
-npx skills add Sumeet-basfore/prosci --all     # install into every supported agent
+npx skills add Sumeet-basfore/Prosci-Skills --all     # install into every supported agent
 ```
 
 Then open the repository you want to work in and run:
@@ -71,7 +71,7 @@ template: `docs/preview/README.md`. Public alpha is deferred until a human-revie
 The ecosystem CLI knows the most agents:
 
 ```sh
-npx skills add Sumeet-basfore/prosci --all
+npx skills add Sumeet-basfore/Prosci-Skills --all
 ```
 
 Or use the bundled installer, which knows the five harnesses Prosci tests by name:
@@ -121,7 +121,7 @@ been measured, and 11/15 is not reliability. Nothing here claims a harness works
 
 ### First time in a repository
 
-Install is per machine (`npx skills add Sumeet-basfore/prosci --all`, `npx prosci --all`, or the clone
+Install is per machine (`npx skills add Sumeet-basfore/Prosci-Skills --all`, `npx prosci --all`, or the clone
 installer above). This is per repository, once:
 
 ```sh
