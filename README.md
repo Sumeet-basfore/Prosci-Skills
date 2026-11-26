@@ -65,17 +65,93 @@ Compatibility is three separate claims and they are not the same claim:
 
 | harness | skills directory | files | discovery | behaviour |
 | --- | --- | --- | --- | --- |
-| pi | `~/.agents/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
-| claude | `~/.claude/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
-| codex | `~/.codex/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
-| cursor | `~/.cursor/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
-| opencode | `~/.config/opencode/skills` | verified 2026-11-24 | not tested | measured in phase 1 |
+| pi | `~/.agents/skills` | verified 2026-11-24 | explicit `--skill` only | measured: 11/15 route loads |
+| claude | `~/.claude/skills` | verified 2026-11-24 | not tested | not tested |
+| codex | `~/.codex/skills` | verified 2026-11-24 | not tested | not tested |
+| cursor | `~/.cursor/skills` | verified 2026-11-24 | not tested | not tested |
+| opencode | `~/.config/opencode/skills` | verified 2026-11-24 | not tested | not tested |
 | omp | no skills directory found | unsupported | not applicable | not applicable |
 
 Files verified means the files land, the names match, and every relative reference resolves.
-Discovery means the harness itself loads them, which phase 0 does not test. Behaviour means the
-harness follows them, which is measured from phase 1. Nothing here claims a harness works beyond
-its column.
+Discovery means the harness itself loads them. Behaviour means the harness follows them; only pi has
+been measured, and 11/15 is not reliability. Nothing here claims a harness works beyond its column.
+
+## Use it
+
+### One-time setup
+
+```sh
+bin/install-skills --check                 # see what is already installed; changes nothing
+bin/install-skills --harness pi            # pick one: pi, claude, codex, cursor, opencode
+bin/install-skills --check                 # expect 17 skills and no broken links
+```
+
+Add `--copy` with `--target <dir>` instead of `--harness` when you want the files inside a project or a
+sandbox. To remove them later, `bin/install-skills --harness <name> --remove` deletes only what the
+installer created.
+
+### Everyday use
+
+Name the skill that matches the job. This is the reliable path: the harness loads that file, and the file
+tells the agent what to read, run and prove.
+
+```text
+/skill:prosci-fix the checkout test fails after the currency change
+/skill:prosci-ship add CSV export to the reports page
+/skill:prosci-review review my uncommitted diff
+/skill:prosci-verify prove the endpoint returns 429 under the limit
+```
+
+If you do not know which one, ask for the router and let it choose a route:
+
+```text
+/skill:prosci the import job now times out on large files
+```
+
+The router is an index, not a guarantee. If the route it names looks wrong, name the route yourself.
+
+### Make it fire without being named
+
+Agents often ignore installed skills. The best measured fix is one line in the repository's own
+instruction file (`AGENTS.md` or `CLAUDE.md`):
+
+```text
+Before you change code here, read the single prosci skill that matches this request and follow it.
+```
+
+That loaded the right route in 11 of 15 frozen runs; passive discovery loaded none. Put it in the repo
+where the work happens, not in your global config.
+
+### Start in an unfamiliar repo
+
+```sh
+bin/prosci-survey .            # read-only facts: stacks, commands with sources, tests, CI
+bin/prosci-survey . --verify   # also run the detected test command
+/skill:prosci-init             # turn the facts into a short, approved AGENTS.md
+```
+
+`prosci-survey` never opens a credential store and prints `null` with a reason when it cannot determine
+something. `prosci-init` writes nothing until you approve the diff.
+
+### Plan-bound multi-agent work (advanced, opt-in)
+
+```sh
+bin/prosci-swarm check plan.json          # roles, models, budgets, dependencies
+bin/prosci-swarm hash plan.json           # approval is bound to this exact plan
+bin/prosci-swarm-run plan.json --approve <hash> --backend fake   # no model calls
+```
+
+Read `docs/plan/e2-parallel-proposal.md` and `docs/security.md` before using `--backend pi --allow-paid`:
+real execution needs a proxy, a request budget, and a boundary you have verified. Worktrees isolate files,
+not credentials, and the controller's limits bind a cooperative worker rather than hostile code.
+
+### Use it well
+
+- Ask for one route per task. Two goals in one request usually get one of them.
+- The route states its own verification. Run it; do not accept “tests pass” without the output.
+- Loading is not adherence. Read the diff and the command output, not the skill's presence.
+- When a skill's advice is wrong for the repo, follow the repo and record the mismatch — that is the only
+  authorized reason to change Prosci now (see `docs/plan/v2-complete.md`).
 
 ## The workflow, in one screen
 
