@@ -1,0 +1,53 @@
+{
+  "id": "discovered-fix-r1",
+  "arm": "discovered",
+  "scenario": "fix",
+  "rep": 1,
+  "status": "ok",
+  "delivered": false,
+  "instructionBytes": 188,
+  "instructionTokens": 47,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": true,
+  "changed": [
+    "src/sum.mjs"
+  ],
+  "adherence": {
+    "ok": false,
+    "rule": "failing test reproduced before first edit",
+    "order": [
+      "edit"
+    ]
+  },
+  "qualityScore": 2,
+  "quality": {
+    "scope": true,
+    "testsUntouched": true
+  },
+  "usage": {
+    "input": 2,
+    "output": 103,
+    "cacheRead": 7383,
+    "cacheWrite": 459,
+    "totalTokens": 7947,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0,
+      "totalFromProvider": false
+    },
+    "cacheWrite1h": 0,
+    "reasoning": 0
+  },
+  "requestsUsed": 4,
+  "requestsAfter": 4,
+  "wallMs": 8014,
+  "monoMs": 7851,
+  "costUsd": 0.000182905,
+  "artifact": "export function sum(a, b) {\n  return a + b;\n}\n",
+  "exit": 0
+}

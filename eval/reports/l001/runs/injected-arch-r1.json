@@ -1,0 +1,52 @@
+{
+  "id": "injected-arch-r1",
+  "arm": "injected",
+  "scenario": "arch",
+  "rep": 1,
+  "status": "ok",
+  "delivered": true,
+  "instructionBytes": 23339,
+  "instructionTokens": 5835,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": true,
+  "changed": [],
+  "adherence": {
+    "ok": true,
+    "rule": "two options and a reversal cost",
+    "options": true,
+    "decision": true,
+    "reversal": true
+  },
+  "qualityScore": 3,
+  "quality": {
+    "options": true,
+    "decision": true,
+    "reversal": true
+  },
+  "usage": {
+    "input": 2,
+    "output": 579,
+    "cacheRead": 17594,
+    "cacheWrite": 372,
+    "totalTokens": 18547,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0,
+      "totalFromProvider": false
+    },
+    "cacheWrite1h": 0,
+    "reasoning": 96
+  },
+  "requestsUsed": 7,
+  "requestsAfter": 12,
+  "wallMs": 79115,
+  "monoMs": 79083,
+  "costUsd": 0.00051214,
+  "artifact": "# ADR 0001: Process uploaded files synchronously in the request, behind a validate-then-store boundary\n\nStatus: proposed\n\n## Context\n\nThe only upload code is `src/upload.mjs`:\n\n```js\nexport function accept(file) {\n  return { name: file.name, bytes: file.bytes };\n}\n```\n\nEvidence gathered:\n\n- `rg \"accept\\(\"` finds only the definition. Nothing calls it.\n- `package.json` declares no dependencies and no queue, worker, or storage client.\n- `git log` has one commit (`efa55b6 fixture: arch`). There is no prior decision record.\n- `accept()` holds the full file body in memory (`bytes`) and checks nothing: no size limit, no type check, no name sanitising.\n\nRequirement: uploaded files must be accepted and processed so that the caller learns the outcome of that upload. The requirement names no volume, ",
+  "exit": 0
+}

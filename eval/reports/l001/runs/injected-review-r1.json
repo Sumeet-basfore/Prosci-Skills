@@ -1,0 +1,53 @@
+{
+  "id": "injected-review-r1",
+  "arm": "injected",
+  "scenario": "review",
+  "rep": 1,
+  "status": "ok",
+  "delivered": true,
+  "instructionBytes": 22517,
+  "instructionTokens": 5630,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": true,
+  "changed": [],
+  "adherence": {
+    "ok": true,
+    "rule": "cites the defective source line",
+    "cites": [
+      2,
+      2,
+      5
+    ]
+  },
+  "qualityScore": 2,
+  "quality": {
+    "verdict": true,
+    "specific": true
+  },
+  "usage": {
+    "input": 2,
+    "output": 357,
+    "cacheRead": 14199,
+    "cacheWrite": 982,
+    "totalTokens": 15540,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0,
+      "totalFromProvider": false
+    },
+    "cacheWrite1h": 0,
+    "reasoning": 0
+  },
+  "requestsUsed": 5,
+  "requestsAfter": 17,
+  "wallMs": 32186,
+  "monoMs": 32172,
+  "costUsd": 0.00044344,
+  "artifact": "# Review: src/validate.mjs\n\nScope: `src/validate.mjs` at HEAD (`ca51a89 fixture: review`). Read-only; no files under `src/` were changed.\n\n## Verdict\n\nNot approved. `parseLimit` accepts values a limit should reject, and neither function has a test.\n\n## Findings\n\n- `src/validate.mjs:2`  **blocking** (if used as a page or row limit)  `Number(raw) || 10` passes negatives and non-integers through unchanged. Observed: `parseLimit(-5)` returns `-5`, `parseLimit(\"2.5\")` returns `2.5`, `parseLimit(\"1e3\")` returns `1000`, `parseLimit(Infinity)` returns `Infinity`. The fix is to validate after parsing: accept only finite integers greater than zero, and fall back to 10 otherwise.\n\n- `src/validate.mjs:2`  **should fix**  `0` silently becomes `10`, because `0` is falsy. `\"0\"`, `\"\"`, `\"  \"`, `\"abc\"`, `u",
+  "exit": 0
+}

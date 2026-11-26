@@ -1,0 +1,52 @@
+{
+  "id": "discovered-arch-r1",
+  "arm": "discovered",
+  "scenario": "arch",
+  "rep": 1,
+  "status": "ok",
+  "delivered": false,
+  "instructionBytes": 251,
+  "instructionTokens": 63,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": true,
+  "changed": [],
+  "adherence": {
+    "ok": false,
+    "rule": "two options and a reversal cost",
+    "options": true,
+    "decision": true,
+    "reversal": false
+  },
+  "qualityScore": 2,
+  "quality": {
+    "options": true,
+    "decision": true,
+    "reversal": false
+  },
+  "usage": {
+    "input": 2,
+    "output": 306,
+    "cacheRead": 6053,
+    "cacheWrite": 1900,
+    "totalTokens": 8261,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0,
+      "totalFromProvider": false
+    },
+    "cacheWrite1h": 0,
+    "reasoning": 0
+  },
+  "requestsUsed": 5,
+  "requestsAfter": 9,
+  "wallMs": 19505,
+  "monoMs": 19492,
+  "costUsd": 0.00045123,
+  "artifact": "# ADR 0001: How uploaded files are processed\n\n- Status: Proposed\n- Date: (set on acceptance)\n- Scope: `src/upload.mjs` and whatever calls it\n\n## Context\n\nThe only upload code today is `accept(file)` in `src/upload.mjs`. It returns `{ name, bytes }` unchanged. The repository has:\n\n- no validation (size, type, or content),\n- no storage or persistence,\n- no processing step,\n- no queue or worker infrastructure,\n- no tests, and no existing ADRs.\n\nNothing in the repo states throughput, file size limits, latency targets, or which processing steps are required. This ADR therefore decides the shape of the pipeline, not its performance budget. Any numeric limit below is a placeholder to be confirmed by the owner.\n\nTwo gaps in the current stub matter for the decision:\n\n1. `name` is passed through unt",
+  "exit": 0
+}

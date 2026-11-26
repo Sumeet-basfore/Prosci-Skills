@@ -1,0 +1,46 @@
+{
+  "id": "discovered-review-r2",
+  "arm": "discovered",
+  "scenario": "review",
+  "rep": 2,
+  "status": "ok",
+  "delivered": false,
+  "instructionBytes": 211,
+  "instructionTokens": 53,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": false,
+  "changed": [],
+  "adherence": {
+    "ok": false,
+    "rule": "cites the defective source line",
+    "cites": []
+  },
+  "qualityScore": 0,
+  "quality": {
+    "verdict": false,
+    "specific": false
+  },
+  "usage": {
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "totalTokens": 0,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0
+    }
+  },
+  "requestsUsed": 2,
+  "requestsAfter": 24,
+  "wallMs": 19736,
+  "monoMs": 19718,
+  "costUsd": 0,
+  "artifact": "",
+  "exit": 0
+}

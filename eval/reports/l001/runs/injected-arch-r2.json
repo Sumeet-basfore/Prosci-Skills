@@ -1,0 +1,49 @@
+{
+  "id": "injected-arch-r2",
+  "arm": "injected",
+  "scenario": "arch",
+  "rep": 2,
+  "status": "ok",
+  "delivered": true,
+  "instructionBytes": 23339,
+  "instructionTokens": 5835,
+  "model": [
+    "l001-proxy/claude-haiku-5-5"
+  ],
+  "acceptance": false,
+  "changed": [],
+  "adherence": {
+    "ok": false,
+    "rule": "two options and a reversal cost",
+    "options": false,
+    "decision": false,
+    "reversal": false
+  },
+  "qualityScore": 0,
+  "quality": {
+    "options": false,
+    "decision": false,
+    "reversal": false
+  },
+  "usage": {
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "totalTokens": 0,
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0
+    }
+  },
+  "requestsUsed": 1,
+  "requestsAfter": 24,
+  "wallMs": 17820,
+  "monoMs": 17771,
+  "costUsd": 0,
+  "artifact": "",
+  "exit": 0
+}

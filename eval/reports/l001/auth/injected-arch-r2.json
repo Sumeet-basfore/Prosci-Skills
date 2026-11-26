@@ -1,0 +1,10 @@
+{
+  "id": "injected-arch-r2",
+  "singleUse": true,
+  "executions": 1,
+  "configHash": "11d55557fc3bceeb",
+  "base": "efa55b6dd91e0a85b1a10c40d88bbb3f21c172f2",
+  "fixtureHash": "981281473e193e9c",
+  "skillsFingerprint": "56516c7902b258de",
+  "maxRequests": 24
+}

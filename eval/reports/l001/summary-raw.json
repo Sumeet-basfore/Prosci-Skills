@@ -1,0 +1,616 @@
+{
+  "configHash": "11d55557fc3bceeb",
+  "fingerprint": "56516c7902b258de",
+  "finishedAt": "2026-11-26T06:49:21.926Z",
+  "budgets": {
+    "discovered": {
+      "schema": 1,
+      "limit": 24,
+      "used": 24
+    },
+    "injected": {
+      "schema": 1,
+      "limit": 24,
+      "used": 24
+    }
+  },
+  "totalRequests": 48,
+  "costEstimateUsd": 0.0035164799999999998,
+  "costWithinCap": true,
+  "arms": {
+    "discovered": {
+      "runs": 6,
+      "completed": 6,
+      "incompleteBudget": 0,
+      "acceptance": 4,
+      "adherence": 0,
+      "qualityMean": 1.6666666666666667,
+      "inputTokens": 39199,
+      "outputTokens": 1276,
+      "instructionTokensMean": 54.333333333333336,
+      "requests": 24,
+      "costUsd": 0.0015173399999999998
+    },
+    "injected": {
+      "runs": 5,
+      "completed": 5,
+      "incompleteBudget": 0,
+      "acceptance": 4,
+      "adherence": 2,
+      "qualityMean": 1.8,
+      "inputTokens": 65411,
+      "outputTokens": 2184,
+      "instructionTokensMean": 5594.4,
+      "requests": 24,
+      "costUsd": 0.00199914
+    }
+  },
+  "runs": [
+    {
+      "id": "discovered-fix-r1",
+      "arm": "discovered",
+      "scenario": "fix",
+      "rep": 1,
+      "status": "ok",
+      "delivered": false,
+      "instructionBytes": 188,
+      "instructionTokens": 47,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [
+        "src/sum.mjs"
+      ],
+      "adherence": {
+        "ok": false,
+        "rule": "failing test reproduced before first edit",
+        "order": [
+          "edit"
+        ]
+      },
+      "qualityScore": 2,
+      "quality": {
+        "scope": true,
+        "testsUntouched": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 103,
+        "cacheRead": 7383,
+        "cacheWrite": 459,
+        "totalTokens": 7947,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "requestsUsed": 4,
+      "requestsAfter": 4,
+      "wallMs": 8014,
+      "monoMs": 7851,
+      "costUsd": 0.000182905,
+      "artifact": "export function sum(a, b) {\n  return a + b;\n}\n",
+      "exit": 0
+    },
+    {
+      "id": "injected-fix-r1",
+      "arm": "injected",
+      "scenario": "fix",
+      "rep": 1,
+      "status": "ok",
+      "delivered": true,
+      "instructionBytes": 21344,
+      "instructionTokens": 5336,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [
+        "src/sum.mjs"
+      ],
+      "adherence": {
+        "ok": false,
+        "rule": "failing test reproduced before first edit",
+        "order": [
+          "edit"
+        ]
+      },
+      "qualityScore": 2,
+      "quality": {
+        "scope": true,
+        "testsUntouched": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 567,
+        "cacheRead": 15566,
+        "cacheWrite": 247,
+        "totalTokens": 16382,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "requestsUsed": 5,
+      "requestsAfter": 5,
+      "wallMs": 12402,
+      "monoMs": 12228,
+      "costUsd": 0.000470235,
+      "artifact": "export function sum(a, b) {\n  return a + b;\n}\n",
+      "exit": 0
+    },
+    {
+      "id": "discovered-arch-r1",
+      "arm": "discovered",
+      "scenario": "arch",
+      "rep": 1,
+      "status": "ok",
+      "delivered": false,
+      "instructionBytes": 251,
+      "instructionTokens": 63,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [],
+      "adherence": {
+        "ok": false,
+        "rule": "two options and a reversal cost",
+        "options": true,
+        "decision": true,
+        "reversal": false
+      },
+      "qualityScore": 2,
+      "quality": {
+        "options": true,
+        "decision": true,
+        "reversal": false
+      },
+      "usage": {
+        "input": 2,
+        "output": 306,
+        "cacheRead": 6053,
+        "cacheWrite": 1900,
+        "totalTokens": 8261,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "requestsUsed": 5,
+      "requestsAfter": 9,
+      "wallMs": 19505,
+      "monoMs": 19492,
+      "costUsd": 0.00045123,
+      "artifact": "# ADR 0001: How uploaded files are processed\n\n- Status: Proposed\n- Date: (set on acceptance)\n- Scope: `src/upload.mjs` and whatever calls it\n\n## Context\n\nThe only upload code today is `accept(file)` in `src/upload.mjs`. It returns `{ name, bytes }` unchanged. The repository has:\n\n- no validation (size, type, or content),\n- no storage or persistence,\n- no processing step,\n- no queue or worker infrastructure,\n- no tests, and no existing ADRs.\n\nNothing in the repo states throughput, file size limits, latency targets, or which processing steps are required. This ADR therefore decides the shape of the pipeline, not its performance budget. Any numeric limit below is a placeholder to be confirmed by the owner.\n\nTwo gaps in the current stub matter for the decision:\n\n1. `name` is passed through unt",
+      "exit": 0
+    },
+    {
+      "id": "injected-arch-r1",
+      "arm": "injected",
+      "scenario": "arch",
+      "rep": 1,
+      "status": "ok",
+      "delivered": true,
+      "instructionBytes": 23339,
+      "instructionTokens": 5835,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [],
+      "adherence": {
+        "ok": true,
+        "rule": "two options and a reversal cost",
+        "options": true,
+        "decision": true,
+        "reversal": true
+      },
+      "qualityScore": 3,
+      "quality": {
+        "options": true,
+        "decision": true,
+        "reversal": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 579,
+        "cacheRead": 17594,
+        "cacheWrite": 372,
+        "totalTokens": 18547,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 96
+      },
+      "requestsUsed": 7,
+      "requestsAfter": 12,
+      "wallMs": 79115,
+      "monoMs": 79083,
+      "costUsd": 0.00051214,
+      "artifact": "# ADR 0001: Process uploaded files synchronously in the request, behind a validate-then-store boundary\n\nStatus: proposed\n\n## Context\n\nThe only upload code is `src/upload.mjs`:\n\n```js\nexport function accept(file) {\n  return { name: file.name, bytes: file.bytes };\n}\n```\n\nEvidence gathered:\n\n- `rg \"accept\\(\"` finds only the definition. Nothing calls it.\n- `package.json` declares no dependencies and no queue, worker, or storage client.\n- `git log` has one commit (`efa55b6 fixture: arch`). There is no prior decision record.\n- `accept()` holds the full file body in memory (`bytes`) and checks nothing: no size limit, no type check, no name sanitising.\n\nRequirement: uploaded files must be accepted and processed so that the caller learns the outcome of that upload. The requirement names no volume, ",
+      "exit": 0
+    },
+    {
+      "id": "discovered-review-r1",
+      "arm": "discovered",
+      "scenario": "review",
+      "rep": 1,
+      "status": "ok",
+      "delivered": false,
+      "instructionBytes": 211,
+      "instructionTokens": 53,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": false,
+      "changed": [],
+      "adherence": {
+        "ok": false,
+        "rule": "cites the defective source line",
+        "cites": []
+      },
+      "qualityScore": 2,
+      "quality": {
+        "verdict": true,
+        "specific": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 343,
+        "cacheRead": 5908,
+        "cacheWrite": 930,
+        "totalTokens": 7183,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "requestsUsed": 4,
+      "requestsAfter": 13,
+      "wallMs": 17444,
+      "monoMs": 17408,
+      "costUsd": 0.00034702999999999996,
+      "artifact": "# Review: src/validate.mjs\n\n## Verdict: Request changes\n\nThe module is two small functions with no tests. `parseLimit` has input-handling defects that can produce wrong limits silently.\n\n## Findings\n\n### 1. `parseLimit` treats `0` as \"use default\" (blocking)\n`src/validate.mjs`, `parseLimit`: `Number(raw) || 10`. `0` is falsy, so `parseLimit(0)` and `parseLimit(\"0\")` return `10`. An explicit zero limit is silently replaced by the default.\n\n### 2. `parseLimit` accepts negative and non-integer values (blocking)\nThe same expression passes through any truthy number. `parseLimit(-5)` returns `-5`, `parseLimit(2.5)` returns `2.5`, and `parseLimit(Infinity)` returns `Infinity`. Nothing enforces that a limit is a positive integer, and the function's name implies it should.\n\n### 3. `parseLimit` coer",
+      "exit": 0
+    },
+    {
+      "id": "injected-review-r1",
+      "arm": "injected",
+      "scenario": "review",
+      "rep": 1,
+      "status": "ok",
+      "delivered": true,
+      "instructionBytes": 22517,
+      "instructionTokens": 5630,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [],
+      "adherence": {
+        "ok": true,
+        "rule": "cites the defective source line",
+        "cites": [
+          2,
+          2,
+          5
+        ]
+      },
+      "qualityScore": 2,
+      "quality": {
+        "verdict": true,
+        "specific": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 357,
+        "cacheRead": 14199,
+        "cacheWrite": 982,
+        "totalTokens": 15540,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "requestsUsed": 5,
+      "requestsAfter": 17,
+      "wallMs": 32186,
+      "monoMs": 32172,
+      "costUsd": 0.00044344,
+      "artifact": "# Review: src/validate.mjs\n\nScope: `src/validate.mjs` at HEAD (`ca51a89 fixture: review`). Read-only; no files under `src/` were changed.\n\n## Verdict\n\nNot approved. `parseLimit` accepts values a limit should reject, and neither function has a test.\n\n## Findings\n\n- `src/validate.mjs:2`  **blocking** (if used as a page or row limit)  `Number(raw) || 10` passes negatives and non-integers through unchanged. Observed: `parseLimit(-5)` returns `-5`, `parseLimit(\"2.5\")` returns `2.5`, `parseLimit(\"1e3\")` returns `1000`, `parseLimit(Infinity)` returns `Infinity`. The fix is to validate after parsing: accept only finite integers greater than zero, and fall back to 10 otherwise.\n\n- `src/validate.mjs:2`  **should fix**  `0` silently becomes `10`, because `0` is falsy. `\"0\"`, `\"\"`, `\"  \"`, `\"abc\"`, `u",
+      "exit": 0
+    },
+    {
+      "id": "discovered-fix-r2",
+      "arm": "discovered",
+      "scenario": "fix",
+      "rep": 2,
+      "status": "ok",
+      "delivered": false,
+      "instructionBytes": 188,
+      "instructionTokens": 47,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [
+        "src/sum.mjs"
+      ],
+      "adherence": {
+        "ok": false,
+        "rule": "failing test reproduced before first edit",
+        "order": [
+          "edit"
+        ]
+      },
+      "qualityScore": 2,
+      "quality": {
+        "scope": true,
+        "testsUntouched": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 80,
+        "cacheRead": 7383,
+        "cacheWrite": 475,
+        "totalTokens": 7940,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 0
+      },
+      "requestsUsed": 4,
+      "requestsAfter": 17,
+      "wallMs": 8353,
+      "monoMs": 8231,
+      "costUsd": 0.000173405,
+      "artifact": "export function sum(a, b) {\n  return a + b;\n}\n",
+      "exit": 0
+    },
+    {
+      "id": "injected-fix-r2",
+      "arm": "injected",
+      "scenario": "fix",
+      "rep": 2,
+      "status": "ok",
+      "delivered": true,
+      "instructionBytes": 21344,
+      "instructionTokens": 5336,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [
+        "src/sum.mjs"
+      ],
+      "adherence": {
+        "ok": false,
+        "rule": "failing test reproduced before first edit",
+        "order": [
+          "edit",
+          "edit"
+        ]
+      },
+      "qualityScore": 2,
+      "quality": {
+        "scope": true,
+        "testsUntouched": true
+      },
+      "usage": {
+        "input": 2,
+        "output": 681,
+        "cacheRead": 15850,
+        "cacheWrite": 593,
+        "totalTokens": 17126,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 84
+      },
+      "requestsUsed": 6,
+      "requestsAfter": 23,
+      "wallMs": 22670,
+      "monoMs": 22539,
+      "costUsd": 0.0005733250000000001,
+      "artifact": "export function sum(a, b) {\n  return a + b;\n}\n",
+      "exit": 0
+    },
+    {
+      "id": "discovered-arch-r2",
+      "arm": "discovered",
+      "scenario": "arch",
+      "rep": 2,
+      "status": "ok",
+      "delivered": false,
+      "instructionBytes": 251,
+      "instructionTokens": 63,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": true,
+      "changed": [],
+      "adherence": {
+        "ok": false,
+        "rule": "two options and a reversal cost",
+        "options": true,
+        "decision": true,
+        "reversal": false
+      },
+      "qualityScore": 2,
+      "quality": {
+        "options": true,
+        "decision": true,
+        "reversal": false
+      },
+      "usage": {
+        "input": 2,
+        "output": 444,
+        "cacheRead": 8232,
+        "cacheWrite": 466,
+        "totalTokens": 9144,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0,
+          "totalFromProvider": false
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 111
+      },
+      "requestsUsed": 5,
+      "requestsAfter": 22,
+      "wallMs": 62389,
+      "monoMs": 62374,
+      "costUsd": 0.00036277,
+      "artifact": "# ADR 0001: How uploaded files are processed\n\n- Status: Proposed\n- Scope: `src/upload.mjs` and whatever calls `accept()`\n\n## Context\n\n`src/upload.mjs` exports `accept(file)`, which returns `{ name, bytes }` from the input unchanged. It does not:\n\n- check file size, type, or name,\n- process or transform the contents,\n- store anything, or\n- separate the accept step from any later step.\n\nSo today the upload path is a pass-through, and no processing decision has been made in code yet. The repo has no other source files, no tests, and no prior ADRs, so this record sets the first precedent.\n\nAssumptions that have not been verified against any requirement (none is stated in the repo):\n\n- Upload sizes are modest enough to hold in memory, since `accept()` takes and returns whole byte buffers.\n- No ",
+      "exit": 0
+    },
+    {
+      "id": "injected-arch-r2",
+      "arm": "injected",
+      "scenario": "arch",
+      "rep": 2,
+      "status": "ok",
+      "delivered": true,
+      "instructionBytes": 23339,
+      "instructionTokens": 5835,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": false,
+      "changed": [],
+      "adherence": {
+        "ok": false,
+        "rule": "two options and a reversal cost",
+        "options": false,
+        "decision": false,
+        "reversal": false
+      },
+      "qualityScore": 0,
+      "quality": {
+        "options": false,
+        "decision": false,
+        "reversal": false
+      },
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 0,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "requestsUsed": 1,
+      "requestsAfter": 24,
+      "wallMs": 17820,
+      "monoMs": 17771,
+      "costUsd": 0,
+      "artifact": "",
+      "exit": 0
+    },
+    {
+      "id": "discovered-review-r2",
+      "arm": "discovered",
+      "scenario": "review",
+      "rep": 2,
+      "status": "ok",
+      "delivered": false,
+      "instructionBytes": 211,
+      "instructionTokens": 53,
+      "model": [
+        "l001-proxy/claude-haiku-5-5"
+      ],
+      "acceptance": false,
+      "changed": [],
+      "adherence": {
+        "ok": false,
+        "rule": "cites the defective source line",
+        "cites": []
+      },
+      "qualityScore": 0,
+      "quality": {
+        "verdict": false,
+        "specific": false
+      },
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 0,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "requestsUsed": 2,
+      "requestsAfter": 24,
+      "wallMs": 19736,
+      "monoMs": 19718,
+      "costUsd": 0,
+      "artifact": "",
+      "exit": 0
+    }
+  ]
+}

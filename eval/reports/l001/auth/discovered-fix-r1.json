@@ -1,0 +1,10 @@
+{
+  "id": "discovered-fix-r1",
+  "singleUse": true,
+  "executions": 1,
+  "configHash": "11d55557fc3bceeb",
+  "base": "2d8031f3bb93adab57892129dd3d9f5ce943affe",
+  "fixtureHash": "80bbbd03b16ed521",
+  "skillsFingerprint": "56516c7902b258de",
+  "maxRequests": 24
+}
