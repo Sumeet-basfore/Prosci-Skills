@@ -24,6 +24,11 @@ const value = (flag) => {
   return i >= 0 ? argv[i + 1] : null;
 };
 
+if (argv[0] === "survey") {
+  const survey = spawnSync(process.execPath, [join(HERE, "prosci-survey"), ...argv.slice(1)], { stdio: "inherit" });
+  process.exit(survey.status ?? 1);
+}
+
 const wanted = [];
 let rest = [];
 for (let i = 0; i < argv.length; i += 1) {
@@ -52,6 +57,7 @@ Usage:
   npx prosci --check            list installed skills, change nothing
   npx prosci --remove           remove what this installer created
   npx prosci --dry-run          show what would change
+  npx prosci survey [repo]      read-only project facts for prosci-init
 
 Options:
   --harness <name>   may be repeated
