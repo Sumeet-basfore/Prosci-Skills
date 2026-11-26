@@ -1,6 +1,6 @@
 {
   "name": "prosci",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A software factory for coding agents: seventeen skills, an optional survey, and a plan-bound multi-agent runner.",
   "type": "module",
   "bin": {
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Sumeet-basfore/prosci.git"
+    "url": "git+https://github.com/Sumeet-basfore/Prosci-Skills.git"
   },
   "keywords": [
     "agent-skills",
