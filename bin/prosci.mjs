@@ -48,6 +48,11 @@ for (let i = 0; i < argv.length; i += 1) {
 const inspect = rest.some((flag) => ["--check", "--remove", "--dry-run"].includes(flag));
 if (wanted.length === 0 && inspect) wanted.push(...HARNESSES);
 
+if (rest.includes("--version") || rest.includes("-v")) {
+  const result = spawnSync(process.execPath, [INSTALLER, "--version"], { stdio: "inherit" });
+  process.exit(result.status ?? 1);
+}
+
 if (rest.includes("--help") || wanted.length === 0) {
   console.log(`Prosci — a software factory for coding agents
 
@@ -64,6 +69,7 @@ Options:
   --all              all five supported harness directories
   --copy             accepted for compatibility; npx installs always copy
   --target <dir>     install into an explicit directory instead of a harness
+  --version          print the package version
 
 Installed skills are copied. Pass --remove with the same --harness to uninstall.`);
   process.exit(rest.includes("--help") ? 0 : 2);

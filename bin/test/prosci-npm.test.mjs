@@ -90,3 +90,12 @@ test("package metadata ships the installer and every skill", () => {
   assert.ok(existsSync(join(REPO, "LICENSE")));
   assert.ok(SKILLS.length >= 17, `expected 17 skills, found ${SKILLS.length}`);
 });
+
+test("--version prints the package version, not usage", () => {
+  const home = temp();
+  const r = run(["--version"], home);
+  const pkg = JSON.parse(readFileSync(join(REPO, "package.json"), "utf8"));
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout.trim(), pkg.version);
+  rmSync(home, { recursive: true, force: true });
+});
