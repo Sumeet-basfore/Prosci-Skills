@@ -34,6 +34,16 @@ test("checks every harness when --check has no --harness", () => {
   rmSync(home, { recursive: true, force: true });
 });
 
+test("survey subcommand returns read-only facts", () => {
+  const home = temp();
+  const result = run(["survey", REPO], home);
+  assert.equal(result.status, 0, result.stderr);
+  const facts = JSON.parse(result.stdout);
+  assert.equal(facts.schema, 1);
+  assert.ok(facts.facts.commands, "test command detected");
+  rmSync(home, { recursive: true, force: true });
+});
+
 test("installs all skills into one harness and removes them", () => {
   const home = temp();
   const installed = run(["--harness", "pi"], home);

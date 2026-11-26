@@ -125,12 +125,12 @@
     {
       "name": "prosci-init",
       "declared": "prosci-init",
-      "sha256": "3b707e8097a7aed14fc7103162668d64784cff19c1981b84f983f5cfcba57a99",
-      "bytes": 8395,
+      "sha256": "90c230743e3b4d9278c89360a1e0b6a064f4532e7334bf2ddcca2e60b6e32bec",
+      "bytes": 8456,
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "3b707e8097a7aed14fc7103162668d64784cff19c1981b84f983f5cfcba57a99"
+          "sha256": "90c230743e3b4d9278c89360a1e0b6a064f4532e7334bf2ddcca2e60b6e32bec"
         },
         {
           "path": "skill.json",
